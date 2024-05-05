@@ -31,7 +31,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/Daniel-Ayz/JewBuyExpress">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
+    <img src="images/JewBuyExpress-logo.webp" alt="Logo" width="400" height="400">
   </a>
 
 <h3 align="center">JewBuyExpress</h3>
@@ -39,7 +39,7 @@
   <p align="center">
     Same as superly but better. Soon will be available online! Watch out Jeff, the jews are comming!
     <br />
-    <a href="https://github.com/Daniel-Ayz/JewBuyExpress"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/Daniel-Ayz/JewBuyExpress/tree/main/docs"><strong>Explore the docs »</strong></a>
     <br />
     <br />
     <a href="https://github.com/Daniel-Ayz/JewBuyExpress">View Demo</a>
@@ -142,7 +142,7 @@ This is an example of how to list things you need to use the software and how to
 
 Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
 
-_For more examples, please refer to the [Documentation](https://github.com/Daniel-Ayz/JewBuyExpress/docs/)_
+_For more examples, please refer to the [Documentation](https://github.com/Daniel-Ayz/JewBuyExpress/tree/main/docs)_
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
