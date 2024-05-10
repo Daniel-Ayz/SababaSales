@@ -30,23 +30,23 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/Daniel-Ayz/JewBuyExpress">
-    <img src="images/JewBuyExpress-logo.webp" alt="Logo" width="400" height="400">
+  <a href="https://github.com/Daniel-Ayz/SababaSales">
+    <img src="images/SababaSales-logo.webp" alt="Logo" width="400" height="400">
   </a>
 
-<h3 align="center">JewBuyExpress</h3>
+<h3 align="center">SababaSales</h3>
 
   <p align="center">
     Same as superly but better. Soon will be available online! Watch out Jeff, the jews are comming!
     <br />
-    <a href="https://github.com/Daniel-Ayz/JewBuyExpress/tree/main/docs"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/Daniel-Ayz/SababaSales/tree/main/docs"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/Daniel-Ayz/JewBuyExpress">View Demo</a>
+    <a href="https://github.com/Daniel-Ayz/SababaSales">View Demo</a>
     ·
-    <a href="https://github.com/Daniel-Ayz/JewBuyExpress/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
+    <a href="https://github.com/Daniel-Ayz/SababaSales/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     ·
-    <a href="https://github.com/Daniel-Ayz/JewBuyExpress/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
+    <a href="https://github.com/Daniel-Ayz/SababaSales/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
 </div>
 
@@ -58,13 +58,23 @@
 
 
 <!-- GETTING STARTED -->
-## Installation
+# Installation
+
+### Clone the project
+Use pycharm clone functionality or use something like:
+```
+git clone https://github.com/Daniel-Ayz/SababaSales.git
+```
 
 ### Create a Virtualenv
 
 - Windows
-Commands might be different (backslashes maybe).
-it will probably be the same
+
+```PowerShell
+  pip install virtualenv
+  virtualenv .venv
+  .\.venv\Scripts\activate
+```
 
 
 - Linux/mac
@@ -94,29 +104,36 @@ This will install pre-commit hooks that will run automatically before each commi
 ```
 
 ### Start Up server
-For the first time:
+Initialize the database (if we don't have one already):
 ```bash
+  cd marketapi
   python manage.py migrate
 ```
-
+Start the server instance
 ```bash
   python manage.py runserver
 ```
+The application should be available at [http://localhost:8000/](http://127.0.0.1:8000/api/docs) through your browser
 
-The application should be available at http://localhost:8000/ through your browser
+### Setup Pycharm
+Click the Python Interpreter selector and choose Add Interpreter (Add the existing one you created in the virtual environment)
+https://www.jetbrains.com/help/pycharm/creating-virtual-environment.html#python_create_virtual_env
 
+
+# Must read docs for development
+
+## Django
+We will use the Django framework for backend [official docs](https://docs.djangoproject.com/en/5.0/intro/tutorial01/)
+
+## Django Ninja (API)
+Django Ninja is a web framework for building APIs with Django and Python 3.6+ type hints.
+Make sure to read about it in the [official docs](https://django-ninja.rest-framework.com/). It supports OpenAPI (previously known as Swagger) and [JSON Schema](https://json-schema.org/), as well as [Pydantic](https://pydantic-docs.helpmanual.io/) models. It also has an ["extra" package](https://eadwincode.github.io/django-ninja-extra/) that adds some useful features.
 
 ## Pydantic
-
 Read briefly about it in the [official docs](https://pydantic-docs.helpmanual.io/). \
 We won't use it directly, but it is used by Django Ninja Schemes support.
 
-## Django API Platform
-
-We chose Django Ninja, make sure to read about it in the [official docs](https://django-ninja.rest-framework.com/). It supports OpenAPI (previously known as Swagger) and [JSON Schema](https://json-schema.org/), as well as [Pydantic](https://pydantic-docs.helpmanual.io/) models. It also has an ["extra" package](https://eadwincode.github.io/django-ninja-extra/) that adds some useful features.
-
-
-### Tutorials
+## Tutorials
 
 Please follow the following tutorials to get started:
 
@@ -134,7 +151,7 @@ Please read and understand some of the following project architectures:
 - [Blog Example](https://github.com/HyoungSooo/Django-Blog) with JWT (API), and blog (templates)
 - [Django Ninja Example](https://github.com/lihuacai168/django-ninja-demo/) with some config files (such as dockerfile, env example, etc.)
 
-## Style and Conventions Guides
+### Style and Conventions Guides
 
 - [Hitchhiker's Guide to Python](https://docs.python-guide.org/writing/style/)
 - [Django Best Practices](https://medium.com/@sadhanajaiswal/django-best-practices-coding-style-7870b398889b)
@@ -142,7 +159,7 @@ Please read and understand some of the following project architectures:
 
 ## Feature Submissions Guidelines
 
-- First, create an issue with the feature request in GitHub, assign it to yourself (or the relevant people), and add the relevant labels (such as "enhancement", "bug", etc.)
+- First, create an issue with the feature request in GitHub, assign it to yourself (or the relevant people), and add the relevant labels (such as "enhancement", "bug", etc.) [Create Issue - Enhancement](https://github.com/Daniel-Ayz/SababaSales/issues/new?labels=enhancement&template=feature-request---.md)
 - Then, create a branch automatically from the issue. The branch name should be `feature/requirement_num/feature_name` (e.g. `feature/2-2/profile-editing`). The "feature" can be replaced with "bug" if needed. Requirement_num is from the clickup documentation.
 - Fetch the remote branch and start working on it locally.
 - Commit and push your changes frequently to the remote branch.
@@ -150,15 +167,13 @@ Please read and understand some of the following project architectures:
 - Create a pull request from the remote branch to the main branch. Add the relevant reviewers (>2) and assign the pull request to yourself. Assign to the relevant milestone.
 - If the pull request is approved, it will be merged into the main branch and the remote branch will be deleted by the reviewer.
 
-
-
 <!-- ROADMAP -->
-## Roadmap
+# Roadmap
 
-- [ ] Release Version 0
+- [X] Release Version 0
     - [X] Add acceptence tests
-    - [ ] Add use cases
-    - [ ] Add class diagrams
+    - [X] Add use cases
+    - [X] Add class diagrams
 - [ ] Release Version 1
     - [ ] Initial backend
     - [ ] Initial frontend
@@ -166,7 +181,7 @@ Please read and understand some of the following project architectures:
 - [ ] Release Version 3
 - [ ] Release Final Version
 
-See the [open issues](https://github.com/Daniel-Ayz/JewBuyExpress/issues) for a full list of proposed features (and known issues).
+See the [open issues](https://github.com/Daniel-Ayz/SababaSales/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -210,7 +225,7 @@ Roy Weiss - weissroy@post.bgu.ac.il
 Roy Shvartz - royshv@post.bgu.ac.il  
 Talia Katrih - katrihta@post.bgu.ac.il
 
-Project Link: [https://github.com/Daniel-Ayz/JewBuyExpress](https://github.com/Daniel-Ayz/JewBuyExpress)
+Project Link: [https://github.com/Daniel-Ayz/SababaSales](https://github.com/Daniel-Ayz/SababaSales)
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -220,16 +235,16 @@ Project Link: [https://github.com/Daniel-Ayz/JewBuyExpress](https://github.com/D
 
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-[contributors-shield]: https://img.shields.io/github/contributors/Daniel-Ayz/JewBuyExpress.svg?style=for-the-badge
-[contributors-url]: https://github.com/Daniel-Ayz/JewBuyExpress/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Daniel-Ayz/JewBuyExpress.svg?style=for-the-badge
-[forks-url]: https://github.com/Daniel-Ayz/JewBuyExpress/network/members
-[stars-shield]: https://img.shields.io/github/stars/Daniel-Ayz/JewBuyExpress.svg?style=for-the-badge
-[stars-url]: https://github.com/Daniel-Ayz/JewBuyExpress/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Daniel-Ayz/JewBuyExpress.svg?style=for-the-badge
-[issues-url]: https://github.com/Daniel-Ayz/JewBuyExpress/issues
-[license-shield]: https://img.shields.io/github/license/Daniel-Ayz/JewBuyExpress.svg?style=for-the-badge
-[license-url]: https://github.com/Daniel-Ayz/JewBuyExpress/blob/master/LICENSE.txt
+[contributors-shield]: https://img.shields.io/github/contributors/Daniel-Ayz/SababaSales.svg?style=for-the-badge
+[contributors-url]: https://github.com/Daniel-Ayz/SababaSales/graphs/contributors
+[forks-shield]: https://img.shields.io/github/forks/Daniel-Ayz/SababaSales.svg?style=for-the-badge
+[forks-url]: https://github.com/Daniel-Ayz/SababaSales/network/members
+[stars-shield]: https://img.shields.io/github/stars/Daniel-Ayz/SababaSales.svg?style=for-the-badge
+[stars-url]: https://github.com/Daniel-Ayz/SababaSales/stargazers
+[issues-shield]: https://img.shields.io/github/issues/Daniel-Ayz/SababaSales.svg?style=for-the-badge
+[issues-url]: https://github.com/Daniel-Ayz/SababaSales/issues
+[license-shield]: https://img.shields.io/github/license/Daniel-Ayz/SababaSales.svg?style=for-the-badge
+[license-url]: https://github.com/Daniel-Ayz/SababaSales/blob/master/LICENSE.txt
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/linkedin_username
 [product-screenshot]: images/screenshot.png
