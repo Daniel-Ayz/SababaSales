@@ -52,99 +52,103 @@
 
 
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
 
 
-
-<!-- ABOUT THE PROJECT -->
-## About The Project
-
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-### Built With
-
-* [![Next][Next.js]][Next-url]
-* [![React][React.js]][React-url]
-* [![Vue][Vue.js]][Vue-url]
-* [![Angular][Angular.io]][Angular-url]
-* [![Svelte][Svelte.dev]][Svelte-url]
-* [![Laravel][Laravel.com]][Laravel-url]
-* [![Bootstrap][Bootstrap.com]][Bootstrap-url]
-* [![JQuery][JQuery.com]][JQuery-url]
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 
 <!-- GETTING STARTED -->
-## Getting Started
+## Installation
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
+### Create a Virtualenv
 
-### Prerequisites
-
-This is an example of how to list things you need to use the software and how to install them.
-* npm
-  ```sh
-  npm install npm@latest -g
-  ```
-
-### Installation
-
-1. Get a free API Key at [https://example.com](https://example.com)
-2. Clone the repo
-   ```sh
-   git clone https://github.com/Daniel-Ayz/JewBuyExpress.git
-   ```
-3. Install NPM packages
-   ```sh
-   npm install
-   ```
-4. Enter your API in `config.js`
-   ```js
-   const API_KEY = 'ENTER YOUR API';
-   ```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+- Windows
+Commands might be different (backslashes maybe).
+it will probably be the same
 
 
+- Linux/mac
 
-<!-- USAGE EXAMPLES -->
-## Usage
+```bash
+  pip install venv
+  python3 venv -m .venv 
+  source .venv/bin/activate
+```
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+You may need to configure your IDE (such as VSCode) to use the virtualenv python interpreter, as well as your IDE linter.
 
-_For more examples, please refer to the [Documentation](https://github.com/Daniel-Ayz/JewBuyExpress/tree/main/docs)_
+### Install Requirements
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+```bash
+  pip install -r requirements.txt
+```
+
+> Note: if you install new packages, please update the requirements.txt file with `pip freeze > requirements.txt`
+
+### Install Pre-Commit Hooks
+
+This will install pre-commit hooks that will run automatically before each commit to make sure that the code is formatted correctly and that there are no errors.
+
+```bash
+  pre-commit install
+```
+
+### Start Up server
+For the first time:
+```bash
+  python manage.py migrate
+```
+
+```bash
+  python manage.py runserver
+```
+
+The application should be available at http://localhost:8000/ through your browser
+
+
+## Pydantic
+
+Read briefly about it in the [official docs](https://pydantic-docs.helpmanual.io/). \
+We won't use it directly, but it is used by Django Ninja Schemes support.
+
+## Django API Platform
+
+We chose Django Ninja, make sure to read about it in the [official docs](https://django-ninja.rest-framework.com/). It supports OpenAPI (previously known as Swagger) and [JSON Schema](https://json-schema.org/), as well as [Pydantic](https://pydantic-docs.helpmanual.io/) models. It also has an ["extra" package](https://eadwincode.github.io/django-ninja-extra/) that adds some useful features.
+
+
+### Tutorials
+
+Please follow the following tutorials to get started:
+
+- [Short Introduction to Django](https://youtu.be/nGIg40xs9e4)
+- [Official Tutorial](https://django-ninja.rest-framework.com/tutorial/)
+- [Django Ninja Video Tutorial](https://www.youtube.com/playlist?list=PLXskueZ7apWgNasQPt6PYhlKNKNEghT3T)
+- [Django Ninja Extra Tutorial](https://eadwincode.github.io/django-ninja-extra/tutorial/)
+- [Django Ninja with Pydantic](https://testdriven.io/blog/django-and-pydantic/)
+
+### Project Examples
+
+Please read and understand some of the following project architectures:
+
+- [Books Example](https://github.com/ErSauravAdhikari/Karnali), only API example (good structure).
+- [Blog Example](https://github.com/HyoungSooo/Django-Blog) with JWT (API), and blog (templates)
+- [Django Ninja Example](https://github.com/lihuacai168/django-ninja-demo/) with some config files (such as dockerfile, env example, etc.)
+
+## Style and Conventions Guides
+
+- [Hitchhiker's Guide to Python](https://docs.python-guide.org/writing/style/)
+- [Django Best Practices](https://medium.com/@sadhanajaiswal/django-best-practices-coding-style-7870b398889b)
+- Make sure to install the pre-commit hooks as explained above.
+
+## Feature Submissions Guidelines
+
+- First, create an issue with the feature request in GitHub, assign it to yourself (or the relevant people), and add the relevant labels (such as "enhancement", "bug", etc.)
+- Then, create a branch automatically from the issue. The branch name should be `feature/requirement_num/feature_name` (e.g. `feature/2-2/profile-editing`). The "feature" can be replaced with "bug" if needed. Requirement_num is from the clickup documentation.
+- Fetch the remote branch and start working on it locally.
+- Commit and push your changes frequently to the remote branch.
+- When you are done, make `git pull origin main` (to your branch) to merge the changes done in main since your branch was created. Solve conflicts carefully if there are any.  
+- Create a pull request from the remote branch to the main branch. Add the relevant reviewers (>2) and assign the pull request to yourself. Assign to the relevant milestone.
+- If the pull request is approved, it will be merged into the main branch and the remote branch will be deleted by the reviewer.
 
 
 
@@ -211,15 +215,6 @@ Project Link: [https://github.com/Daniel-Ayz/JewBuyExpress](https://github.com/D
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
-
-* [Yehuda Shitrit]()
-* [Oleg]()
-* [Additional Acknoledgments will be added later]()
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 
