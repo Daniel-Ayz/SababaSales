@@ -159,13 +159,17 @@ Please read and understand some of the following project architectures:
 
 ## Feature Submissions Guidelines
 
-- First, create an issue with the feature request in GitHub, assign it to yourself (or the relevant people), and add the relevant labels (such as "enhancement", "bug", etc.) [Create Issue - Enhancement](https://github.com/Daniel-Ayz/SababaSales/issues/new?labels=enhancement&template=feature-request---.md)
-- Then, create a branch automatically from the issue. The branch name should be `feature/requirement_num/feature_name` (e.g. `feature/2-2/profile-editing`). The "feature" can be replaced with "bug" if needed. Requirement_num is from the clickup documentation.
-- Fetch the remote branch and start working on it locally.
-- Commit and push your changes frequently to the remote branch.
-- When you are done, make `git pull origin main` (to your branch) to merge the changes done in main since your branch was created. Solve conflicts carefully if there are any.  
-- Create a pull request from the remote branch to the main branch. Add the relevant reviewers (>2) and assign the pull request to yourself. Assign to the relevant milestone.
-- If the pull request is approved, it will be merged into the main branch and the remote branch will be deleted by the reviewer.
+1. Create an issue with the feature request on GitHub, fill in the Assignees & Projects & Milestone & Labels. [Create Issue - Enhancement](https://github.com/Daniel-Ayz/SababaSales/issues/new?labels=enhancement&template=feature-request---.md)
+2. After creating the issue, Click "Create a branch" (under "Development" on the right side).
+3. Run the suggested commands
+```
+git fetch origin
+git checkout <branch-name>
+```
+4. Commit and push your changes frequently to the remote branch.
+5. When you are done, make `git pull origin main` (to your branch) to merge the changes done in main since your branch was created. Solve conflicts carefully if there are any.  
+6. Create a pull request from the remote branch to the main branch. Add the relevant reviewers and assign the pull request to yourself. Assign to the relevant milestone.
+7. If the pull request is approved, it will be merged into the main branch and the remote branch will be deleted by the reviewer.
 
 <!-- ROADMAP -->
 # Roadmap
@@ -176,7 +180,12 @@ Please read and understand some of the following project architectures:
     - [X] Add class diagrams
 - [ ] Release Version 1
     - [ ] Initial backend
-    - [ ] Initial frontend
+        - [ ] Users app
+            - [ ] Authentication
+        - [ ] Purchase app
+        - [ ] Store app
+    - [ ] Initial frontend design
+    - [ ] Acceptence tests (code)
 - [ ] Release Version 2
 - [ ] Release Version 3
 - [ ] Release Final Version
@@ -184,25 +193,6 @@ Please read and understand some of the following project architectures:
 See the [open issues](https://github.com/Daniel-Ayz/SababaSales/issues) for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- CONTRIBUTING -->
-## Contributing
-
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- LICENSE -->
