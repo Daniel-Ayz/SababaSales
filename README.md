@@ -31,7 +31,7 @@
 <br />
 <div align="center">
   <a href="https://github.com/Daniel-Ayz/SababaSales">
-    <img src="images/SababaSales-logo.webp" alt="Logo" width="400" height="400">
+    <img src="images/SababaSales-logoB.png" alt="Logo" width="700" height="400">
   </a>
 
 <h3 align="center">SababaSales</h3>
