@@ -37,7 +37,7 @@
 <h3 align="center">SababaSales</h3>
 
   <p align="center">
-    Same as superly but better. Soon will be available online! Watch out Jeff, the jews are comming!
+    Same as superly but better. Soon will be available online! Watch out Jeff, the sales are comming!
     <br />
     <a href="https://github.com/Daniel-Ayz/SababaSales/tree/main/docs"><strong>Explore the docs »</strong></a>
     <br />
