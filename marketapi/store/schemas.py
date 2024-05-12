@@ -44,7 +44,6 @@ class DiscountPolicySchema(Schema):
     store: StoreSchemaOut
     min_items: Optional[int]  # Optional
     min_price: Optional[float]  # Optional
-    discount: float
 
 
 #OwnerSchema.update_forward_refs() not sure if needed

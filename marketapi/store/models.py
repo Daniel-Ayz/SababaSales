@@ -58,7 +58,6 @@ class DiscountPolicy(models.Model):
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='discount_policies')
     min_items = models.IntegerField(null=True, blank=True)  # Optional
     min_price = models.FloatField(null=True, blank=True)  # Optional
-    discount = models.FloatField()
 
     def __str__(self):
         return f"Discount: {self.discount}%"

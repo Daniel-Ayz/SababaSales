@@ -151,6 +151,7 @@ def reopen_store(request, store_id: int, owner_id: int):
 
     return {"message": "Store reopened successfully"}
 
+
 @router.get("/stores/{store_id}/get_owners")
 def get_owners(request, store_id: int, owner_id: int):
     store = get_object_or_404(Store, pk=store_id)
@@ -161,5 +162,3 @@ def get_owners(request, store_id: int, owner_id: int):
     owners = Owner.objects.filter(store=store)
 
     return owners
-
-
