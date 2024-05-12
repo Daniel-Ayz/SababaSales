@@ -1,8 +1,11 @@
+from typing import List
+
 from django.http import HttpResponse
 from ninja import Router
 
-from models import Store, Owner, Manager, ManagerPermission
-from schemas import StoreSchemaIn, StoreSchemaOut, OwnerSchema, ManagerPermissionSchema
+from models import Store, Owner, Manager, ManagerPermission, PurchasePolicy, DiscountPolicy
+from schemas import StoreSchemaIn, StoreSchemaOut, OwnerSchema, ManagerPermissionSchema, PurchasePolicySchema, \
+    DiscountPolicySchema, StoreProductSchema
 from django.shortcuts import get_object_or_404
 
 router = Router()
@@ -98,18 +101,17 @@ def remove_manager(request, store_id: int, removing_owner_id: int, removed_user_
     return {"message": "Manager removed successfully"}
 
 
-@router.post("/stores/{store_id}/assign_manager_permissions")
+@router.post("/stores/{store_id}/change_manager_permissions")
 def assign_manager_permissions(request, payload: ManagerPermissionSchema, store_id: int, manager_id: int,
                                assigning_owner_id: int):
     store = get_object_or_404(Store, pk=store_id)
     manager = get_object_or_404(Manager, pk=payload.manager_id, store=store)
     assigning_owner = get_object_or_404(Owner, user_id=assigning_owner_id, store=store)
-    payload = payload.dict(Exclude={"manager"})
 
     try:
         existing_permission, _ = ManagerPermission.objects.update_or_create(
             manager=manager,
-            **payload.dict()
+            defaults=payload.dict(exclude={"manager"})
         )
     except Exception as e:
         return HttpResponse(status=500, content=f"Error assigning permissions: {str(e)}")
@@ -129,8 +131,8 @@ def assign_manager_permissions(request, payload: ManagerPermissionSchema, store_
 @router.put("stores/{store_id}/close_store")
 def close_store(request, store_id: int, owner_id: int):
     store = get_object_or_404(Store, pk=store_id)
-    owner = get_object_or_404(Owner, user_id=owner_id, store=store)
-    if not owner.is_founder:
+    #owner = get_object_or_404(Owner, user_id=owner_id, store=store)
+    if not Owner.objects.filter(user_id=owner_id, store=store, is_founder=True).exists():
         raise ValueError("Only the founder can close the store")
 
     store.is_active = False
@@ -142,8 +144,8 @@ def close_store(request, store_id: int, owner_id: int):
 @router.put("stores/{store_id}/reopen_store")
 def reopen_store(request, store_id: int, owner_id: int):
     store = get_object_or_404(Store, pk=store_id)
-    owner = get_object_or_404(Owner, user_id=owner_id, store=store)
-    if not owner.is_founder:
+    #owner = get_object_or_404(Owner, user_id=owner_id, store=store)
+    if not Owner.objects.filter(user_id=owner_id, store=store, is_founder=True).exists():
         raise ValueError("Only the founder can reopen the store")
 
     store.is_active = True
@@ -152,7 +154,7 @@ def reopen_store(request, store_id: int, owner_id: int):
     return {"message": "Store reopened successfully"}
 
 
-@router.get("/stores/{store_id}/get_owners")
+@router.get("/stores/{store_id}", response=List[OwnerSchema])
 def get_owners(request, store_id: int, owner_id: int):
     store = get_object_or_404(Store, pk=store_id)
 
@@ -162,3 +164,43 @@ def get_owners(request, store_id: int, owner_id: int):
     owners = Owner.objects.filter(store=store)
 
     return owners
+
+
+@router.post("/stores/{store_id}/change_purchase_policy")
+def change_purchase_policy(request, store_id: int, owner_id: int, payload: PurchasePolicySchema):
+    store = get_object_or_404(Store, pk=store_id)
+    owner = get_object_or_404(Owner, user_id=owner_id, store=store)
+
+    policy, _ = PurchasePolicy.objects.update_or_create(
+        store=store,
+        defaults=payload.dict(Exclude={"store"})
+    )
+
+    return {"message": "Purchase policy updated successfully"}
+
+
+@router.post("/stores/{store_id}/change_discount_policy")
+def change_discount_policy(request, store_id: int, owner_id: int, payload: DiscountPolicySchema):
+    store = get_object_or_404(Store, pk=store_id)
+    owner = get_object_or_404(Owner, user_id=owner_id, store=store)
+
+    policy, _ = DiscountPolicy.objects.update_or_create(
+        store=store,
+        defaults=payload.dict(Exclude={"store"})
+    )
+
+    return {"message": "Discount policy updated successfully"}
+
+
+@router.post("/stores/{store_id}/add_product")
+def add_product(request, store_id: int, user_id: int, payload: StoreProductSchema):
+    store = get_object_or_404(Store, pk=store_id)
+    if not Owner.objects.filter(user_id=user_id, store=store).exists():  #user has to be manager with proper permissions
+        manager = get_object_or_404(Manager, user_id=user_id, store=store)  #check if manager exists in the first place
+        permissions = get_object_or_404(ManagerPermission, manager=manager)  #get permissions
+        if not permissions.can_add_product:
+            raise ValueError("Manager does not have permission to add products")
+
+    product = store.products.create(**payload.dict())
+
+    return {"message": "Product added successfully"}

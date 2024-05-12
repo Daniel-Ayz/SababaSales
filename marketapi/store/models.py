@@ -60,4 +60,21 @@ class DiscountPolicy(models.Model):
     min_price = models.FloatField(null=True, blank=True)  # Optional
 
     def __str__(self):
-        return f"Discount: {self.discount}%"
+        policy_text = ""
+        if self.min_items:
+            policy_text += f"Min items: {self.min_items}"
+        if self.min_price:
+            if policy_text:
+                policy_text += " & "
+            policy_text += f"Min price: {self.min_price}"
+        return policy_text or "No restrictions"
+
+
+class StoreProduct(models.Model):
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='store_products')
+    initial_price = models.FloatField()
+    quantity = models.IntegerField()
+    name = models.CharField(max_length=255)
+
+    def __str__(self):
+        return self.name
