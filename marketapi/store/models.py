@@ -5,7 +5,6 @@ class Store(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
@@ -14,20 +13,22 @@ class Store(models.Model):
 
 class Role(models.Model):
     user_id = models.IntegerField()
+    store = models.ForeignKey(Store, on_delete=models.CASCADE)
 
     class Meta:
         abstract = True
 
 
 class Owner(Role):
-    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='owners')
+    #store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='owners')
     is_founder = models.BooleanField(default=False, unique=True)
-    assigned_by = models.ForeignKey('self', on_delete=models.CASCADE, related_name='assigned_owners')
+    assigned_by = models.ForeignKey('self', on_delete=models.CASCADE, related_name='assigned_owners', null=True,
+                                    blank=True)
     #because there is a related name we get both who assigned the owner and who else the owner assigned
 
 
 class Manager(Role):
-    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='managers')
+    #store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='managers')
     assigned_by = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name='assigned_managers')
 
 
@@ -36,6 +37,10 @@ class ManagerPermission(models.Model):
     can_add_product = models.BooleanField(default=False)
     can_edit_product = models.BooleanField(default=False)
     can_delete_product = models.BooleanField(default=False)
+    can_add_discount_policy = models.BooleanField(default=False)
+    can_add_purchase_policy = models.BooleanField(default=False)
+    can_remove_discount_policy = models.BooleanField(default=False)
+    can_remove_purchase_policy = models.BooleanField(default=False)
 
 
 class PurchasePolicy(models.Model):

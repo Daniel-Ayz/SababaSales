@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from schemas import ManagerPermissionSchema, ManagerSchema, PurchasePolicySchema, DiscountPolicySchema
+from schemas import ManagerPermissionSchemaIn, PurchasePolicySchemaIn, DiscountPolicySchemaIn
 
 
 #----------------------------------------------ManagerPermissionBuilder----------------------------------------------
@@ -18,7 +18,23 @@ class ManagerPermissionBuilder(ABC):
         pass
 
     @abstractmethod
-    def build(self) -> ManagerPermissionSchema:
+    def with_can_add_purchase_policy(self):
+        pass
+
+    @abstractmethod
+    def with_can_add_discount_policy(self):
+        pass
+
+    @abstractmethod
+    def with_can_remove_purchase_policy(self):
+        pass
+
+    @abstractmethod
+    def with_can_remove_discount_policy(self):
+        pass
+
+    @abstractmethod
+    def build(self) -> ManagerPermissionSchemaIn:
         """Builds and returns the ManagerPermissionSchema object."""
         pass
 
@@ -36,13 +52,25 @@ class ConcreteManagerPermissionBuilder(ManagerPermissionBuilder):
     def with_can_delete_product(self):
         self.permissions["can_delete_product"] = True
 
-    def build(self) -> ManagerPermissionSchema:
-        return ManagerPermissionSchema(
+    def with_can_add_purchase_policy(self):
+        self.permissions["can_add_purchase_policy"] = True
+
+    def with_can_add_discount_policy(self):
+        self.permissions["can_add_discount_policy"] = True
+
+    def with_can_remove_purchase_policy(self):
+        self.permissions["can_remove_purchase_policy"] = True
+
+    def with_can_remove_discount_policy(self):
+        self.permissions["can_remove_discount_policy"] = True
+
+    def build(self) -> ManagerPermissionSchemaIn:
+        return ManagerPermissionSchemaIn(
             **self.permissions,
         )
 
 
-def create_full_manager_permissions(manager_schema):
+def create_full_manager_permissions():
     builder = ManagerPermissionBuilder()
     builder.with_can_add_product()
     builder.with_can_edit_product()
@@ -60,15 +88,15 @@ def create_full_manager_permissions(manager_schema):
 #----------------------------------------------PurchasePolicyBuilder----------------------------------------------
 class PurchasePolicyBuilder(ABC):
     @abstractmethod
-    def with_max_items_per_purchase(self):
+    def with_max_items_per_purchase(self, max_items_per_purchase):
         pass
 
     @abstractmethod
-    def with_min_items_per_purchase(self):
+    def with_min_items_per_purchase(self, min_items_per_purchase):
         pass
 
     @abstractmethod
-    def build(self):
+    def build(self) -> PurchasePolicySchemaIn:
         pass
 
 
@@ -82,8 +110,8 @@ class ConcretePurchasePolicyBuilder(PurchasePolicyBuilder):
     def with_min_items_per_purchase(self, min_items_per_purchase):
         self.policy["min_items_per_purchase"] = min_items_per_purchase
 
-    def build(self):
-        return PurchasePolicySchema(
+    def build(self) -> PurchasePolicySchemaIn:
+        return PurchasePolicySchemaIn(
             **self.policy,
         )
 
@@ -101,19 +129,15 @@ def create_purchase_policy(max_items_per_purchase, min_items_per_purchase):
 #----------------------------------------------DiscountPolicyBuilder----------------------------------------------
 class DiscountPolicyBuilder(ABC):
     @abstractmethod
-    def with_min_items(self):
+    def with_min_items(self, min_items):
         pass
 
     @abstractmethod
-    def with_min_price(self):
+    def with_min_price(self, min_price):
         pass
 
     @abstractmethod
-    def with_discount(self):
-        pass
-
-    @abstractmethod
-    def build(self):
+    def build(self) -> DiscountPolicySchemaIn:
         pass
 
 
@@ -127,11 +151,8 @@ class ConcreteDiscountPolicyBuilder(DiscountPolicyBuilder):
     def with_min_price(self, min_price):
         self.policy["min_price"] = min_price
 
-    def with_discount(self, discount):
-        self.policy["discount"] = discount
-
-    def build(self):
-        return DiscountPolicySchema(
+    def build(self) -> DiscountPolicySchemaIn:
+        return DiscountPolicySchemaIn(
             **self.policy,
         )
 

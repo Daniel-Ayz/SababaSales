@@ -8,7 +8,7 @@ class StoreSchemaIn(Schema):
     name: str
     description: str
     is_active: bool
-    created_at: datetime
+    #created_at: datetime added automatically
 
 
 class StoreSchemaOut(Schema):
@@ -19,7 +19,26 @@ class StoreSchemaOut(Schema):
     is_active: bool
 
 
-class RoleSchema(Schema):
+class RoleSchemaIn(Schema):
+    user_id: int
+    store_id: int
+
+    class Meta:
+        abstract = True
+
+
+class OwnerSchemaIn(RoleSchemaIn):
+    is_founder: bool
+    assigned_by: int
+    removed_by: Optional[int] = None
+
+
+class ManagerSchemaIn(RoleSchemaIn):
+    assigned_by: int
+    removed_by: Optional[int] = None
+
+
+class RoleSchemaOut(Schema):
     user_id: int
     store: StoreSchemaOut
 
@@ -27,26 +46,33 @@ class RoleSchema(Schema):
         abstract = True
 
 
-class OwnerSchema(RoleSchema):
+class OwnerSchemaOut(RoleSchemaOut):
     is_founder: bool
-    assigned_by: Optional['OwnerSchema'] = None
+    assigned_by: Optional['OwnerSchemaOut'] = None
 
 
-class ManagerSchema(RoleSchema):
-    assigned_by: OwnerSchema
+class ManagerSchemaOut(RoleSchemaOut):
+    assigned_by: OwnerSchemaOut
 
 
 class ManagerPermissionSchemaOut(Schema):
-    manager: ManagerSchema
+    manager: ManagerSchemaOut
     can_add_product: bool
     can_edit_product: bool
     can_delete_product: bool
+    can_change_purchase_policy: bool
+    can_change_discount_policy: bool
 
 
 class ManagerPermissionSchemaIn(Schema):
     can_add_product: bool
     can_edit_product: bool
     can_delete_product: bool
+    can_add_purchase_policy: bool
+    can_add_discount_policy: bool
+    can_remove_purchase_policy: bool
+    can_remove_discount_policy: bool
+
 
 
 class PurchasePolicySchemaOut(Schema):
@@ -81,6 +107,12 @@ class StoreProductSchemaOut(Schema):
 class StoreProductSchemaIn(Schema):
     name: str
     initial_price: float
+    quantity: int
+
+
+class PurchaseStoreProductSchema(Schema):
+    store_id: int
+    product_name: int
     quantity: int
 
 #OwnerSchema.update_forward_refs() not sure if needed
