@@ -7,7 +7,6 @@ from ninja import Schema
 class StoreSchemaIn(Schema):
     name: str
     description: str
-    is_active: bool
     #created_at: datetime added automatically
 
 
@@ -28,7 +27,6 @@ class RoleSchemaIn(Schema):
 
 
 class OwnerSchemaIn(RoleSchemaIn):
-    is_founder: bool
     assigned_by: int
     removed_by: Optional[int] = None
 
@@ -57,44 +55,45 @@ class ManagerSchemaOut(RoleSchemaOut):
 
 class ManagerPermissionSchemaOut(Schema):
     manager: ManagerSchemaOut
-    can_add_product: bool
-    can_edit_product: bool
-    can_delete_product: bool
-    can_change_purchase_policy: bool
-    can_change_discount_policy: bool
+    can_add_product: Optional[bool]
+    can_edit_product: Optional[bool]
+    can_delete_product: Optional[bool]
+    can_add_purchase_policy: Optional[bool]
+    can_add_discount_policy: Optional[bool]
+    can_remove_purchase_policy: Optional[bool]
+    can_remove_discount_policy: Optional[bool]
 
 
 class ManagerPermissionSchemaIn(Schema):
-    can_add_product: bool
-    can_edit_product: bool
-    can_delete_product: bool
-    can_add_purchase_policy: bool
-    can_add_discount_policy: bool
-    can_remove_purchase_policy: bool
-    can_remove_discount_policy: bool
-
+    can_add_product: Optional[bool] = False
+    can_edit_product: Optional[bool] = False
+    can_delete_product: Optional[bool] = False
+    can_add_purchase_policy: Optional[bool] = False
+    can_add_discount_policy: Optional[bool] = False
+    can_remove_purchase_policy: Optional[bool] = False
+    can_remove_discount_policy: Optional[bool] = False
 
 
 class PurchasePolicySchemaOut(Schema):
     store: StoreSchemaOut
-    max_items_per_purchase: Optional[int]  # Optional
-    min_items_per_purchase: Optional[int]  # Optional
+    max_items_per_purchase: Optional[int] = None  # Optional
+    min_items_per_purchase: Optional[int] = None  # Optional
 
 
 class PurchasePolicySchemaIn(Schema):
-    max_items_per_purchase: Optional[int]  # Optional
-    min_items_per_purchase: Optional[int]  # Optional
+    max_items_per_purchase: Optional[int] = None  # Optional
+    min_items_per_purchase: Optional[int] = None  # Optional
 
 
 class DiscountPolicySchemaOut(Schema):
     store: StoreSchemaOut
-    min_items: Optional[int]  # Optional
-    min_price: Optional[float]  # Optional
+    min_items: Optional[int] = None  # Optional
+    min_price: Optional[float] = None  # Optional
 
 
 class DiscountPolicySchemaIn(Schema):
-    min_items: Optional[int]  # Optional
-    min_price: Optional[float]  # Optional
+    min_items: Optional[int] = None  # Optional
+    min_price: Optional[float] = None  # Optional
 
 
 class StoreProductSchemaOut(Schema):
