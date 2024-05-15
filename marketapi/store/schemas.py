@@ -28,12 +28,18 @@ class RoleSchemaIn(Schema):
 
 class OwnerSchemaIn(RoleSchemaIn):
     assigned_by: int
-    removed_by: Optional[int] = None
+
+
+class RemoveOwnerSchemaIn(RoleSchemaIn):
+    removed_by: int
 
 
 class ManagerSchemaIn(RoleSchemaIn):
     assigned_by: int
-    removed_by: Optional[int] = None
+
+
+class RemoveManagerSchemaIn(RoleSchemaIn):
+    removed_by: int
 
 
 class RoleSchemaOut(Schema):
@@ -110,8 +116,7 @@ class StoreProductSchemaIn(Schema):
 
 
 class PurchaseStoreProductSchema(Schema):
-    store_id: int
-    product_name: int
+    product_name: str
     quantity: int
 
 #OwnerSchema.update_forward_refs() not sure if needed

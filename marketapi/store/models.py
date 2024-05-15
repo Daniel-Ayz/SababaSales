@@ -21,7 +21,7 @@ class Role(models.Model):
 
 class Owner(Role):
     #store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='owners')
-    is_founder = models.BooleanField(default=False, unique=True)
+    is_founder = models.BooleanField(default=False)
     assigned_by = models.ForeignKey('self', on_delete=models.CASCADE, related_name='assigned_owners', null=True,
                                     blank=True)
     #because there is a related name we get both who assigned the owner and who else the owner assigned
