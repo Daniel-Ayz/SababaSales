@@ -1,15 +1,15 @@
 from ninja import Schema
 from ninja.orm import ModelSchema
 
-from .models import CustomPurchaseController, Cart, Basket, Product
+from .models import PurchaseController, Cart, Basket, Product
 
 
 # -------------------- Purchase --------------------
 
 
-class CustomPurchaseControllerSchema(ModelSchema):
+class PurchaseControllerSchema(ModelSchema):
     class Meta:
-        model = CustomPurchaseController
+        model = PurchaseController
         fields = "__all__"
 
 

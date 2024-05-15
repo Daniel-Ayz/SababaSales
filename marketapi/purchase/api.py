@@ -5,9 +5,11 @@ from ninja import Router
 
 from ninja.security import django_auth
 
-from .models import CustomUser, CustomPurchaseController, Cart, Basket, Product
+from django.shortcuts import get_object_or_404, aget_object_or_404
+
+from .models import CustomUser, PurchaseController, Cart, Basket, Product
 from .schemas import (
-    CustomPurchaseControllerSchema,
+    PurchaseControllerSchema,
     CartSchema,
     BasketSchema,
     ProductSchema,
@@ -17,13 +19,12 @@ from .schemas import (
 router = Router()
 
 
+
 # -------------------- Get history --------------------
-@router.get("/purchase/{purchase_id}", response=CustomPurchaseControllerSchema)
+@router.get("/purchase/{purchase_id}", response=PurchaseControllerSchema)
 def get_purchase_history(request, user_id: int):
     try:
-        user = CustomUser.objects.get(id=user_id)
-        # not sure if this is the correct way to get all purchases of a user:
-        purchase_history = user.purchasehistory_set.all()
+        purchase_history = PurchaseController.objects.filter(user_id=user_id)
         return 200, purchase_history
     except CustomUser.DoesNotExist as e:
         return 404, {"error": "User not found"}
@@ -31,17 +32,15 @@ def get_purchase_history(request, user_id: int):
 
 # -------------------- Make Purchase --------------------
 
-@router.post("/purchase/{cart_id}", response=CustomPurchaseControllerSchema)
+@router.post("/purchase/{cart_id}", response=PurchaseControllerSchema)
 def make_purchase_of_all_products_in_cart(request, user_id: int, cart_id: int):
     try:
-        user = CustomUser.objects.get(id=user_id)
-        cart = Cart.objects.get(id=cart_id)
-        purchase = CustomPurchaseController.objects.create(user=user, cart=cart)
+        cart = get_object_or_404(Cart, pk =cart_id)
+        purchase = PurchaseController.objects.create(user_id = user_id, cart=cart)
         for basket in cart.baskets.all():
-            for basket_product in basket.basket_products.all():
-                product = basket_product.product
-                product.quantity -= basket_product.quantity
-                product.save()
+            for product in basket.products.all():
+                # stores has function: def purchase_product(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
+                purchase_product( basket.store_id, [product])
         return 200, purchase
     except CustomUser.DoesNotExist as e:
         return 404, {"error": "User not found"}
@@ -49,18 +48,19 @@ def make_purchase_of_all_products_in_cart(request, user_id: int, cart_id: int):
         return 404, {"error": "Cart not found"}
     
 
-@router.post("/purchase/{cart_id}/{product_id}", response=CustomPurchaseControllerSchema)
+# this function seems to be unnecessary because Stores has this functionality in purchase_product
+
+@router.post("/purchase/{cart_id}/{product_id}", response=PurchaseControllerSchema)
 def cancel_purchase_of_entire_shopping_cart(request, user_id: int, cart_id: int):
     try:
-        user = CustomUser.objects.get(id=user_id)
-        cart = Cart.objects.get(id=cart_id)
-        purchase = CustomPurchaseController.objects.get(user=user, cart=cart)
+        cart = get_object_or_404(Cart, pk =cart_id)
+        purchase = PurchaseController.objects.get(user_id = user_id, cart=cart)
         purchase.delete()
         return 200, {"message": "Purchase has been canceled"}
     except CustomUser.DoesNotExist as e:
         return 404, {"error": "User not found"}
     except Cart.DoesNotExist as e:
         return 404, {"error": "Cart not found"}
-    except CustomPurchaseController.DoesNotExist as e:
+    except PurchaseController.DoesNotExist as e:
         return 404, {"error": "Purchase not found"}
     

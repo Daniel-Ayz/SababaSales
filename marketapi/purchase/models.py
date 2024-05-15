@@ -3,16 +3,15 @@ from django.db import models
 # Create your models here.
 from django.contrib.auth.models import AbstractUser
 
-
 # how to add controllers, facade, and adapters from the UML?
 # for now - purchase controller is CustomPurchaseController(?)
 
-class CustomPurchaseController(models.Model):
+class PurchaseController(models.Model):
     pass
 
 
 class Cart(models.Model):
-    user = models.ManyToOneRel(CustomPurchaseController, on_delete=models.CASCADE)
+    user_id = models.IntegerField()
 
 
 class Basket(models.Model):
