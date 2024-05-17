@@ -1,6 +1,6 @@
 from typing import List
 
-from marketapi.purchase.schemas import PurchaseSchema
+from purchase.schemas import PurchaseSchema
 
 from ninja import Router
 
@@ -26,7 +26,7 @@ class purchaseController:
 
     # -------------------- Get history --------------------
 
-    @router.get("/purchase/{purchase_id}", response=PurchaseSchema)
+    @router.get("/purchase/{user_id}/get_purchase_history", response=PurchaseSchema)
     def get_purchase_history(request, user_id: int):
         try:
 
@@ -41,7 +41,8 @@ class purchaseController:
 
     # -------------------- Make Purchase --------------------
 
-    @router.post("/purchase/{cart_id}", response=PurchaseSchema)
+    # check
+    @router.post("/purchase/{cart_id}/make_purchase", response=PurchaseSchema)
     def make_purchase(request, cart_id: int):
         try:
             # integrate delivery service and payment service
