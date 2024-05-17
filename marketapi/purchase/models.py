@@ -7,30 +7,21 @@ from typing import Optional
 
 from enum import Enum
 
-# how to add controllers, facade, and adapters from the UML?
-# for now - purchase controller is CustomPurchaseController(?)
 
+from users.models import Cart
 
-class PurchaseController(models.Model):
-    pass
-
-
-class Cart(models.Model):
-    user_id = models.IntegerField()
-
-
-class Basket(models.Model):
-    store_id = models.IntegerField()
+class Purchase(models.Model):
     # many-to-one relationship with Cart
-    cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
-
-
-class Product(models.Model):
-    id = models.IntegerField(primary_key=True)
-    quantity = models.IntegerField()
-    # many-to-one relationship with Basket
-    basket = models.ForeignKey(Basket, on_delete=models.CASCADE)
-
+    cart_id = models.ForeignKey(Cart, on_delete=models.CASCADE) 
+    purchase_id = models.AutoField(primary_key=True)
+    purchase_date = models.DateTimeField(auto_now_add=True)
+    #total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    #total_quantity = models.IntegerField()
+    #payment_method = models.CharField(max_length=50)
+    #delivery_method = models.CharField(max_length=50)
+    #delivery_address = models.CharField(max_length=255)
+    #delivery_date = models.DateTimeField()
+    #status = models.CharField(max_length=50)
 
 class PaymentServiceType(str, Enum):
     PAYPAL = "paypal"
