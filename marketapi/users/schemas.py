@@ -1,3 +1,5 @@
+from typing import List
+
 from ninja import Schema
 from ninja.orm import ModelSchema
 
@@ -22,6 +24,10 @@ class Error(Schema):
     error: str
 
 
+class Msg(Schema):
+    msg: str
+
+
 # -------------------- User --------------------
 
 
@@ -31,25 +37,33 @@ class UserSchema(ModelSchema):
         fields = ["id", "username", "email"]
 
 
-class NotificationSchema(Schema):
+class NotificationIn(Schema):
+    msg: str
+
+
+class NotificationSchema(ModelSchema):
+    # user: UserSchema
     class Meta:
         model = Notification
-        fields = "__all__"
-
-
-class CartSchema(ModelSchema):
-    class Meta:
-        model = Cart
-        fields = "__all__"
-
-
-class BasketSchema(ModelSchema):
-    class Meta:
-        model = Basket
-        fields = "__all__"
+        exclude = ["user"]
 
 
 class BasketProductSchema(ModelSchema):
     class Meta:
         model = BasketProduct
-        fields = "__all__"
+        exclude = ["id", "basket"]
+
+
+class BasketSchema(Schema):
+    id: int
+    store_id: int
+    basket_products: List[BasketProductSchema]
+
+
+class CartSchema(Schema):
+    user: UserSchema
+    baskets: List[BasketSchema]
+
+
+class StoreProduct(BasketProductSchema):
+    store_id: int
