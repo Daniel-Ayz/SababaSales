@@ -34,7 +34,10 @@ class TestPurchase(TestCase):
         response = self.client.post(f'/baskets?cart_id={self.cart_id}', json={"store id": self.store_id})
         self.basket_id = response.json()['basket_id']
 
-        # TODO: add product to basket
+        # Add product to basket
+        response = self.client.post("/cart/products", json={
+            "payload": { "quantity": 10, "name": "Test Product", "store_id": self.store_id}
+        })
 
 
         # Add product to store
@@ -123,12 +126,11 @@ class TestPurchase(TestCase):
 
     def test_purchase_unavailable_product(self):
         # Prepare test data
-        products = {
-            "product1": {"name": 'Product 1', "stock quantity": 0, "price": 10},
-            "product2": {"name": 'Product 2', "stock quantity": 5, "price": 20},
-            "product3": {"name": 'Product 3', "stock quantity": 3, "price": 30}
-        }
-        # TODO: replace above lines by adding product to basket with quantity 0
+
+        # Add product to basket
+        response = self.client.post("/cart/products", json={
+            "payload": { "quantity": 11, "name": "Test Product", "store_id": self.store_id}
+        })
 
         # Perform the test
         response = self.client.post(f'/purchase/{self.cart_id}/make_purchase')

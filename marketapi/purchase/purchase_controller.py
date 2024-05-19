@@ -69,7 +69,7 @@ class purchaseController:
                 for product in BasketProduct.objects.filter(basket_id = basket.id).values():
                     name = product['name']
                     quantity = product['quantity']
-                    products_list.append((name, quantity))
+                    products_list.append({"product_name": name,"quantity": quantity})
 
                 store.models.api.purchase_product(store_id, products_list)
 
