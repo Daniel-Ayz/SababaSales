@@ -1,2 +1,3 @@
 ./.venv/
 ./marketapi/db.sqlite3
+/marketapi/db.sqlite3
