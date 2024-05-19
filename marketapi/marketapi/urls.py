@@ -23,4 +23,7 @@ from store.api import router as store_router
 api = NinjaAPI()
 api.add_router("/store/", store_router)
 
-urlpatterns = [path("admin/", admin.site.urls), path("api/", api.urls)]
+urlpatterns = [
+    path("admin/", admin.site.urls),
+    path("api/", api.urls),
+]
