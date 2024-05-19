@@ -2,6 +2,9 @@ from ninja.errors import HttpError
 from typing import List
 from ninja import Router
 
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 from .models import Store, Owner, Manager, ManagerPermission, PurchasePolicy, DiscountPolicy, StoreProduct
 from .schemas import StoreSchemaIn, StoreSchemaOut, OwnerSchemaIn, ManagerPermissionSchemaIn, PurchasePolicySchemaIn, \
     DiscountPolicySchemaIn, StoreProductSchemaIn, ManagerSchemaIn, OwnerSchemaOut, RoleSchemaIn, StoreProductSchemaOut, \

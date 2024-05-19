@@ -1,35 +1,44 @@
 from django.test import TestCase
 from ninja.testing import TestClient
 
+import store.api
+from users.models import Cart, CustomUser
 from .api import router
-
-from users.models import Cart
-
-from purchase.models import Product
+from store.api import router as store_router
+from users.api import router as user_router
 
 # Create your tests here.
 class TestPurchase(TestCase):
     def setUp(self):
         self.client = TestClient(router)
+        self.store_client = TestClient(store_router)
+        self.user_client = TestClient(user_router)
 
-        self.products = {
-            "product1": {"name": 'Product 1', "stock quantity": 10, "price": 10},
-            "product2": {"name": 'Product 2', "stock quantity": 5, "price": 20},
-            "product3": {"name": 'Product 3', "stock quantity": 3, "price": 30}
-        }
-        self.basket = {"Basket 1": self.products}
-        self.cart = {"Cart 1": self.basket}
-        self.user = {"User 1": self.cart}
+        # self.products = {
+        #     "product1": {"name": 'Product 1', "stock quantity": 10, "price": 10},
+        #     "product2": {"name": 'Product 2', "stock quantity": 5, "price": 20},
+        #     "product3": {"name": 'Product 3', "stock quantity": 3, "price": 30}
+        # }
+        # self.basket = {"Basket 1": self.products}
+        # self.cart = {"Cart 1": self.basket}
+        # self.user = {"User 1": self.cart}
 
         self.user_id = 1
-        response = self.client.post(f'/stores?user_id={self.user_id}', json={
+        response = self.store_client.post(f'/stores?user_id={self.user_id}', json={
             "name": "Test Store",
             "description": "Test Description"
         })
         self.store_id = response.json()['store_id']
 
-        response = self.client.post(f'/carts?user_id={self.user_id}', json={})
-        self.cart_id = response.json()['cart_id']
+        response = self.user_client.post("/register", json={
+            "username": "Test User",
+            "email": "test@email.com",
+            "password": "Test Password"})
+        self.user_id = response.json()['id']
+        self.user = response.json()
+        
+        # find the cart id of the cart which belongs to the user with user_id from the db
+        response = self.user_client.get(f'/users/cart')
 
         response = self.client.post(f'/baskets?cart_id={self.cart_id}', json={"store id": self.store_id})
         self.basket_id = response.json()['basket_id']

@@ -1,7 +1,11 @@
 from typing import List
 
-from marketapi.purchase.purchase_controller import purchaseController
-from marketapi.purchase.schemas import PurchaseSchema
+from purchase.purchase_controller import purchaseController
+from purchase.schemas import PurchaseSchema
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)
+
 
 from ninja import Router
 

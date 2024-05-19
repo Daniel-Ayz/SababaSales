@@ -155,13 +155,13 @@ class StoreAPITestCase(TestCase):
         response = self.client.delete("/stores/{store_id}/remove_owner", json={
             "user_id": self.owner2_id, "store_id": self.store_id, "removed_by": self.user_id
         })
-        print(response.content)
+        # print(response.content)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Owner removed successfully"})
         response = self.client.get(f'/stores/{self.store_id}/get_managers', json={
             "user_id": self.user_id, "store_id": self.store_id
         })
-        print(response.content)
+        # print(response.content)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 0)  #manager should have been removed because owner is removed
 
@@ -208,19 +208,19 @@ class StoreAPITestCase(TestCase):
         response = self.client.post("/stores/{store_id}/add_product", json={
             "role": {"user_id": self.owner2_id, "store_id": self.store_id},
             "payload": {"name": "Test Product 3", "quantity": 1, "initial_price": 100}})
-        print(response.content)
+        # print(response.content)
 
         # Store owner deletes a product
         delete_response = self.client.delete("/stores/{store_id}/remove_product?product_name=Test Product 3", json={
             "user_id": self.user_id, "store_id": self.store_id
         })
-        print(delete_response.content)
+        # print(delete_response.content)
         # At the same time, another user tries to buy the product
         purchase_response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
             "product_name": "Test Product 3",
             "quantity": 1
         }])
-        print(purchase_response.content)
+        # print(purchase_response.content)
 
         # The purchase request should fail
         self.assertEqual(purchase_response.status_code, 404)

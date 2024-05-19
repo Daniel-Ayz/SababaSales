@@ -1,5 +1,6 @@
 from typing import List
 
+import store
 from purchase.schemas import PurchaseSchema
 
 from ninja import Router
