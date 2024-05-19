@@ -3,5 +3,5 @@ from purchase.models import PaymentMethod
 
 
 class AbstractPaymentService(PaymentServiceInterface):
-    def process_payment(self, payment_method: PaymentMethod) -> dict:
-        raise NotImplementedError("The payment service is not yet implemented.")
+    def process_payment(self, payment_method, flag: PaymentMethod) -> dict:
+        return not flag

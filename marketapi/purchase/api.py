@@ -4,6 +4,7 @@ from purchase.purchase_controller import purchaseController
 from purchase.schemas import PurchaseSchema
 
 import warnings
+
 warnings.filterwarnings("ignore", category=UserWarning)
 
 
@@ -18,14 +19,16 @@ pc = purchaseController()
 
 
 # -------------------- Get history --------------------
-@router.get("/purchase/{purchase_id}", response=PurchaseSchema)
+@router.get("/{user_id}/get_purchase_history", response=List[PurchaseSchema])
 def get_purchase_history(request, user_id: int):
     return pc.get_purchase_history(request, user_id)
-    
+
 
 # -------------------- Make Purchase --------------------
 
-@router.post("/purchase/{cart_id}", response=PurchaseSchema)
-def make_purchase_of_all_products_in_cart(request, user_id: int, cart_id: int):
-    return pc.make_purchase_of_all_products_in_cart(request, user_id, cart_id)
-    
+
+@router.post("/{cart_id}/make_purchase")
+def make_purchase(
+    request, cart_id: int, flag_delivery: bool = False, flag_payment: bool = False
+):
+    return pc.make_purchase(request, cart_id, flag_delivery=False, flag_payment=False)
