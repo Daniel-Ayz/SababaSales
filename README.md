@@ -81,7 +81,7 @@ git clone https://github.com/Daniel-Ayz/SababaSales.git
 
 ```bash
   pip install venv
-  python3 venv -m .venv 
+  python3 -m venv .venv 
   source .venv/bin/activate
 ```
 
