@@ -11,20 +11,18 @@ from django.shortcuts import get_object_or_404, aget_object_or_404
 
 router = Router()
 
-class StoreController():
-    @router.get("/stores/{store_id}", response=StoreSchemaOut)
-    def get_store(request, store_id: int):
-        return get_object_or_404(Store, pk=store_id)
-        #return {"id": store.id,"created_at" : store.created_at, "name": store.name, "description": store.description, "is_active": store.is_active}
 
+class StoreController:
+
+    def get_store(self, request, store_id: int):
+        return get_object_or_404(Store, pk=store_id)
+        # return {"id": store.id,"created_at" : store.created_at, "name": store.name, "description": store.description, "is_active": store.is_active}
 
     # @router.get("/stores/{store_id}", response=StoreSchemaOut)
     # async def get_store(request, store_id: int):
     #     return await aget_object_or_404(Store, pk=store_id)
 
-
-    @router.post("/stores")
-    def create_store(request, payload: StoreSchemaIn, user_id: int):
+    def create_store(self, request, payload: StoreSchemaIn, user_id: int):
         if Store.objects.filter(name=payload.name).exists():
             raise HttpError(403, "Store with this name already exists")
         store = Store.objects.create(**payload.dict(), is_active=True)
@@ -34,7 +32,6 @@ class StoreController():
             is_founder=True
         )
         return {"store_id": store.id}
-
 
     # @router.post("/stores")
     # async def create_store(request, payload: StoreSchemaIn, user_id: int):
@@ -48,19 +45,14 @@ class StoreController():
     #     )
     #     return {"store_id": store.id}
 
-
-    @router.get("/stores", response=List[StoreSchemaOut])
-    def get_stores(request):
+    def get_stores(self, request):
         return Store.objects.all()
-
 
     # @router.get("/stores", response=List[StoreSchemaOut])
     # async def get_stores(request):
     #     return await Store.objects.all()
 
-
-    @router.post("/stores/{store_id}/assign_owner")
-    def assign_owner(request, payload: OwnerSchemaIn):
+    def assign_owner(self, request, payload: OwnerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
         assigning_owner = get_object_or_404(Owner, user_id=payload.assigned_by, store=store)
         if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
@@ -73,7 +65,6 @@ class StoreController():
             is_founder=False
         )
         return {"message": "Owner assigned successfully"}
-
 
     # @router.post("/stores/{store_id}/assign_owner")
     # async def assign_owner(request, payload: OwnerSchemaIn):
@@ -91,7 +82,6 @@ class StoreController():
     #     )
     #     return {"message": "Owner assigned successfully"}
 
-
     # @router.delete("/stores/{store_id}/remove_owner")
     # async def remove_owner(request, payload: OwnerSchemaIn):
     #     store = await aget_object_or_404(Store, pk=payload.store_id)
@@ -104,9 +94,7 @@ class StoreController():
     #     await removed_owner.adelete()
     #     return {"message": "Owner removed success"}
 
-
-    @router.delete("/stores/{store_id}/remove_owner")
-    def remove_owner(request, payload: RemoveOwnerSchemaIn):
+    def remove_owner(self, request, payload: RemoveOwnerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
         removing_owner = get_object_or_404(Owner, user_id=payload.removed_by, store=store)
         removed_owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
@@ -117,9 +105,7 @@ class StoreController():
         removed_owner.delete()
         return {"message": "Owner removed successfully"}
 
-
-    @router.delete("/stores/{store_id}/leave_ownership")
-    def leave_ownership(request, payload: RoleSchemaIn):
+    def leave_ownership(self, request, payload: RoleSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
         owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
         if owner.is_founder:
@@ -128,9 +114,7 @@ class StoreController():
         owner.delete()
         return {"message": "Ownership left successfully"}
 
-
-    @router.post("/stores/{store_id}/assign_manager")
-    def assign_manager(request, payload: ManagerSchemaIn):
+    def assign_manager(self, request, payload: ManagerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
         assigning_owner = get_object_or_404(Owner, user_id=payload.assigned_by, store=store)
         if Manager.objects.filter(user_id=payload.user_id, store=store).exists():
@@ -149,9 +133,7 @@ class StoreController():
         )
         return {"message": "Manager assigned successfully"}
 
-
-    @router.delete("/stores/{store_id}/remove_manager")
-    def remove_manager(request, payload: RemoveManagerSchemaIn):
+    def remove_manager(self, request, payload: RemoveManagerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
         removing_owner = get_object_or_404(Owner, user_id=payload.removed_by, store=store)
         removed_manager = get_object_or_404(Manager, user_id=payload.user_id, store=store)
@@ -162,9 +144,7 @@ class StoreController():
         removed_manager.delete()
         return {"message": "Manager removed successfully"}
 
-
-    @router.post("/stores/{store_id}/change_manager_permissions")
-    def assign_manager_permissions(request, payload: ManagerPermissionSchemaIn, manager: RoleSchemaIn,
+    def assign_manager_permissions(self, request, payload: ManagerPermissionSchemaIn, manager: RoleSchemaIn,
                                    assigning_owner_id: int):
         store = get_object_or_404(Store, pk=manager.store_id)
         manager = get_object_or_404(Manager, user_id=manager.user_id, store=store)
@@ -180,17 +160,13 @@ class StoreController():
 
         return {"message": "Manager permissions assigned successfully"}
 
-
-    @router.get("/stores/{store_id}/get_manager_permissions")
-    def get_manager_permissions(request, role: RoleSchemaIn, manager_id: int):
+    def get_manager_permissions(self, request, role: RoleSchemaIn, manager_id: int):
         store = get_object_or_404(Store, pk=role.store_id)
         manager = get_object_or_404(Manager, pk=manager_id, store=store)
         permissions = get_object_or_404(ManagerPermission, manager=manager)
         return permissions
 
-
-    @router.put("stores/{store_id}/close_store")
-    def close_store(request, payload: RoleSchemaIn):
+    def close_store(self, request, payload: RoleSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
         owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
         if not owner.is_founder:
@@ -201,9 +177,7 @@ class StoreController():
 
         return {"message": "Store closed successfully"}
 
-
-    @router.put("stores/{store_id}/reopen_store")
-    def reopen_store(request, payload: RoleSchemaIn):
+    def reopen_store(self, request, payload: RoleSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
         owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
         if not owner.is_founder:
@@ -214,9 +188,7 @@ class StoreController():
 
         return {"message": "Store reopened successfully"}
 
-
-    @router.get("/stores/{store_id}/get_owners", response=List[OwnerSchemaOut])
-    def get_owners(request, payload: RoleSchemaIn):
+    def get_owners(self, request, payload: RoleSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
         if not Owner.objects.filter(user_id=payload.user_id, store=store).exists():
             raise HttpError(403, "User is not an owner of the store")
@@ -225,9 +197,7 @@ class StoreController():
 
         return owners
 
-
-    @router.get("/stores/{store_id}/get_managers", response=List[ManagerSchemaOut])
-    def get_managers(request, payload: RoleSchemaIn):
+    def get_managers(self, request, payload: RoleSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
         if not Owner.objects.filter(user_id=payload.user_id, store=store).exists():
             raise HttpError(403, "User is not an owner of the store")
@@ -236,9 +206,7 @@ class StoreController():
 
         return managers
 
-
-    @router.post("/stores/{store_id}/add_purchase_policy")
-    def add_purchase_policy(request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn):
+    def add_purchase_policy(self, request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn):
         store = get_object_or_404(Store, pk=role.store_id)
 
         # Check if the user is an owner or manager of the store
@@ -262,9 +230,7 @@ class StoreController():
 
         return {"message": "Purchase policy added successfully"}
 
-
-    @router.delete("/stores/{store_id}/remove_purchase_policy")
-    def remove_purchase_policy(request, store_id: int, role: RoleSchemaIn):
+    def remove_purchase_policy(self, request, store_id: int, role: RoleSchemaIn):
         store = get_object_or_404(Store, pk=store_id)
 
         # Check if the user is an owner or manager of the store
@@ -288,9 +254,7 @@ class StoreController():
 
         return {"message": "Purchase policy removed successfully"}
 
-
-    @router.get("/stores/{store_id}/get_purchase_policies", response=List[PurchasePolicySchemaOut])
-    def get_purchase_policy(request, store_id: int, role: RoleSchemaIn):
+    def get_purchase_policy(self, request, store_id: int, role: RoleSchemaIn):
         store = get_object_or_404(Store, pk=store_id)
         if not store.is_active:
             if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
@@ -299,7 +263,6 @@ class StoreController():
         policies = PurchasePolicy.objects.filter(store=store)
 
         return policies
-
 
     # @router.post("/stores/{store_id}/change_purchase_policy")
     # def change_purchase_policy(request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn):
@@ -319,9 +282,7 @@ class StoreController():
     #
     #     return {"message": "Purchase policy updated successfully"}
 
-
-    @router.post("/stores/{store_id}/add_discount_policy")
-    def change_discount_policy(request, role: RoleSchemaIn, payload: DiscountPolicySchemaIn):
+    def change_discount_policy(self, request, role: RoleSchemaIn, payload: DiscountPolicySchemaIn):
         store = get_object_or_404(Store, pk=role.store_id)
 
         # Check if the user is an owner or manager of the store
@@ -335,7 +296,8 @@ class StoreController():
                 raise HttpError(403, "Manager does not have permission to change discount policy")
 
         # Check if a discount policy with the same parameters already exists for the store
-        if DiscountPolicy.objects.filter(store=store, min_items=payload.min_items, min_price=payload.min_price).exists():
+        if DiscountPolicy.objects.filter(store=store, min_items=payload.min_items,
+                                         min_price=payload.min_price).exists():
             raise HttpError(400, "Discount policy with these parameters already exists")
 
         policy = DiscountPolicy.objects.create(
@@ -345,9 +307,7 @@ class StoreController():
 
         return {"message": "Discount policy added successfully"}
 
-
-    @router.delete("/stores/{store_id}/remove_discount_policy")
-    def remove_discount_policy(request, role: RoleSchemaIn, payload: DiscountPolicySchemaIn):
+    def remove_discount_policy(self, request, role: RoleSchemaIn, payload: DiscountPolicySchemaIn):
         store = get_object_or_404(Store, pk=role.store_id)
 
         # Check if the user is an owner or manager of the store
@@ -371,9 +331,7 @@ class StoreController():
 
         return {"message": "Discount policy removed successfully"}
 
-
-    @router.get("/stores/{store_id}/get_discount_policies", response=List[DiscountPolicySchemaOut])
-    def get_discount_policy(request, store_id: int, role: RoleSchemaIn):
+    def get_discount_policy(self, request, store_id: int, role: RoleSchemaIn):
         store = get_object_or_404(Store, pk=store_id)
         if not store.is_active:
             if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
@@ -382,7 +340,6 @@ class StoreController():
         policies = DiscountPolicy.objects.filter(store=store)
 
         return policies
-
 
     # not sure if editing discount policies is needed, can just delete and add new ones
     #
@@ -403,9 +360,7 @@ class StoreController():
     #     return {"message": "Discount policy edited successfully"}
     #
 
-
-    @router.post("/stores/{store_id}/add_product")
-    def add_product(request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
+    def add_product(self, request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
         store = get_object_or_404(Store, pk=role.store_id)
 
         if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
@@ -429,9 +384,7 @@ class StoreController():
 
         return {"message": "Product added successfully"}
 
-
-    @router.delete("/stores/{store_id}/remove_product")
-    def remove_product(request, role: RoleSchemaIn, product_name: str):
+    def remove_product(self, request, role: RoleSchemaIn, product_name: str):
         store = get_object_or_404(Store, pk=role.store_id)
 
         # Check if the user is an owner or manager of the store
@@ -452,9 +405,7 @@ class StoreController():
 
         return {"message": "Product removed successfully"}
 
-
-    @router.put("/stores/{store_id}/edit_product")
-    def edit_product(request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
+    def edit_product(self, request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
         store = get_object_or_404(Store, pk=role.store_id)
 
         # Check if the user is an owner or manager of the store
@@ -483,9 +434,7 @@ class StoreController():
 
         return {"message": "Product edited successfully"}
 
-
-    @router.get("/stores/{store_id}/get_products", response=List[StoreProductSchemaOut])
-    def get_products(request, store_id: int, role: RoleSchemaIn):
+    def get_products(self, request, store_id: int, role: RoleSchemaIn):
         store = get_object_or_404(Store, pk=store_id)
         if not store.is_active:
             if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
@@ -495,9 +444,7 @@ class StoreController():
 
         return products
 
-
-    @router.put("/stores/{store_id}/purchase_product")
-    def purchase_product(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
+    def purchase_product(self, request, store_id: int, payload: List[PurchaseStoreProductSchema]):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to purchase")
         store = get_object_or_404(Store, pk=store_id)

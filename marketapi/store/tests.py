@@ -205,19 +205,22 @@ class StoreAPITestCase(TestCase):
         self.assertTrue(response1.status_code == 404 or response2.status_code == 404)
 
     def test_concurrent_product_deletion_and_purchase(self):
-        self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/stores/{store_id}/add_product", json={
             "role": {"user_id": self.owner2_id, "store_id": self.store_id},
             "payload": {"name": "Test Product 3", "quantity": 1, "initial_price": 100}})
+        print(response.content)
 
         # Store owner deletes a product
         delete_response = self.client.delete("/stores/{store_id}/remove_product?product_name=Test Product 3", json={
             "user_id": self.user_id, "store_id": self.store_id
         })
+        print(delete_response.content)
         # At the same time, another user tries to buy the product
         purchase_response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
             "product_name": "Test Product 3",
             "quantity": 1
         }])
+        print(purchase_response.content)
 
         # The purchase request should fail
         self.assertEqual(purchase_response.status_code, 404)

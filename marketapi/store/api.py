@@ -9,7 +9,7 @@ from .schemas import StoreSchemaIn, StoreSchemaOut, OwnerSchemaIn, ManagerPermis
     RemoveManagerSchemaIn, ManagerSchemaOut
 from django.shortcuts import get_object_or_404, aget_object_or_404
 
-from store_controller import StoreController
+from .store_controller import StoreController
 
 router = Router()
 
@@ -113,8 +113,8 @@ def get_products(request, store_id: int, role: RoleSchemaIn):
     return sc.get_products(request, store_id, role)
 
 @router.put("/stores/{store_id}/purchase_product")
-def purchase_product(request, store_id: int, payload: List[tuple]):
+def purchase_product(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
     real_payload = []
-    for tup in payload:
-        real_payload.append(PurchaseStoreProductSchema(tup[0], tup[1]))
-    return sc.purchase_product(request, store_id, real_payload)
+    # for tup in payload:
+    #     real_payload.append(PurchaseStoreProductSchema(tup[0], tup[1]))
+    return sc.purchase_product(request, store_id, payload)
