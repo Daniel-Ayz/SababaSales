@@ -73,11 +73,15 @@ class purchaseController:
             delivery_result = delivery_service.create_shipment(
                 address, package_details, flag_delivery
             )
+            if not delivery_result:
+                raise HttpError(400, f'error": "Delivery failed')
             # if delivery is ok:
             # TODO: somehow get payment method - probably from user facade, or even argument
             payment_result = payment_service.process_payment(
                 payment_method, flag_payment
             )
+            if not payment_result:
+                raise HttpError(400, f'error": "Payment failed')
             # if payment is ok:
             cart = get_object_or_404(Cart, id=cart_id)
 

@@ -28,7 +28,15 @@ def get_purchase_history(request, user_id: int):
 
 
 @router.post("/{cart_id}/make_purchase")
-def make_purchase(
-    request, cart_id: int, flag_delivery: bool = False, flag_payment: bool = False
-):
+def make_purchase(request, cart_id: int):
     return pc.make_purchase(request, cart_id, flag_delivery=False, flag_payment=False)
+
+
+@router.post("/{cart_id}/make_purchase_delivery_fail")
+def make_purchase(request, cart_id: int):
+    return pc.make_purchase(request, cart_id, flag_delivery=True, flag_payment=False)
+
+
+@router.post("/{cart_id}/make_purchase_payment_fail")
+def make_purchase(request, cart_id: int):
+    return pc.make_purchase(request, cart_id, flag_delivery=False, flag_payment=True)

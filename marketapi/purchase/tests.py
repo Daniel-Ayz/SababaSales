@@ -129,34 +129,26 @@ class TestPurchase(TestCase):
         supply_service_verification = False
 
         # Perform the test
-        response = self.client.post(f"/{self.cart_id}/make_purchase")
+        response = self.client.post(f"/{self.cart_id}/make_purchase_delivery_fail")
         print(response.json())
 
         self.assertEqual(response.status_code, 400)
 
-        # Assertions
-        # Verify that the purchase is canceled
-        # self.assertEqual(response.json()['status'], 'failure')
-
         # # Check if the error message is sent to the guest
-        # self.assertEqual(response.json()['error_message'], 'Supply service verification failed')
+        self.assertEqual(response.json()["detail"], "Delivery failed")
 
     def test_payment_failure(self):
         # Simulate failure in payment verification
         payment_verification = False
 
         # Perform the test
-        response = self.client.post(f"/{self.cart_id}/make_purchase")
+        response = self.client.post(f"/{self.cart_id}/make_purchase_payment_fail")
         print(response.json())
 
         self.assertEqual(response.status_code, 400)
 
-        # Assertions
-        # Verify that the purchase is canceled
-        # self.assertEqual(response.json()['status'], 'failure')
-
         # # Check if the error message is sent to the guest
-        # self.assertEqual(response.json()['error_message'], 'Payment verification failed')
+        self.assertEqual(response.json()["detail"], "Payment failed")
 
     def test_purchase_unavailable_product(self):
         # Prepare test data
