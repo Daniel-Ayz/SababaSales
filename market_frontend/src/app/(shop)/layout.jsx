@@ -3,6 +3,9 @@ import React from 'react';
 import NavBar from './navbar'; // Assuming Example component is in a separate file
 import Footer from './footer'; // Assuming Example component is in a separate file
 import Cart from './cart'; // Assuming Example component is in a separate file
+import ShopGrid from './shopGrid';
+import ProdGrid from './prodGrid';
+import ProductView from './product/productView';
 
 const UserContext = React.createContext({
   loggedIn: false,
@@ -25,10 +28,18 @@ const Layout = ({ children }) => {
       <Cart isOpen={cart} setCart = {setCart}/>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto bg-gray-100">
-        {children}
+      <main className="main">
+        <h2 className="shopBy">Shop By Store</h2>
+        <ShopGrid />
+        <hr className="seperate"/>
+        <h2 className="shopBy">Shop By Product</h2>
+        <ProdGrid />
+        <hr className="seperate"/>
+        <h2 className="shopBy recommended">Recommended</h2>
+        <ProductView />
+        {/*{children}*/}
       </main>
-
+      
       {/* Footer (if needed) */}
       {/* <footer className="bg-gray-800 text-white text-center py-4"> */}
         {/* {/* Your footer content here */}

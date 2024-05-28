@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react'; // Import React and hooks
 import Link from 'next/link';
 import { UserContext } from './layout'; // Import the UserContext
+import '@/app/(shop)/homepage.css'
 import {
   Disclosure,
   DisclosureButton,
@@ -51,10 +52,10 @@ export default function NavBar({setCart}) {
   };
 
   return (
-    <Disclosure as="nav" className="bg-gray-800">
+    <Disclosure as="nav" className="navBar">
       {({ open }) => (
         <>
-          <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
+          <div>
             <div className="relative flex h-16 items-center justify-between">
               <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
                 {/* Mobile menu button*/}
@@ -71,7 +72,6 @@ export default function NavBar({setCart}) {
               <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                 <div className="flex flex-shrink-0 items-center">
                   <img
-                    className="h-8 w-auto"
                     src="SababaSales-logoB.png"
                     alt="Your Company"
                   />
@@ -83,7 +83,7 @@ export default function NavBar({setCart}) {
                         key={item.name}
                         href={item.href}
                         className={classNames(
-                          item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white',
+                          item.current ? 'bg-gray-900 text-white' : 'text-black hover:bg-gray-700 hover:text-white',
                           'rounded-md px-3 py-2 text-sm font-medium'
                         )}
                         aria-current={item.current ? 'page' : undefined}
@@ -206,7 +206,7 @@ export default function NavBar({setCart}) {
                 ) : (
                   <Link
                     href="/login"
-                    className="ml-3 text-sm text-white hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md whitespace-nowrap"
+                    className="ml-3 text-sm text-black hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md whitespace-nowrap"
                   >
                     Sign in
                   </Link>

@@ -1,0 +1,74 @@
+.navBar{
+    background-color: #DEDDDD;
+}
+
+
+.square{
+    font-style: normal;
+    background-color: white;
+    height: 520px;
+    width: 520px;
+    border-radius: 20px;
+    margin-left: 50px;
+    margin-bottom: 40px;
+    padding-bottom: 40px;
+}
+.topic{
+    padding-top: 20px;
+    margin-left:20px;
+    margin-top:10px;
+    font-family: "Jaldi", sans-serif;
+    font-weight: 600;
+}
+.itemGrid{
+    display: grid;
+    grid-template-columns: auto auto auto;
+    padding: 20px;
+    margin-left: 10px;
+}
+.gridItem{
+    padding: 50px;
+    margin: 50px;
+}
+.itemImg{
+    height: 110px;
+    width: 110px;
+    border-radius: 20px;
+    margin: 10px;
+    border-width: 2px;
+    border-color: rgb(92, 92, 92);
+}
+.seeMore{
+    float:right;
+    padding-right: 20px;
+}
+.itemImg:hover{
+    border-color: rgb(157, 157, 157);
+}
+
+.shopBy{
+    padding-top: 20px;
+    margin-left: 50px;
+    margin-top: 30px;
+    font-family: "Jaldi", sans-serif;
+    font-weight: bolder;
+    font-size: larger;
+}
+.main{
+    overflow-y: auto;
+    flex: 1 1 0%;
+    background-color: #F8F4EC;
+}
+
+.seperate{
+    border-top: 6px solid black;
+    border-radius: 5px;
+    width: 300px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.recomended{
+    font-size:xx-large;
+}

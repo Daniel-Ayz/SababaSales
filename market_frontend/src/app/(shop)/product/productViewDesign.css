@@ -1,0 +1,55 @@
+.rectangle{
+    width: 500px;
+    height: 250px;
+    background-color: white;
+    border-radius:40px;
+    margin-top: 20px;
+    margin-left: 80px;
+    margin-bottom: 40px;
+    display: grid;
+    grid-template-areas:'image name name name'
+    'image name name name'
+    'image price price price'
+    'image storeName storeName storeName'
+    'image footer footer footer'
+    'image footer footer footer'
+    'image footer footer footer';
+}
+.rectangle:hover{
+    background-color: rgb(242, 239, 239);
+}
+
+.productImage{
+    width: 200px;
+    height: 200px;
+    border-width: 2px;
+    border-color: rgb(92, 92, 92);
+    border-radius: 20px;
+    display:block;
+    margin-top: 25px;
+    margin-left: 30px;
+    grid-area:image;
+}
+
+.info{
+    grid-area: info;
+    font-family: "Roboto", sans-serif;
+    font-style: normal;
+}
+.price{
+    grid-area: price;
+}
+.storeName {
+    grid-area: storeName;
+}
+.footer {
+    grid-area: footer;
+}
+.productName{
+    margin-top: 40px;
+    grid-area: name;
+    font-family: "Roboto", sans-serif;
+    font-size: larger;
+    font-weight: 500;
+    font-style: normal;
+}
