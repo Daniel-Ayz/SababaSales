@@ -6,8 +6,8 @@
 .square{
     font-style: normal;
     background-color: white;
-    height: 520px;
-    width: 520px;
+    height: 90%;
+    width: 80%;
     border-radius: 20px;
     margin-left: 50px;
     margin-bottom: 40px;
@@ -31,8 +31,8 @@
     margin: 50px;
 }
 .itemImg{
-    height: 110px;
-    width: 110px;
+    height: 6vw;
+    width: 6vw;
     border-radius: 20px;
     margin: 10px;
     border-width: 2px;

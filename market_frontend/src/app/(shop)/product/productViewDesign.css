@@ -1,36 +1,37 @@
 .rectangle{
-    width: 500px;
-    height: 250px;
+    width:25vw;
+    height: 13vw;
     background-color: white;
     border-radius:40px;
     margin-top: 20px;
     margin-left: 80px;
     margin-bottom: 40px;
     display: grid;
-    grid-template-areas:'image name name name'
-    'image name name name'
-    'image price price price'
-    'image storeName storeName storeName'
-    'image footer footer footer'
-    'image footer footer footer'
-    'image footer footer footer';
+    grid-template-areas:'imageRef nameRef nameRef nameRef'
+    'imageRef rating rating rating'
+    'imageRef price price price'
+    'imageRef storeName storeName storeName'
+    'imageRef footer footer footer'
+    'imageRef footer footer footer'
+    'imageRef footer footer footer';
 }
-.rectangle:hover{
-    background-color: rgb(242, 239, 239);
+.productPreview{
+    display: inline-block;
 }
-
 .productImage{
-    width: 200px;
-    height: 200px;
+    width: 10vw;
+    height: 10vw;
     border-width: 2px;
     border-color: rgb(92, 92, 92);
     border-radius: 20px;
     display:block;
-    margin-top: 25px;
+    margin-top: 1.5vw;
     margin-left: 30px;
     grid-area:image;
 }
-
+.productImage:hover{
+    border-color: rgb(157, 157, 157);
+}
 .info{
     grid-area: info;
     font-family: "Roboto", sans-serif;
@@ -44,6 +45,9 @@
 }
 .footer {
     grid-area: footer;
+    padding:1vw;
+    padding-right: 4vw;
+    margin-bottom:0px;
 }
 .productName{
     margin-top: 40px;
@@ -52,4 +56,74 @@
     font-size: larger;
     font-weight: 500;
     font-style: normal;
+}
+
+.nameRef{
+    grid-area: nameRef;
+}
+
+.imageRef {
+    grid-area: imageRef;
+}
+
+input[type=radio]{
+    display: none;
+}
+.rating{
+    grid-area: rating;
+}
+.chooseStar{
+    cursor: pointer;
+}
+
+.star{
+    display: inline-block;
+}
+
+.container {
+    width: 100vw;
+    height: 30vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.content-box{
+    width: 200vw;
+    display: flex;
+    align-items: center;
+    gap: 0px;
+}
+
+
+.card{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.action-btns{
+    display: flex;
+    margin-left: 46vw;
+    margin-bottom: 5vh;
+    gap: 60px;
+}
+
+.action-btns button{
+    font-size: 15px;
+    font-weight: 500;
+    color: #002d26;
+    background-color: #99c6cf;
+    border-radius: 6px;
+    padding: 10px 23px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.5s ease;
+}
+
+.action-btns button:hover{
+    color: #ffffff;
+    background-color: #002d36;
 }

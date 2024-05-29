@@ -1,13 +1,20 @@
 import '@/app/(shop)/product/productViewDesign.css'
 import '@/app/(shop)/homepage.css'
-export default function ProductView({productHref, imgSource, imgDesc, prodName, prodPrice, prodStore}) {
+import ProductRating from './productRating'
+import ProductStars from './productStars'
+import product from './productData'
+export default function ProductView({prod}) {
   return (
-    <a className="rectangle" href='#'>
-        <img className="productImage" src="https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-01.jpg" imgDesc={"Orange pouch"}/> 
-        <h3 className = "productName">Tik katan</h3>
-        <h4 className='info price'>73$</h4>
-        <h4 className='info storeName'>Tikim</h4>
-        <div className='footer'></div>
-    </a>
+    <div className='productPreview'>
+        <div className="rectangle">
+          <a href={prod.productHref} className='imageRef'><img className="productImage" src={prod.imgSource} imgDesc={prod.imgDesc}/> </a>
+          <a className="nameRef" href={prod.productHref}><h3 className = "productName">{prod.prodName}</h3></a>
+          <ProductStars className="rating" rating={prod.prodRat}/>
+          <h4 className='info price'>{prod.prodPrice}</h4>
+          <a href ={prod.storHref} className='info storeName'>{prod.prodStore}</a>
+          <div className='footer'></div>
+        </div> 
+
+    </div>
   );
 }

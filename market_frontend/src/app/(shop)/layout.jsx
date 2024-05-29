@@ -6,6 +6,10 @@ import Cart from './cart'; // Assuming Example component is in a separate file
 import ShopGrid from './shopGrid';
 import ProdGrid from './prodGrid';
 import ProductView from './product/productView';
+import ProductStars from './product/productStars';
+import ProductScroll from './product/productScroll';
+
+const product = require('./product/productData');
 
 const UserContext = React.createContext({
   loggedIn: false,
@@ -36,7 +40,7 @@ const Layout = ({ children }) => {
         <ProdGrid />
         <hr className="seperate"/>
         <h2 className="shopBy recommended">Recommended</h2>
-        <ProductView />
+        <ProductScroll />
         {/*{children}*/}
       </main>
       
