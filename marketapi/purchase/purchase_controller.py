@@ -95,9 +95,9 @@ class purchaseController:
                     )
                     products_list.append(schema)
 
-            amount = sc.purchase_product(
-                request=None, store_id=store_id, payload=products_list
-            )["total_price"]
+                amount = sc.purchase_product(
+                    request=None, store_id=store_id, payload=products_list
+                )["total_price"]
 
             delivery_result = delivery_service.create_shipment(
                 address, package_details, flag_delivery
