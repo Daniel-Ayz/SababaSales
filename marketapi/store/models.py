@@ -59,20 +59,20 @@ class PurchasePolicy(models.Model):
         return policy_text or "No restrictions"
 
 
-class DiscountPolicy(models.Model):
-    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='discount_policies')
-    min_items = models.IntegerField(null=True, blank=True)  # Optional
-    min_price = models.FloatField(null=True, blank=True)  # Optional
-
-    def __str__(self):
-        policy_text = ""
-        if self.min_items:
-            policy_text += f"Min items: {self.min_items}"
-        if self.min_price:
-            if policy_text:
-                policy_text += " & "
-            policy_text += f"Min price: {self.min_price}"
-        return policy_text or "No restrictions"
+# class DiscountPolicy(models.Model):
+#     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='discount_policies')
+#     min_items = models.IntegerField(null=True, blank=True)  # Optional
+#     min_price = models.FloatField(null=True, blank=True)  # Optional
+#
+#     def __str__(self):
+#         policy_text = ""
+#         if self.min_items:
+#             policy_text += f"Min items: {self.min_items}"
+#         if self.min_price:
+#             if policy_text:
+#                 policy_text += " & "
+#             policy_text += f"Min price: {self.min_price}"
+#         return policy_text or "No restrictions"
 
 
 class StoreProduct(models.Model):
@@ -83,3 +83,26 @@ class StoreProduct(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class DiscountBase(models.Model):
+    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='discounts')
+    discount_type = models.CharField(max_length=50)
+
+    class Meta:
+        abstract = True
+
+
+class SimpleDiscount(DiscountBase):
+    percentage = models.FloatField()
+    applicable_items = models.ManyToManyField(StoreProduct, related_name='simple_discounts')
+
+
+class ConditionalDiscount(DiscountBase):
+    condition_name = models.CharField(max_length=255)
+    discount = models.ForeignKey(DiscountBase, on_delete=models.CASCADE, related_name='conditional_discounts')
+
+
+class CompositeDiscount(DiscountBase):
+    discounts = models.ManyToManyField(DiscountBase, related_name='composite_discounts')
+    combine_function = models.CharField(max_length=50)

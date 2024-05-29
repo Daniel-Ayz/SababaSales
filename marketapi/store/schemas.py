@@ -91,15 +91,38 @@ class PurchasePolicySchemaIn(Schema):
     min_items_per_purchase: Optional[int] = None  # Optional
 
 
-class DiscountPolicySchemaOut(Schema):
-    store: StoreSchemaOut
-    min_items: Optional[int] = None  # Optional
-    min_price: Optional[float] = None  # Optional
+class DiscountBaseSchema(Schema):
+    store_id: int
+    discount_type: str
+
+    class Meta:
+        abstract = True
 
 
-class DiscountPolicySchemaIn(Schema):
-    min_items: Optional[int] = None  # Optional
-    min_price: Optional[float] = None  # Optional
+class SimpleDiscountSchema(DiscountBaseSchema):
+    percentage: float
+    applicable_products: list[str]
+
+
+class ConditionalDiscountSchema(DiscountBaseSchema):
+    condition_name: str
+    discount: DiscountBaseSchema
+
+
+class CompositeDiscountSchema(DiscountBaseSchema):
+    discounts: list[DiscountBaseSchema]
+    combine_function: str
+
+
+# class DiscountPolicySchemaOut(Schema):
+#     store: StoreSchemaOut
+#     min_items: Optional[int] = None  # Optional
+#     min_price: Optional[float] = None  # Optional
+#
+#
+# class DiscountPolicySchemaIn(Schema):
+#     min_items: Optional[int] = None  # Optional
+#     min_price: Optional[float] = None  # Optional
 
 
 class StoreProductSchemaOut(Schema):

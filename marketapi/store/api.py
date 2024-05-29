@@ -88,8 +88,8 @@ def get_purchase_policy(request, store_id: int, role: RoleSchemaIn):
     return sc.get_purchase_policy(request, store_id, role)
 
 @router.post("/stores/{store_id}/add_discount_policy")
-def change_discount_policy(request, role: RoleSchemaIn, payload: DiscountPolicySchemaIn):
-    return sc.change_discount_policy(request, role, payload)
+def add_discount_policy(request, role: RoleSchemaIn, payload: DiscountPolicySchemaIn):
+    return sc.add_discount_policy(request, role, payload)
 
 @router.delete("/stores/{store_id}/remove_discount_policy")
 def remove_discount_policy(request, role: RoleSchemaIn, payload: DiscountPolicySchemaIn):

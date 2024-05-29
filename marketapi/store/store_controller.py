@@ -2,12 +2,14 @@ from ninja.errors import HttpError
 from typing import List
 from ninja import Router
 
-from .models import Store, Owner, Manager, ManagerPermission, PurchasePolicy, DiscountPolicy, StoreProduct
+from .models import Store, Owner, Manager, ManagerPermission, PurchasePolicy, StoreProduct, DiscountBase
 from .schemas import StoreSchemaIn, StoreSchemaOut, OwnerSchemaIn, ManagerPermissionSchemaIn, PurchasePolicySchemaIn, \
-    DiscountPolicySchemaIn, StoreProductSchemaIn, ManagerSchemaIn, OwnerSchemaOut, RoleSchemaIn, StoreProductSchemaOut, \
-    PurchaseStoreProductSchema, DiscountPolicySchemaOut, PurchasePolicySchemaOut, RemoveOwnerSchemaIn, \
-    RemoveManagerSchemaIn, ManagerSchemaOut
+    StoreProductSchemaIn, ManagerSchemaIn, OwnerSchemaOut, RoleSchemaIn, StoreProductSchemaOut, \
+    PurchaseStoreProductSchema, PurchasePolicySchemaOut, RemoveOwnerSchemaIn, \
+    RemoveManagerSchemaIn, ManagerSchemaOut, DiscountBaseSchema
 from django.shortcuts import get_object_or_404, aget_object_or_404
+
+from .discount import SimpleDiscount, ConditionalDiscount, CompositeDiscount
 
 router = Router()
 
@@ -282,7 +284,7 @@ class StoreController:
     #
     #     return {"message": "Purchase policy updated successfully"}
 
-    def change_discount_policy(self, request, role: RoleSchemaIn, payload: DiscountPolicySchemaIn):
+    def add_discount_policy(self, request, role: RoleSchemaIn, payload: DiscountBaseSchema):
         store = get_object_or_404(Store, pk=role.store_id)
 
         # Check if the user is an owner or manager of the store
@@ -360,17 +362,29 @@ class StoreController:
     #     return {"message": "Discount policy edited successfully"}
     #
 
-    def add_product(self, request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
-        store = get_object_or_404(Store, pk=role.store_id)
-
+    def validate_permissions(self, role: RoleSchemaIn, store: Store, permission: str):
         if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
             if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
                 raise HttpError(403, "User is not an owner or manager of the store")
 
             manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
             manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-            if not manager_permissions.can_add_product:
-                raise HttpError(403, "Manager does not have permission to add product")
+            if not getattr(manager_permissions, permission):
+                raise HttpError(403, "Manager does not have permission to perform this action")
+
+
+    def add_product(self, request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
+        store = get_object_or_404(Store, pk=role.store_id)
+
+        self.validate_permissions(role, store, "can_add_product")
+        # if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
+        #     if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
+        #         raise HttpError(403, "User is not an owner or manager of the store")
+        #
+        #     manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
+        #     manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
+        #     if not manager_permissions.can_add_product:
+        #         raise HttpError(403, "Manager does not have permission to add product")
 
         all_products = StoreProduct.objects.filter(store=store)
         if payload.name in all_products.values_list('name', flat=True):
@@ -386,16 +400,17 @@ class StoreController:
 
     def remove_product(self, request, role: RoleSchemaIn, product_name: str):
         store = get_object_or_404(Store, pk=role.store_id)
+        self.validate_permissions(role, store, "can_delete_product")
 
         # Check if the user is an owner or manager of the store
-        if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-            if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-                raise HttpError(403, "User is not an owner or manager of the store")
-
-            manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-            manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-            if not manager_permissions.can_delete_product:
-                raise HttpError(403, "Manager does not have permission to delete product")
+        # if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
+        #     if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
+        #         raise HttpError(403, "User is not an owner or manager of the store")
+        #
+        #     manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
+        #     manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
+        #     if not manager_permissions.can_delete_product:
+        #         raise HttpError(403, "Manager does not have permission to delete product")
 
         # Check if the product exists
         product = get_object_or_404(StoreProduct, store=store, name=product_name)
@@ -408,15 +423,17 @@ class StoreController:
     def edit_product(self, request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
         store = get_object_or_404(Store, pk=role.store_id)
 
-        # Check if the user is an owner or manager of the store
-        if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-            if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-                raise HttpError(403, "User is not an owner or manager of the store")
+        self.validate_permissions(role, store, "can_edit_product")
 
-            manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-            manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-            if not manager_permissions.can_edit_product:
-                raise HttpError(403, "Manager does not have permission to edit product")
+        # Check if the user is an owner or manager of the store
+        # if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
+        #     if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
+        #         raise HttpError(403, "User is not an owner or manager of the store")
+        #
+        #     manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
+        #     manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
+        #     if not manager_permissions.can_edit_product:
+        #         raise HttpError(403, "Manager does not have permission to edit product")
 
         # Get the product to edit
         product = get_object_or_404(StoreProduct, store=store, name=payload.name)
@@ -461,12 +478,7 @@ class StoreController:
             raise HttpError(400, "Total items is less than the minimum items per purchase limit")
 
         # Apply discount policy
-        store_discount_policies = DiscountPolicy.objects.filter(store=store)
-        for store_discount_policy in store_discount_policies:
-            if (store_discount_policy.min_items and total_items >= store_discount_policy.min_items) and (
-                    store_discount_policy.min_price and total_price >= store_discount_policy.min_price):
-                total_price *= 0.9  # Apply 10% discount
-                break
+        total_price -= self.calculate_cart_discount(payload)
 
         for item in payload:
             product = get_object_or_404(StoreProduct, store=store, name=item.product_name)
@@ -479,3 +491,25 @@ class StoreController:
                 product.save()
 
         return {"message": "Products purchased successfully", "total_price": total_price}
+
+    def get_discount_instance(self, discount_model: DiscountBase):
+        if isinstance(discount_model, SimpleDiscount):
+            return SimpleDiscount(discount_model.percentage, discount_model.applicable_items.all())
+        elif isinstance(discount_model, ConditionalDiscount):
+            condition_name = discount_model.condition_name
+            related_discount = self.get_discount_instance(discount_model.discount)
+            return ConditionalDiscount(condition_name, related_discount)
+        elif isinstance(discount_model, CompositeDiscount):
+            discounts = [self.get_discount_instance(d) for d in discount_model.discounts.all()]
+            return CompositeDiscount(discounts, discount_model.combine_function)
+        return None
+
+    def calculate_cart_discount(self, purchase_products: List[PurchaseStoreProductSchema]):
+        total_discount = 0
+        discount_models = DiscountBase.objects.all()
+        for discount_model in discount_models:
+            discount_instance = self.get_discount_instance(discount_model)
+            if discount_instance:
+                total_discount += discount_instance.apply_discount(purchase_products)
+        return total_discount
+
