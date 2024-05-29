@@ -55,8 +55,8 @@ class purchaseController:
     def make_purchase(
         self,
         request,
-        cart_id: int,
         user_id: int,  # the user that purchases this cart
+        cart_id: int,
         flag_delivery: bool = True,
         flag_payment: bool = True,
     ):

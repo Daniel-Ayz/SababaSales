@@ -116,7 +116,7 @@ class TestPurchase(TestCase):
 
     def test_make_purchase_of_all_products_in_cart_positive(self):
         # Perform the test
-        response = self.client.post(f"/{self.cart_id}/make_purchase")
+        response = self.client.post(f"/{self.user_id}/{self.cart_id}/make_purchase")
         self.assertEqual(response.status_code, 200)
 
         # Assertions
@@ -129,7 +129,9 @@ class TestPurchase(TestCase):
         supply_service_verification = False
 
         # Perform the test
-        response = self.client.post(f"/{self.cart_id}/make_purchase_delivery_fail")
+        response = self.client.post(
+            f"/{self.user_id}/{self.cart_id}/make_purchase_delivery_fail"
+        )
         print(response.json())
 
         self.assertEqual(response.status_code, 400)
@@ -142,7 +144,9 @@ class TestPurchase(TestCase):
         payment_verification = False
 
         # Perform the test
-        response = self.client.post(f"/{self.cart_id}/make_purchase_payment_fail")
+        response = self.client.post(
+            f"/{self.user_id}/{self.cart_id}/make_purchase_payment_fail"
+        )
         print(response.json())
 
         self.assertEqual(response.status_code, 400)
@@ -159,7 +163,7 @@ class TestPurchase(TestCase):
         )
 
         # Perform the test
-        response = self.client.post(f"/{self.cart_id}/make_purchase")
+        response = self.client.post(f"/{self.user_id}/{self.cart_id}/make_purchase")
         self.assertEqual(response.status_code, 400)
 
         # Check if the error message is sent to the guest
