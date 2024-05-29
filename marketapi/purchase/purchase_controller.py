@@ -10,7 +10,6 @@ from ninja import Router
 from store.schemas import PurchaseStoreProductSchema
 from store.store_controller import StoreController
 
-
 from users.models import Cart, CustomUser, Basket, BasketProduct
 from purchase.models import Purchase
 from datetime import datetime
@@ -20,14 +19,17 @@ from purchase.adapters.delivery_service import (
     AbstractDeliveryService,
 )  # Use actual delivery service when available
 
+# from users.usercontroller import UserController
+
+
 router = Router()
 
 sc = StoreController()
+# uc = UserController()
+
 
 payment_service = AbstractPaymentService()
-delivery_service = (
-    AbstractDeliveryService()
-)  # Replace with RealDeliveryService when available
+delivery_service = AbstractDeliveryService()
 
 
 class purchaseController:
@@ -53,35 +55,28 @@ class purchaseController:
     def make_purchase(
         self,
         request,
+        user_id: int,  # the user that purchases this cart
         cart_id: int,
-        flag_delivery: bool = False,
-        flag_payment: bool = False,
+        flag_delivery: bool = True,
+        flag_payment: bool = True,
     ):
         try:
-            # integrate delivery service and payment service
-            # TODO: somehow get address - probably from user facade
-            # TODO: same about package details
+            # demo data
             address = "Test address"
             package_details = "Test package details"
             payment_method = {
                 "service": "paypal",
                 "currency": "USD",
-                "amount": 100.0,
                 "billing_address": "Test billing address",
             }
+            # TODO: add this functionality to user facade
+            # address = uc.get_user_address(user_id)
+            # payment_information_user = uc.get_user_payment_information(user_id)
 
-            delivery_result = delivery_service.create_shipment(
-                address, package_details, flag_delivery
-            )
-            if not delivery_result:
-                raise HttpError(400, f'error": "Delivery failed')
-            # if delivery is ok:
-            # TODO: somehow get payment method - probably from user facade, or even argument
-            payment_result = payment_service.process_payment(
-                payment_method, flag_payment
-            )
-            if not payment_result:
-                raise HttpError(400, f'error": "Payment failed')
+            # payment_method = payment_information_user["service"]
+            # currency = payment_information_user["currency"]
+            # billing_address = payment_information_user["billing_address"]
+
             # if payment is ok:
             cart = get_object_or_404(Cart, id=cart_id)
 
@@ -100,11 +95,24 @@ class purchaseController:
                     )
                     products_list.append(schema)
 
-                # print(products_list)
-                sc.purchase_product(
+                amount = sc.purchase_product(
                     request=None, store_id=store_id, payload=products_list
-                )
-                # store.api.purchase_product(request, store_id, products_list)
+                )["total_price"]
+
+            delivery_result = delivery_service.create_shipment(
+                address, package_details, flag_delivery
+            )
+
+            if delivery_result["result"]:
+                raise HttpError(400, f'error": "Delivery failed')
+            amount += delivery_result["delivery_fee"]
+
+            payment_method["amount"] = amount
+            payment_result = payment_service.process_payment(
+                payment_method, flag_payment
+            )
+            if payment_result["result"]:
+                raise HttpError(400, f'error": "Payment failed')
 
             purchase.save()
             return {"message": "Purchase added successfully"}
