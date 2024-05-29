@@ -5,7 +5,21 @@ from django.contrib.auth.models import AbstractUser
 
 
 class CustomUser(AbstractUser):
-    pass
+    # make address optional
+    address = models.CharField(max_length=100, blank=True)
+
+
+class PaymentInformationUser(models.Model):
+    # one-to-one relationship with CustomUser # This is in the for now
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    billing_address = models.CharField(max_length=100)
+    currency = models.CharField(max_length=10)
+    credit_card_number = models.CharField(max_length=16)
+    expiration_date = models.DateField()
+    security_code = models.CharField(max_length=3)
+
+    def __str__(self):
+        return f"Payment information for {self.user.username}"
 
 
 class Notification(models.Model):

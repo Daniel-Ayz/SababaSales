@@ -19,13 +19,13 @@ from purchase.adapters.delivery_service import (
     AbstractDeliveryService,
 )  # Use actual delivery service when available
 
-# from users.usercontroller import UserController
+from users.usercontroller import UserController
 
 
 router = Router()
 
 sc = StoreController()
-# uc = UserController()
+uc = UserController()
 
 
 payment_service = AbstractPaymentService()
@@ -62,26 +62,32 @@ class purchaseController:
     ):
         try:
             # demo data
-            address = "Test address"
+            # TODO: package details
             package_details = "Test package details"
-            payment_method = {
-                "service": "paypal",
-                "currency": "USD",
-                "billing_address": "Test billing address",
-            }
-            # TODO: add this functionality to user facade
-            # address = uc.get_user_address(user_id)
-            # payment_information_user = uc.get_user_payment_information(user_id)
 
-            # payment_method = payment_information_user["service"]
-            # currency = payment_information_user["currency"]
-            # billing_address = payment_information_user["billing_address"]
+            delivery_address = uc.get_user_address(user_id)
+            payment_information_user = uc.get_user_payment_information(user_id)
+
+            currency = payment_information_user["currency"]
+            billing_address = payment_information_user["billing_address"]
+            credit_card_number = payment_information_user["credit_card_number"]
+            expiration_date = payment_information_user["expiration_date"]
+            security_code = payment_information_user["security_code"]
+            payment_details = {
+                "currency": currency,
+                "billing_address": billing_address,
+                "credit_card_number": credit_card_number,
+                "expiration_date": expiration_date,
+                "security_code": security_code,
+                "total_price": 0,
+            }
 
             # if payment is ok:
             cart = get_object_or_404(Cart, id=cart_id)
 
             purchase = Purchase.objects.create(cart=cart, purchase_date=datetime.now())
-
+            total_price = 0
+            item_counter = 0  # this is for the delivery service - idk why not
             for basket in Basket.objects.filter(cart_id=cart_id).values():
                 store_id = basket["store_id"]
                 products_list = []
@@ -94,22 +100,23 @@ class purchaseController:
                         product_name=name, quantity=quantity
                     )
                     products_list.append(schema)
+                    item_counter += quantity
 
-                amount = sc.purchase_product(
+                total_price += sc.purchase_product(
                     request=None, store_id=store_id, payload=products_list
                 )["total_price"]
 
             delivery_result = delivery_service.create_shipment(
-                address, package_details, flag_delivery
-            )
+                delivery_address, item_counter, flag_delivery
+            )  # we are passing address, total amount of items and a flag for the delivery service
 
             if delivery_result["result"]:
                 raise HttpError(400, f'error": "Delivery failed')
-            amount += delivery_result["delivery_fee"]
+            total_price += delivery_result["delivery_fee"]
 
-            payment_method["amount"] = amount
+            payment_details["total_price"] = total_price
             payment_result = payment_service.process_payment(
-                payment_method, flag_payment
+                payment_details, flag_payment
             )
             if payment_result["result"]:
                 raise HttpError(400, f'error": "Payment failed')
