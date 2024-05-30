@@ -1,3 +1,6 @@
 ./.venv/
 ./marketapi/db.sqlite3
 /marketapi/db.sqlite3
+/.venv
+/.idea
+/market_frontend/node_modules

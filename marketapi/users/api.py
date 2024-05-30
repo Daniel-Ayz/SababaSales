@@ -47,16 +47,16 @@ def logout(request):
     return uc.logout(request)
 
 
-@router.get("/", response={200: List[UserSchema], 401: Error})
-def get_users(request):
-    user = uc.get_all_users(request)
+@router.get("/", response={200: UserSchema, 401: Error}, auth=django_auth)
+def get_user(request):
+    user = uc.get_user(request)
     return user
 
 
-# user must be authenticated to get their own user info
-@router.get("/{int:user_id}", response={200: UserSchema}, auth=django_auth)
-def get_user(request, user_id: int):
-    return uc.get_user(request, user_id)
+# # user must be authenticated to get their own user info
+# @router.get("/{int:user_id}", response={200: UserSchema}, auth=django_auth)
+# def get_user(request, user_id: int):
+#     return uc.get_user(request, user_id)
 
 
 @router.delete("/{int:user_id}", response={200: Msg, 401: Error})
