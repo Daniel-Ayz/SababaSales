@@ -10,5 +10,5 @@ class PaymentServiceInterface(ABC):
 
 class DeliveryServiceInterface(ABC):
     @abstractmethod
-    def create_shipment(self, address: str, package_details: dict, **kwargs) -> dict:
+    def create_shipment(self, address: str, item_quantity: float, **kwargs) -> dict:
         pass

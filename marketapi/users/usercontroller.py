@@ -169,3 +169,17 @@ class UserController:
         for basket in baskets:
             products.extend(basket.products.all())
         return products
+
+    # added 2 functions for the make purchase
+    def get_user_address(self, request, user_id: int) -> str:
+        if not self._verify_user_id(request, user_id):
+            raise HttpError(401, "Unauthorized")
+        user = CustomUser.objects.get(id=request.user.id)
+        return user.address
+
+    def get_user_payment_information(self, request, user_id: int) -> dict:
+        if not self._verify_user_id(request, user_id):
+            raise HttpError(401, "Unauthorized")
+        user = CustomUser.objects.get(id=user_id)
+        payment_info = PaymentInformationUser.objects.get(user=user)
+        return payment_info
