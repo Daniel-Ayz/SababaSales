@@ -1,0 +1,1 @@
+export const CATEGORIES = {"sports": "#","fashion": "#","home design": "#","gaming": "#","books": "#"};

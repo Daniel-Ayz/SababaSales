@@ -1,0 +1,43 @@
+.navContainer{
+    height: 70px;
+    background-color: rgba(222, 221, 221, 1);
+}
+
+.gridLayout{
+    margin-left:4vw;
+    margin-top: 10px;
+    display: grid;
+    grid-template-areas: 'logo search categories delivery cart sign';
+}
+
+.logo{
+    grid-area: logo;
+    width: 50px;
+    height: 50px;
+}
+
+.search{
+    grid-area: search;
+    width: 500px;
+    
+}
+
+.categories{
+    grid-area: categories;
+}
+.categoriesDrop {
+    grid-area: categories;
+    margin-top: 7px !important;
+}
+
+.delivery{
+    grid-area: delivery;
+}
+
+.shoppingCart{
+    grid-area: cart;
+}
+
+.signIn{
+    grid-area: sign;
+}

@@ -8,7 +8,7 @@ import ProdGrid from './prodGrid';
 import ProductView from './product/productView';
 import ProductStars from './product/productStars';
 import ProductScroll from './product/productScroll';
-
+import Nav from './navbar/nav';
 const product = require('./product/productData');
 
 const UserContext = React.createContext({
@@ -28,9 +28,9 @@ const Layout = ({ children }) => {
     <UserContext.Provider value={{ user, setUser }}>
     <div className="flex flex-col h-screen">
       {/* Navigation Bar */}
-      <NavBar setCart = {setCart} />
-      <Cart isOpen={cart} setCart = {setCart}/>
-
+      {/*{<NavBar setCart = {setCart} />}
+      {<Cart isOpen={cart} setCart = {setCart}/>}*/}
+      <Nav/>
       {/* Main Content */}
       <main className="main">
         <h2 className="shopBy">Shop By Store</h2>

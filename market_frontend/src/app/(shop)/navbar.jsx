@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react'; // Import React and hooks
 import Link from 'next/link';
 import { UserContext } from './layout'; // Import the UserContext
 import '@/app/(shop)/homepage.css'
+
 import {
   Disclosure,
   DisclosureButton,

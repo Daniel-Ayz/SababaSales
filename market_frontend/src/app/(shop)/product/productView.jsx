@@ -14,7 +14,6 @@ export default function ProductView({prod}) {
           <a href ={prod.storHref} className='info storeName'>{prod.prodStore}</a>
           <div className='footer'></div>
         </div> 
-
     </div>
   );
 }
