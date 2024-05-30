@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react'; // Import React and hooks
 import Link from 'next/link';
-import { UserContext } from './layout'; // Import the UserContext
+import { UserContext } from '../layout'; // Import the UserContext
 import {
   Disclosure,
   DisclosureButton,
@@ -11,7 +11,10 @@ import {
   MenuItems,
   Transition,
 } from '@headlessui/react';
-import { Bars3Icon, ShoppingCartIcon, XIcon,BellIcon  } from '@heroicons/react/24/outline';
+import { Bars3Icon, ShoppingCartIcon ,BellIcon  } from '@heroicons/react/24/outline';
+import { XIcon } from '@heroicons/react/24/solid';
+import axios from 'axios';
+axios.defaults.withCredentials = true;
 
 const navigation = [
   { name: 'Dashboard', href: '#', current: true },
@@ -23,13 +26,26 @@ const navigation = [
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
+async function handleLogout(setUser){
+
+    axios.post('http://localhost:8000/api/users/logout',
+    {headers: {'Content-Type': 'application/json'}, withCredentials: true })
+    .then(function (response) {
+      // set the user context and redirect:
+      setUser({loggedIn: false, userName: null, id: null})
+    })
+    .catch(function (error) {
+      console.log(error);
+    });
+
+}
 
 // Mock context for user authentication
 
 export default function NavBar({setCart}) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const { loggedIn, userName , id } = useContext(UserContext);
+  const {user,setUser} = useContext(UserContext);
 
   const handleSearch = async () => {
     try {
@@ -123,14 +139,14 @@ export default function NavBar({setCart}) {
                     </svg>
                   </button>
                 </div>
-                <button
+                {user.loggedIn && <button
                   type="button"
                   className="relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
                 >
                   <span className="absolute -inset-1.5" />
                   <span className="sr-only">View notifications</span>
                   <BellIcon className="h-6 w-6" aria-hidden="true" />
-                </button>
+                </button>}
 
                 {/* Cart icon */}
                 <button
@@ -143,13 +159,13 @@ export default function NavBar({setCart}) {
                 </button>
 
                 {/* Profile dropdown or Sign in */}
-                {loggedIn ? (
+                {user.loggedIn ? (
                   <Menu as="div" className="relative ml-3">
                     <div>
                       <MenuButton className="relative flex rounded-full bg-gray-800 text-sm focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800">
                         <span className="absolute -inset-1.5" />
                         <span className="sr-only">Open user menu</span>
-                        <span className="text-white truncate">{userName}</span>
+                        <span className="text-white truncate">{user.userName}</span>
                       </MenuButton>
                     </div>
                     <Transition
@@ -190,6 +206,7 @@ export default function NavBar({setCart}) {
                         <MenuItem>
                           {({ focus }) => (
                             <a
+                              onClick={() => handleLogout(setUser)}
                               href="#"
                               className={classNames(
                                 focus ? 'bg-gray-100' : '',

@@ -62,13 +62,11 @@ class UserController:
         logout(request)
         return {"msg": "Logged out"}
 
-    def get_user(self, request, user_id: int) -> UserSchema:
+    def get_user(self, request) -> UserSchema:
         """
         returns the user with the given id,if the id matches the current session user id
         """
-        if not self._verify_user_id(request, user_id):
-            raise HttpError(401, "Unauthorized")
-        user = CustomUser.objects.get(id=user_id)
+        user = CustomUser.objects.get(id=request.user.id)
         return user
 
     def delete_user(self, request, user_id) -> any:

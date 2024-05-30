@@ -4,21 +4,16 @@ import NavBar from './navbar'; // Assuming Example component is in a separate fi
 import Footer from './footer'; // Assuming Example component is in a separate file
 import Cart from './cart'; // Assuming Example component is in a separate file
 
-const UserContext = React.createContext({
-  loggedIn: false,
-  userName: null,
-  id: null,
-});
 
 const Layout = ({ children }) => {
-  const [user, setUser] = React.useState({
-    loggedIn: false,
-    userName: null,
-    id: null,
-  });
-  const [cart, setCart] = React.useState(true);
+  // const [user, setUser] = React.useState({
+  //   loggedIn: false,
+  //   userName: null,
+  //   id: null,
+  // });
+  const [cart, setCart] = React.useState(false);
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    // <UserContext.Provider value={{ user, setUser }}>
     <div className="flex flex-col h-screen">
       {/* Navigation Bar */}
       <NavBar setCart = {setCart} />
@@ -35,9 +30,9 @@ const Layout = ({ children }) => {
       {/* </footer>  */}
       <Footer />
     </div>
-    </UserContext.Provider>
+    // </UserContext.Provider>
   );
 };
 
 export default Layout;
-export { UserContext };
+// export { UserContext };

@@ -1,3 +1,5 @@
+// import { useCsrfToken } from 'next-auth/react';
+
 /*
   This example requires some changes to your config:
 
@@ -12,7 +14,63 @@
   }
   ```
 */
+"use client"
+import axios from "axios"
+import Alert from '@mui/material/Alert';
+
+// import { headers } from "next/headers";
+axios.defaults.withCredentials = true;
+import { useState } from "react";
+import { UserContext } from "../layout";
+import { useContext } from "react";
+import {useRouter } from 'next/navigation';
 export default function Example() {
+
+  const [showAlert, setShowAlert] = useState(false)
+  const {user,setUser} = useContext(UserContext);
+
+  const router = useRouter()
+
+  async function login(formData) {
+
+    const rawFormData = {
+      username: formData.get('username'),
+      password: formData.get('password'),
+    }
+    axios.post('http://localhost:8000/api/users/login', {
+      username:  formData.get('username'),
+      password:  formData.get('password'),
+    },{headers: {'Content-Type': 'application/json'}, withCredentials: true })
+    .then(function (response) {
+      // set the user context and redirect:
+      setUser({loggedIn: true, userName: response.data.username, id: response.data.id})
+      router.push('/')
+
+
+    })
+    .catch(function (error) {
+      console.log(error);
+      setShowAlert(true)
+
+    });
+
+  //   const response = await fetch('http://localhost:8000/api/users/', {
+  //     method: 'GET',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       // 'accept': 'application/json',
+  //     },
+  //     credentials: 'include',
+  //   })
+  //   const data = await response.json()
+  //   if (response.ok) {
+  //     console.log(data)
+  //   } else {
+  //     console.error(data)
+  //   }
+
+
+  }
     return (
       <>
         {/*
@@ -36,18 +94,18 @@ export default function Example() {
           </div>
 
           <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-            <form className="space-y-6" action="#" method="POST">
+            <form className="space-y-6" action={login} >
               <div>
-                <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-                  Email address
+                <label htmlFor="username" className="block text-sm font-medium leading-6 text-gray-900">
+                  User Name
                 </label>
                 <div className="mt-2">
                   <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
+                    id="username"
+                    name="username"
+                    type="username"
                     required
+                    // onChange={(e)=>setUsername(e.target.value)}
                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   />
                 </div>
@@ -66,6 +124,7 @@ export default function Example() {
                     type="password"
                     autoComplete="current-password"
                     required
+                    // onChange={(e)=> setPassword(e.target.value)}
                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   />
                 </div>
@@ -87,6 +146,9 @@ export default function Example() {
                Register here
               </a>
             </p>
+            {showAlert && (
+            <Alert severity="error">Incorrect credentials, try again</Alert>
+            )}
           </div>
         </div>
       </>
