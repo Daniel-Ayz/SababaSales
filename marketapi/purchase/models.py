@@ -16,19 +16,56 @@ class Purchase(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE)
     purchase_id = models.AutoField(primary_key=True)
     purchase_date = models.DateTimeField(auto_now_add=True)
-    # total_price = models.DecimalField(max_digits=10, decimal_places=2)
-    # total_quantity = models.IntegerField()
-    # payment_method = models.CharField(max_length=50)
-    # delivery_method = models.CharField(max_length=50)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    total_quantity = models.IntegerField()
     # delivery_address = models.CharField(max_length=255)
     # delivery_date = models.DateTimeField()
     # status = models.CharField(max_length=50)
+    
+    def __str__(self):
+        return f"purchase {self.purchase_id} for cart {self.cart.id}"
+
 
 
 class PaymentMethod(BaseModel):
-    billing_address = models.CharField(max_length=100)
+   billing_address = models.CharField(max_length=100)
     currency = models.CharField(max_length=10)
     credit_card_number = models.CharField(max_length=16)
     expiration_date = models.DateField()
     security_code = models.CharField(max_length=3)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    
+# Talia:
+# i think we should add product and product basket models here 
+# and then add them to the purchase model by "get" function when creating a purchase
+# and not as another field in the purchase model
+#copied this from the user models
+class HistoryBasket(models.Model):
+    basket_id = models.AutoField(primary_key=True)
+    store_id = models.IntegerField()
+    # many-to-one relationship with Cart
+    purchase_id = models.ForeignKey(Purchase, on_delete=models.CASCADE)
+
+    total_price = models.FloatField()
+    total_quantity = models.IntegerField()
+
+    def __str__(self):
+        return f"basket for store {self.store_id}, in cart {self.cart.id}"
+
+
+class HistoryBasketProduct(models.Model):
+    """
+    Basket product associated with a single basket
+    """
+
+    quantity = models.IntegerField()
+    name = models.CharField(max_length=100, default="product")
+    # many-to-one relationship with Basket
+    history_basket = models.ForeignKey(
+        HistoryBasket, on_delete=models.CASCADE, related_name="products"
+    )
+    initial_price = models.FloatField()
+    post_discount_price = models.FloatField()
+
+    def __str__(self):
+        return self.name
