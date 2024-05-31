@@ -19,9 +19,14 @@ pc = purchaseController()
 
 
 # -------------------- Get history --------------------
-@router.get("/{user_id}/get_purchase_history", response=List[PurchaseSchema])
+@router.get("/{user_id}/get_purchase_history", response=List[PurchaseSchema]) # response should be changed to the correct schema
 def get_purchase_history(request, user_id: int):
     return pc.get_purchase_history(request, user_id)
+
+# -------------------- Get purchase receipt --------------------
+@router.get("/{purchase_id}/get_purchase_receipt", response=PurchaseSchema) # response should be changed to the correct schema
+def get_purchase_receipt(request, purchase_id: int):
+    return pc.get_purchase_receipt(request, purchase_id)
 
 
 # -------------------- Make Purchase --------------------

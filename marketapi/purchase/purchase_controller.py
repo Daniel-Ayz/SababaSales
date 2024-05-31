@@ -38,13 +38,67 @@ class purchaseController:
 
     def get_purchase_history(self, request, user_id: int):
         try:
+            purchase_history = {}
             cart_ids = Cart.objects.filter(user_id=user_id).values_list("id", flat=True)
-            purchase_history = Purchase.objects.filter(cart_id__in=cart_ids)
-
+            purchase_ids = Purchase.objects.filter(cart_id__in=cart_ids).values_list("purchase_id", flat=True)
+            for purchase_id in purchase_ids:
+                purchase_history[purchase_id] = self.get_purchase_receipt(request, purchase_id)
             return purchase_history
 
         except CustomUser.DoesNotExist as e:
             raise HttpError(404, f'error": "User not found')
+        except HttpError as e:
+            raise e
+        except Exception as e:
+            raise HttpError(404, f'error": {str(e)}')
+        
+    # -------------------- Get purchase receipt --------------------
+    def get_purchase_receipt(self, request, purchase_id: int):
+        try:
+            purchase = Purchase.objects.get(purchase_id=purchase_id)
+            purchase_receipt = {
+                "purchase_id": purchase.purchase_id,
+                "purchase_date": purchase.purchase_date,
+                "total_price": purchase.total_price,
+                "total_quantity": purchase.total_quantity,
+                "cart_id": purchase.cart, #not sure
+                "baskets": [],
+            }
+
+            history_baskets = HistoryBasket.objects.filter(purchase_id=purchase_id)
+            for history_basket in history_baskets:
+                history_basket_schema = {
+                    "basket_id": history_basket.basket_id,
+                    "store_id": history_basket.store_id,
+                    "total_price": history_basket.total_price,
+                    "total_quantity": history_basket.total_quantity,
+                    "discount": history_basket.discount,
+                    "basket_products": [],
+                }
+
+                history_basket_products = HistoryBasketProduct.objects.filter(
+                    history_basket_id=history_basket.basket_id
+                )
+                for history_basket_product in history_basket_products:
+                    history_basket_product_schema = {
+                        "quantity": history_basket_product.quantity,
+                        "name": history_basket_product.name,
+                        "initial_price": history_basket_product.initial_price,
+                    }
+                    history_basket_schema["basket_products"].append(
+                        history_basket_product_schema
+                    )
+
+                purchase_receipt["baskets"].append(history_basket_schema)
+
+            return purchase_receipt
+
+        except Purchase.DoesNotExist as e:
+            raise HttpError(404, f'error": "Purchase not found')
+        except HistoryBasket.DoesNotExist as e:
+            raise HttpError(404, f'error": "HistoryBasket not found')
+        except HistoryBasketProduct.DoesNotExist as e:
+            raise HttpError(404, f'error": "HistoryBasketProduct not found')
         except HttpError as e:
             raise e
         except Exception as e:
@@ -121,6 +175,7 @@ class purchaseController:
                     purchase_id=purchase.purchase_id,
                     total_price=response["total_price"],
                     total_quantity=total_basket_quantity,
+                    discount=response["discount"],
                 )
                 history_basket.save()
 
