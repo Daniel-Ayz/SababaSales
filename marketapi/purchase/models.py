@@ -29,11 +29,11 @@ class Purchase(models.Model):
 
 class PaymentMethod(BaseModel):
    billing_address = models.CharField(max_length=100)
-    currency = models.CharField(max_length=10)
-    credit_card_number = models.CharField(max_length=16)
-    expiration_date = models.DateField()
-    security_code = models.CharField(max_length=3)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+   currency = models.CharField(max_length=10)
+   credit_card_number = models.CharField(max_length=16)
+   expiration_date = models.DateField()
+   security_code = models.CharField(max_length=3)
+   total_price = models.DecimalField(max_digits=10, decimal_places=2)
     
 # Talia:
 # i think we should add product and product basket models here 
@@ -48,6 +48,7 @@ class HistoryBasket(models.Model):
 
     total_price = models.FloatField()
     total_quantity = models.IntegerField()
+    discount = models.FloatField()
 
     def __str__(self):
         return f"basket for store {self.store_id}, in cart {self.cart.id}"
@@ -65,7 +66,6 @@ class HistoryBasketProduct(models.Model):
         HistoryBasket, on_delete=models.CASCADE, related_name="products"
     )
     initial_price = models.FloatField()
-    post_discount_price = models.FloatField()
 
     def __str__(self):
         return self.name

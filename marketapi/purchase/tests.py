@@ -186,7 +186,7 @@ class TestPurchase(TestCase):
         
 
     # Test 5: Positive test case, get purchase history
-   def test_get_purchase_history_positive(self):
+    def test_get_purchase_history_positive(self):
         # Perform the test
         response = self.client.get(f"/{self.user_id}/get_purchase_history")
         self.assertEqual(response.status_code, 200)
