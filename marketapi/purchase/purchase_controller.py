@@ -7,12 +7,12 @@ import users.api
 
 from ninja import Router
 
-from store.schemas import PurchaseStoreProductSchema
+from store.schemas import HistoryBasketProductSchema, PurchaseStoreProductSchema
 from store.store_controller import StoreController
 
 
 from users.models import Cart, CustomUser, Basket, BasketProduct
-from purchase.models import Purchase
+from purchase.models import HistoryBasket, HistoryBasketProduct, Purchase
 from datetime import datetime
 
 from purchase.adapters.payment_service import AbstractPaymentService
@@ -86,7 +86,8 @@ class purchaseController:
             cart = get_object_or_404(Cart, id=cart_id)
 
             purchase = Purchase.objects.create(cart=cart, purchase_date=datetime.now())
-
+            total_price = 0
+            total_quantity = 0
             for basket in Basket.objects.filter(cart_id=cart_id).values():
                 store_id = basket["store_id"]
                 products_list = []
@@ -101,10 +102,40 @@ class purchaseController:
                     products_list.append(schema)
 
                 # print(products_list)
-                sc.purchase_product(
+                response = sc.purchase_product(
                     request=None, store_id=store_id, payload=products_list
                 )
                 # store.api.purchase_product(request, store_id, products_list)
+
+                # calculate total price and quantity per basket
+                total_price += response["total_price"] 
+                total_basket_quantity = 0
+                for basket_product in response["history products basket"]:
+                    total_basket_quantity += basket_product.quantity
+
+                total_quantity += total_basket_quantity
+
+                history_basket = HistoryBasket.objects.create(
+                    store_id=store_id,
+                    purchase_id=purchase.purchase_id,
+                    total_price=response["total_price"],
+                    total_quantity=total_basket_quantity,
+                )
+                history_basket.save()
+
+                for basket_product_schema in response["history products basket"]:
+                    history_basket_product = HistoryBasketProduct.objects.create(
+                        quantity = basket_product_schema.quantity,
+                        name=basket_product_schema.product_name,
+                        initial_price=basket_product_schema.initial_price,
+                        post_discount_price=basket_product_schema.post_discount_price,
+                        history_basket_id= history_basket.basket_id
+                    )
+                    history_basket_product.save()
+
+            Purchase.objects.update(
+                total_price=total_price, total_quantity=total_quantity, purchase=purchase
+            )
 
             purchase.save()
             return {"message": "Purchase added successfully"}
