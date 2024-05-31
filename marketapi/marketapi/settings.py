@@ -54,8 +54,11 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True  # For development only, adjust accordingly for production
-
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_WHITELIST = [
+    "http://localhost:3000",  # Add your frontend URL here
+    "http://127.0.0.1:3000",
+]
 ROOT_URLCONF = "marketapi.urls"
 
 TEMPLATES = [
@@ -125,3 +128,4 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+# SESSION_COOKIE_SAMESITE = 'None'

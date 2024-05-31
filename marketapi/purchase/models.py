@@ -27,23 +27,14 @@ class Purchase(models.Model):
 
 
 
-class PaymentServiceType(str, Enum):
-    PAYPAL = "paypal"
-    CREDIT_CARD = "credit_card"
-    BANK_TRANSFER = "bank_transfer"
-    # Add other payment services as needed
-
-
 class PaymentMethod(BaseModel):
-    service: PaymentServiceType  # Using the enum for service type
-    currency: str
-    amount: float
-    billing_address: str
-    additional_info: Optional[dict] = Field(
-        default_factory=dict
-    )  # For any extra details specific to the service
-
-
+   billing_address = models.CharField(max_length=100)
+    currency = models.CharField(max_length=10)
+    credit_card_number = models.CharField(max_length=16)
+    expiration_date = models.DateField()
+    security_code = models.CharField(max_length=3)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    
 # Talia:
 # i think we should add product and product basket models here 
 # and then add them to the purchase model by "get" function when creating a purchase
