@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Union
 
 from ninja import Schema
 
@@ -91,28 +91,83 @@ class PurchasePolicySchemaIn(Schema):
     min_items_per_purchase: Optional[int] = None  # Optional
 
 
-class DiscountBaseSchema(Schema):
+class StoreProductSchemaOut(Schema):
+    name: str
+    initial_price: float
+    quantity: int
+    store: StoreSchemaOut
+    category: str
+
+
+class StoreProductSchemaIn(Schema):
+    name: str
+    initial_price: float
+    quantity: int
+    category: str
+
+
+class PurchaseStoreProductSchema(Schema):
+    product_name: str
+    quantity: int
+    category: str
+
+
+class RemoveDiscountSchemaIn(Schema):
     store_id: int
-    discount_type: str
+    discount_id: int
+
+class DiscountBaseSchemaIn(Schema):
+    store_id: int
+    #id: Optional[int] = None
+    #discount_type: str
+    is_root: bool
 
     class Meta:
         abstract = True
 
 
-class SimpleDiscountSchema(DiscountBaseSchema):
+class SimpleDiscountSchemaIn(DiscountBaseSchemaIn):
     percentage: float
-    applicable_products: list[str]
+    applicable_products: Optional[list[str]] = None
+    applicable_categories: Optional[list[str]] = None
 
 
-class ConditionalDiscountSchema(DiscountBaseSchema):
+class ConditionalDiscountSchemaIn(DiscountBaseSchemaIn):
     condition_name: str
-    discount: DiscountBaseSchema
+    discount: Union[SimpleDiscountSchemaIn, 'ConditionalDiscountSchemaIn', 'CompositeDiscountSchemaIn']
 
 
-class CompositeDiscountSchema(DiscountBaseSchema):
-    discounts: list[DiscountBaseSchema]
+class CompositeDiscountSchemaIn(DiscountBaseSchemaIn):
+    discounts: list[Union[SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, 'CompositeDiscountSchemaIn']]
     combine_function: str
+    conditions: list[str]
 
+
+class DiscountBaseSchemaOut(Schema):
+    store: StoreSchemaOut
+    id: int
+    #discount_type: str
+    is_root: bool
+
+    class Meta:
+        abstract = True
+
+
+class SimpleDiscountSchemaOut(DiscountBaseSchemaOut):
+    percentage: float
+    applicable_products: Optional[list[StoreProductSchemaOut]] = None
+    applicable_categories: Optional[str] = '[]'
+
+
+class ConditionalDiscountSchemaOut(DiscountBaseSchemaOut):
+    condition_name: str
+    discount: Union[SimpleDiscountSchemaOut, 'ConditionalDiscountSchemaOut', 'CompositeDiscountSchemaOut']
+
+
+class CompositeDiscountSchemaOut(DiscountBaseSchemaOut):
+    discounts: list[Union[SimpleDiscountSchemaOut, ConditionalDiscountSchemaOut, 'CompositeDiscountSchemaOut']]
+    combine_function: str
+    conditions: str
 
 # class DiscountPolicySchemaOut(Schema):
 #     store: StoreSchemaOut
@@ -124,22 +179,5 @@ class CompositeDiscountSchema(DiscountBaseSchema):
 #     min_items: Optional[int] = None  # Optional
 #     min_price: Optional[float] = None  # Optional
 
-
-class StoreProductSchemaOut(Schema):
-    name: str
-    initial_price: float
-    quantity: int
-    store: StoreSchemaOut
-
-
-class StoreProductSchemaIn(Schema):
-    name: str
-    initial_price: float
-    quantity: int
-
-
-class PurchaseStoreProductSchema(Schema):
-    product_name: str
-    quantity: int
 
 #OwnerSchema.update_forward_refs() not sure if needed

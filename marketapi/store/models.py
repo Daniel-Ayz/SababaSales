@@ -1,4 +1,7 @@
 from django.db import models
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
+from polymorphic.models import PolymorphicModel
 
 
 class Store(models.Model):
@@ -80,29 +83,43 @@ class StoreProduct(models.Model):
     initial_price = models.FloatField()
     quantity = models.IntegerField()
     name = models.CharField(max_length=255)
+    category = models.CharField(max_length=255)
 
     def __str__(self):
         return self.name
 
 
-class DiscountBase(models.Model):
-    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='discounts')
-    discount_type = models.CharField(max_length=50)
-
-    class Meta:
-        abstract = True
+class DiscountBase(PolymorphicModel):
+    store = models.ForeignKey(Store, on_delete=models.CASCADE)
+    #discount_type = models.CharField(max_length=50)
+    is_root = models.BooleanField(default=False)
 
 
 class SimpleDiscount(DiscountBase):
     percentage = models.FloatField()
-    applicable_items = models.ManyToManyField(StoreProduct, related_name='simple_discounts')
+    applicable_products = models.ManyToManyField(StoreProduct, related_name='simple_discounts')
+    applicable_categories = models.TextField(null=True, blank=True)
 
 
 class ConditionalDiscount(DiscountBase):
     condition_name = models.CharField(max_length=255)
-    discount = models.ForeignKey(DiscountBase, on_delete=models.CASCADE, related_name='conditional_discounts')
+    discount = models.ForeignKey("DiscountBase", on_delete=models.CASCADE, related_name='conditional_discounts')
+
+
+@receiver(pre_delete, sender=ConditionalDiscount)
+def delete_associated_discount(sender, instance, **kwargs):
+    if instance.discount:
+        instance.discount.delete()
 
 
 class CompositeDiscount(DiscountBase):
-    discounts = models.ManyToManyField(DiscountBase, related_name='composite_discounts')
+    discounts = models.ManyToManyField("DiscountBase", related_name='composite_discounts')
     combine_function = models.CharField(max_length=50)
+    conditions = models.TextField(null=True, blank=True)
+
+
+@receiver(pre_delete, sender=CompositeDiscount)
+def cascade_delete_discounts(sender, instance, **kwargs):
+    # Delete all related discounts
+    for discount in instance.discounts.all():
+        discount.delete()
