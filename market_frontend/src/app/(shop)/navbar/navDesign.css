@@ -7,7 +7,8 @@
     margin-left:4vw;
     margin-top: 10px;
     display: grid;
-    grid-template-areas: 'logo search categories delivery cart sign';
+    column-gap: 0px;
+    grid-template-areas: 'logo search space space categories delivery cart sign';
 }
 
 .logo{
@@ -24,6 +25,7 @@
 
 .categories{
     grid-area: categories;
+    width: 50px !important;
 }
 .categoriesDrop {
     grid-area: categories;
@@ -34,10 +36,69 @@
     grid-area: delivery;
 }
 
+
 .shoppingCart{
     grid-area: cart;
+    width: 30px;
+    height: 30px;
+    display: block;
+    margin: auto;
+    margin-top: 10px;
+}
+
+
+.shoppingCartRef{
+    grid-area: cart;
+    width: 80px;
+    height: 45px;
+    border-radius: 5px;
+}
+
+.shoppingCartRef:hover {
+    background-color: white;
 }
 
 .signIn{
     grid-area: sign;
+    width: 100px;
+    height: 50px;
+    border-radius: 5px;
 }
+.space{
+    grid-area: space;
+    width: 200px;
+}
+.signIn:hover{
+    background-color: white;
+}
+
+.signInName{
+    display: inline-block;
+    margin-top: 13px;
+    margin-left: 23px;
+}
+
+.deliveryTruck{
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    margin:auto;
+
+}
+
+.deliveryLoc{
+    display: inline-block;
+    margin:auto;
+}
+
+.deliveryContainer{
+    display: flex;
+    width:170px;
+    height: 50px;
+    border-radius: 5px;
+}
+
+.deliveryContainer:hover {
+    background-color: white;
+}
+

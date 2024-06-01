@@ -3,7 +3,9 @@ import React, { useContext, useState } from 'react'; // Import React and hooks
 import Link from 'next/link';
 import { CATEGORIES } from './categoriesMock'; 
 import Categories from '@/app/(shop)/navbar/categories';
+import DeliverTo from '@/app/(shop)/navbar/deliverTo';
 import { IoLogoXbox , IoIosArrowDown } from "react-icons/io";
+import {LuShoppingCart} from "react-icons/lu"
 import { UserContext } from '../layout'; // Import the UserContext
 export default function Nav() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,7 +59,11 @@ export default function Nav() {
                   </button>
                 </div>
         </div>
+        <div className='space'></div>
         <Categories className="categories" categoriesDict={CATEGORIES} />
+        <DeliverTo className="delivery" location={"Israel"}/>
+        <a href="#" className='shoppingCartRef'><LuShoppingCart className='shoppingCart'/></a>
+        <a href="#" className='signIn'><h3 className='signInName'><b>Sign in</b></h3></a>
       </div>
     </div>
   );
