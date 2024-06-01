@@ -567,8 +567,8 @@ class StoreController:
         total_price = sum([product.initial_price * item.quantity for product, item in zip(products, payload)])
         original_total_price = total_price
 
-        original_prices = {product.name: product.initial_price * item.quantity for product, item in
-                           zip(products, payload)}
+        original_prices = [{product.name: product.initial_price * item.quantity} for product, item in
+                           zip(products, payload)]
 
         # Check purchase policy limits
         store_purchase_policy = get_object_or_404(PurchasePolicy, store=store)
@@ -618,5 +618,7 @@ class StoreController:
         for discount_model in all_discount_models:
             discount_instance = self.get_discount_instance(discount_model, store)
             if discount_instance:
-                total_discount += discount_instance.apply_discount(purchase_products)
+                discount = discount_instance.apply_discount(purchase_products)
+                if discount:
+                    total_discount += discount
         return total_discount
