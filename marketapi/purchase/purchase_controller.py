@@ -7,12 +7,11 @@ import users.api
 
 from ninja import Router
 
-from store.schemas import PurchaseStoreProductSchema
+from store.schemas import HistoryBasketProductSchema, PurchaseStoreProductSchema
 from store.store_controller import StoreController
 
-
 from users.models import Cart, CustomUser, Basket, BasketProduct
-from purchase.models import Purchase
+from purchase.models import HistoryBasket, HistoryBasketProduct, Purchase
 from datetime import datetime
 
 from purchase.adapters.payment_service import AbstractPaymentService
@@ -20,14 +19,17 @@ from purchase.adapters.delivery_service import (
     AbstractDeliveryService,
 )  # Use actual delivery service when available
 
+from users.usercontroller import UserController
+
+
 router = Router()
 
 sc = StoreController()
+uc = UserController()
+
 
 payment_service = AbstractPaymentService()
-delivery_service = (
-    AbstractDeliveryService()
-)  # Replace with RealDeliveryService when available
+delivery_service = AbstractDeliveryService()
 
 
 class purchaseController:
@@ -36,13 +38,67 @@ class purchaseController:
 
     def get_purchase_history(self, request, user_id: int):
         try:
+            purchase_history = {}
             cart_ids = Cart.objects.filter(user_id=user_id).values_list("id", flat=True)
-            purchase_history = Purchase.objects.filter(cart_id__in=cart_ids)
-
+            purchase_ids = Purchase.objects.filter(cart_id__in=cart_ids).values_list("purchase_id", flat=True)
+            for purchase_id in purchase_ids:
+                purchase_history[purchase_id] = self.get_purchase_receipt(request, purchase_id)
             return purchase_history
 
         except CustomUser.DoesNotExist as e:
             raise HttpError(404, f'error": "User not found')
+        except HttpError as e:
+            raise e
+        except Exception as e:
+            raise HttpError(404, f'error": {str(e)}')
+        
+    # -------------------- Get purchase receipt --------------------
+    def get_purchase_receipt(self, request, purchase_id: int):
+        try:
+            purchase = Purchase.objects.get(purchase_id=purchase_id)
+            purchase_receipt = {
+                "purchase_id": purchase.purchase_id,
+                "purchase_date": purchase.purchase_date,
+                "total_price": purchase.total_price,
+                "total_quantity": purchase.total_quantity,
+                "cart_id": purchase.cart, #not sure
+                "baskets": [],
+            }
+
+            history_baskets = HistoryBasket.objects.filter(purchase_id=purchase_id)
+            for history_basket in history_baskets:
+                history_basket_schema = {
+                    "basket_id": history_basket.basket_id,
+                    "store_id": history_basket.store_id,
+                    "total_price": history_basket.total_price,
+                    "total_quantity": history_basket.total_quantity,
+                    "discount": history_basket.discount,
+                    "basket_products": [],
+                }
+
+                history_basket_products = HistoryBasketProduct.objects.filter(
+                    history_basket_id=history_basket.basket_id
+                )
+                for history_basket_product in history_basket_products:
+                    history_basket_product_schema = {
+                        "quantity": history_basket_product.quantity,
+                        "name": history_basket_product.name,
+                        "initial_price": history_basket_product.initial_price,
+                    }
+                    history_basket_schema["basket_products"].append(
+                        history_basket_product_schema
+                    )
+
+                purchase_receipt["baskets"].append(history_basket_schema)
+
+            return purchase_receipt
+
+        except Purchase.DoesNotExist as e:
+            raise HttpError(404, f'error": "Purchase not found')
+        except HistoryBasket.DoesNotExist as e:
+            raise HttpError(404, f'error": "HistoryBasket not found')
+        except HistoryBasketProduct.DoesNotExist as e:
+            raise HttpError(404, f'error": "HistoryBasketProduct not found')
         except HttpError as e:
             raise e
         except Exception as e:
@@ -53,40 +109,40 @@ class purchaseController:
     def make_purchase(
         self,
         request,
+        user_id: int,  # the user that purchases this cart
         cart_id: int,
-        flag_delivery: bool = False,
-        flag_payment: bool = False,
+        flag_delivery: bool = True,
+        flag_payment: bool = True,
     ):
         try:
-            # integrate delivery service and payment service
-            # TODO: somehow get address - probably from user facade
-            # TODO: same about package details
-            address = "Test address"
+            # demo data
+            # TODO: package details
             package_details = "Test package details"
-            payment_method = {
-                "service": "paypal",
-                "currency": "USD",
-                "amount": 100.0,
-                "billing_address": "Test billing address",
+
+            delivery_address = uc.get_user_address(user_id)
+            payment_information_user = uc.get_user_payment_information(user_id)
+
+            currency = payment_information_user["currency"]
+            billing_address = payment_information_user["billing_address"]
+            credit_card_number = payment_information_user["credit_card_number"]
+            expiration_date = payment_information_user["expiration_date"]
+            security_code = payment_information_user["security_code"]
+            payment_details = {
+                "currency": currency,
+                "billing_address": billing_address,
+                "credit_card_number": credit_card_number,
+                "expiration_date": expiration_date,
+                "security_code": security_code,
+                "total_price": 0,
             }
 
-            delivery_result = delivery_service.create_shipment(
-                address, package_details, flag_delivery
-            )
-            if not delivery_result:
-                raise HttpError(400, f'error": "Delivery failed')
-            # if delivery is ok:
-            # TODO: somehow get payment method - probably from user facade, or even argument
-            payment_result = payment_service.process_payment(
-                payment_method, flag_payment
-            )
-            if not payment_result:
-                raise HttpError(400, f'error": "Payment failed')
             # if payment is ok:
             cart = get_object_or_404(Cart, id=cart_id)
 
             purchase = Purchase.objects.create(cart=cart, purchase_date=datetime.now())
-
+            total_price = 0
+            total_quantity = 0
+            item_counter = 0  # this is for the delivery service - idk why not
             for basket in Basket.objects.filter(cart_id=cart_id).values():
                 store_id = basket["store_id"]
                 products_list = []
@@ -99,12 +155,59 @@ class purchaseController:
                         product_name=name, quantity=quantity
                     )
                     products_list.append(schema)
+                    item_counter += quantity
 
                 # print(products_list)
-                sc.purchase_product(
+                response = sc.purchase_product(
                     request=None, store_id=store_id, payload=products_list
+                )["total_price"]
+                
+                # calculate total price and quantity per basket
+                total_price += response["total_price"] 
+                total_basket_quantity = 0
+                for basket_product in response["history products basket"]:
+                    total_basket_quantity += basket_product.quantity
+
+                total_quantity += total_basket_quantity
+
+                history_basket = HistoryBasket.objects.create(
+                    store_id=store_id,
+                    purchase_id=purchase.purchase_id,
+                    total_price=response["total_price"],
+                    total_quantity=total_basket_quantity,
+                    discount=response["discount"],
                 )
-                # store.api.purchase_product(request, store_id, products_list)
+                history_basket.save()
+
+                for basket_product_schema in response["history products basket"]:
+                    history_basket_product = HistoryBasketProduct.objects.create(
+                        quantity = basket_product_schema.quantity,
+                        name=basket_product_schema.product_name,
+                        initial_price=basket_product_schema.initial_price,
+                        post_discount_price=basket_product_schema.post_discount_price,
+                        history_basket_id= history_basket.basket_id
+                    )
+                    history_basket_product.save()
+
+            delivery_result = delivery_service.create_shipment(
+                delivery_address, item_counter, flag_delivery
+            )  # we are passing address, total amount of items and a flag for the delivery service
+
+            if delivery_result["result"]:
+                raise HttpError(400, f'error": "Delivery failed')
+                
+            total_price += delivery_result["delivery_fee"]
+
+            payment_details["total_price"] = total_price
+            payment_result = payment_service.process_payment(
+                payment_details, flag_payment
+            )
+            if payment_result["result"]:
+                raise HttpError(400, f'error": "Payment failed')
+
+            Purchase.objects.update(
+                total_price=total_price, total_quantity=total_quantity, purchase=purchase
+            )
 
             purchase.save()
             return {"message": "Purchase added successfully"}

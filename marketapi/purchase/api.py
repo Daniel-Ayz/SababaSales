@@ -19,24 +19,34 @@ pc = purchaseController()
 
 
 # -------------------- Get history --------------------
-@router.get("/{user_id}/get_purchase_history", response=List[PurchaseSchema])
+@router.get("/{user_id}/get_purchase_history", response=List[PurchaseSchema]) # response should be changed to the correct schema
 def get_purchase_history(request, user_id: int):
     return pc.get_purchase_history(request, user_id)
+
+# -------------------- Get purchase receipt --------------------
+@router.get("/{purchase_id}/get_purchase_receipt", response=PurchaseSchema) # response should be changed to the correct schema
+def get_purchase_receipt(request, purchase_id: int):
+    return pc.get_purchase_receipt(request, purchase_id)
 
 
 # -------------------- Make Purchase --------------------
 
 
-@router.post("/{cart_id}/make_purchase")
-def make_purchase(request, cart_id: int):
-    return pc.make_purchase(request, cart_id, flag_delivery=False, flag_payment=False)
+@router.post("/{user_id}/{cart_id}/make_purchase")
+def make_purchase(request, user_id, cart_id: int):
+    return pc.make_purchase(
+        request, user_id, cart_id, flag_delivery=False, flag_payment=False
+    )
 
 
-@router.post("/{cart_id}/make_purchase_delivery_fail")
-def make_purchase(request, cart_id: int):
+# those are for tests
+@router.post("/{user_id}/{cart_id}/make_purchase_delivery_fail")
+def make_purchase(request, user_id, cart_id: int):
     return pc.make_purchase(request, cart_id, flag_delivery=True, flag_payment=False)
 
 
-@router.post("/{cart_id}/make_purchase_payment_fail")
-def make_purchase(request, cart_id: int):
-    return pc.make_purchase(request, cart_id, flag_delivery=False, flag_payment=True)
+@router.post("/{user_id}/{cart_id}/make_purchase_payment_fail")
+def make_purchase(request, user_id, cart_id: int):
+    return pc.make_purchase(
+        request, user_id, cart_id, flag_delivery=False, flag_payment=True
+    )
