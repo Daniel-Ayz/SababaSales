@@ -7,11 +7,11 @@ from ninja.errors import HttpError
 
 from .discount import SimpleDiscountClass, ConditionalDiscountClass, CompositeDiscountClass
 from .models import Store, Owner, Manager, ManagerPermission, PurchasePolicy, StoreProduct, SimpleDiscount, \
-    ConditionalDiscount, CompositeDiscount, DiscountBase
+    ConditionalDiscount, CompositeDiscount, DiscountBase, Condition
 from .schemas import StoreSchemaIn, OwnerSchemaIn, ManagerPermissionSchemaIn, PurchasePolicySchemaIn, \
     StoreProductSchemaIn, ManagerSchemaIn, RoleSchemaIn, PurchaseStoreProductSchema, RemoveOwnerSchemaIn, \
     RemoveManagerSchemaIn, SimpleDiscountSchemaIn, CompositeDiscountSchemaIn, \
-    ConditionalDiscountSchemaIn, RemoveDiscountSchemaIn
+    ConditionalDiscountSchemaIn, RemoveDiscountSchemaIn, ConditionalDiscountSchemaOut, CompositeDiscountSchemaOut
 
 router = Router()
 
@@ -361,8 +361,15 @@ class StoreController:
         discount = ConditionalDiscount.objects.create(
             is_root=payload.is_root,
             store=store,
-            condition_name=payload.condition_name,
             discount=base_discount
+        )
+
+        condition = Condition.objects.create(
+            applies_to=payload.condition.applies_to,
+            name_of_apply=payload.condition.name_of_apply,
+            condition=payload.condition.condition,
+            value=payload.condition.value,
+            discount=discount
         )
 
         return {"message": "Conditional discount policy added successfully", "discount": discount}
@@ -379,9 +386,19 @@ class StoreController:
             is_root=payload.is_root,
             store=store,
             combine_function=payload.combine_function,
-            conditions=json.dumps(payload.conditions)
         )
         discount.discounts.set(discounts)
+
+        for conditions in payload.conditions:
+            condition = Condition.objects.create(
+                applies_to=conditions.applies_to,
+                name_of_apply=conditions.name_of_apply,
+                condition=conditions.condition,
+                value=conditions.value,
+                discount=discount
+            )
+
+
 
         return {"message": "Composite discount policy added successfully", "discount": discount}
 
@@ -602,12 +619,12 @@ class StoreController:
                 store=store
             )
         elif isinstance(discount_model, ConditionalDiscount):
-            condition_name = discount_model.condition_name
+            condition_name = discount_model.conditions.all()
             related_discount = self.get_discount_instance(discount_model.discount, store)
             return ConditionalDiscountClass(condition_name, related_discount, store)
         elif isinstance(discount_model, CompositeDiscount):
             discounts = [self.get_discount_instance(d, store) for d in discount_model.discounts.all()]
-            conditions = get_list_from_string(discount_model.conditions)
+            conditions = discount_model.conditions.all()
             return CompositeDiscountClass(discounts, discount_model.combine_function, conditions, store)
         return None
 

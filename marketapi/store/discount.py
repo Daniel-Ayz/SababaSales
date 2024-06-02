@@ -1,10 +1,13 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import List
 
-from .models import StoreProduct, Store
+from .conditions import logical_and, logical_or, logical_xor, build_condition_funcs
+from .models import StoreProduct, Store, Condition
 from .schemas import PurchaseStoreProductSchema
-from .conditions import condition_registry
 
+
+#from .conditions import condition_registry
 
 class Discount(ABC):
     @abstractmethod
@@ -30,7 +33,8 @@ class SimpleDiscountClass(Discount):
                     (prod for prod in self.applicable_products if prod.name == product.product_name), None)
                 price = target_product.initial_price * product.quantity
                 discount += price * self.percentage / 100
-            elif self.applicable_categories is not None and (product.category in self.applicable_categories or self.applicable_categories == ["all"]):
+            elif self.applicable_categories is not None and (
+                    product.category in self.applicable_categories or self.applicable_categories == ["all"]):
                 item = StoreProduct.objects.get(name=product.product_name, store=self.store)
                 price = item.initial_price * product.quantity
                 discount += price * self.percentage / 100
@@ -44,7 +48,7 @@ class ConditionalDiscountClass(Discount):
         self.store = store
 
     def apply_discount(self, cart_products: List[PurchaseStoreProductSchema]):
-        condition_func = condition_registry.get(self.condition_name)
+        condition_func = build_condition_funcs(self.condition_name)[0]
         products = [StoreProduct.objects.get(name=product.product_name, store=self.store) for product in cart_products]
         if condition_func(cart_products, products):
             return self.discount.apply_discount(cart_products)
@@ -52,7 +56,7 @@ class ConditionalDiscountClass(Discount):
 
 
 class CompositeDiscountClass(Discount):
-    def __init__(self, discounts, combine_function, conditions, store):
+    def __init__(self, discounts, combine_function, conditions: List[Condition], store):
         self.discounts = discounts
         self.combine_function = combine_function
         self.conditions = conditions
@@ -67,20 +71,9 @@ class CompositeDiscountClass(Discount):
         }
 
         products = [StoreProduct.objects.get(name=product.product_name, store=self.store) for product in cart_products]
-        condition_funcs = [condition_registry.get(condition) for condition in self.conditions]
+        condition_funcs = build_condition_funcs(self.conditions)
         if self.combine_function == 'max':
             return max(discount.apply_discount(cart_products) for discount in self.discounts)
         if combine_operations[self.combine_function](condition_funcs, cart_products, products):
             return sum(discount.apply_discount(cart_products) for discount in self.discounts)
 
-
-def logical_and(condition_funcs, cart_products, products):
-    return all(func(cart_products, products) for func in condition_funcs)
-
-
-def logical_or(condition_funcs, cart_products, products):
-    return any(func(cart_products, products) for func in condition_funcs)
-
-
-def logical_xor(condition_funcs, cart_products, products):
-    return sum(func(cart_products, products) for func in condition_funcs) == 1
