@@ -27,13 +27,13 @@ class Purchase(models.Model):
 
 
 
-class PaymentMethod(BaseModel):
-   billing_address = models.CharField(max_length=100)
-   currency = models.CharField(max_length=10)
-   credit_card_number = models.CharField(max_length=16)
-   expiration_date = models.DateField()
-   security_code = models.CharField(max_length=3)
-   total_price = models.DecimalField(max_digits=10, decimal_places=2)
+class PaymentMethod(models.Model):
+    billing_address = models.CharField(max_length=100)
+    currency = models.CharField(max_length=10)
+    credit_card_number = models.CharField(max_length=16)
+    expiration_date = models.DateField()
+    security_code = models.CharField(max_length=3)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
     
 # Talia:
 # i think we should add product and product basket models here 

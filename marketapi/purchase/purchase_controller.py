@@ -7,9 +7,10 @@ import users.api
 
 from ninja import Router
 
-from store.schemas import HistoryBasketProductSchema, PurchaseStoreProductSchema
+from store.schemas import PurchaseStoreProductSchema
 from store.store_controller import StoreController
 
+from purchase.schemas import HistoryBasketProductSchema
 from users.models import Cart, CustomUser, Basket, BasketProduct
 from purchase.models import HistoryBasket, HistoryBasketProduct, Purchase
 from datetime import datetime
