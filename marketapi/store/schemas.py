@@ -116,6 +116,7 @@ class RemoveDiscountSchemaIn(Schema):
     store_id: int
     discount_id: int
 
+
 class DiscountBaseSchemaIn(Schema):
     store_id: int
     #id: Optional[int] = None
@@ -168,6 +169,19 @@ class CompositeDiscountSchemaOut(DiscountBaseSchemaOut):
     discounts: list[Union[SimpleDiscountSchemaOut, ConditionalDiscountSchemaOut, 'CompositeDiscountSchemaOut']]
     combine_function: str
     conditions: str
+
+
+class SearchSchema(Schema):
+    product_name: Optional[str] = None
+    category: Optional[str] = None
+    store_id: Optional[int] = None
+
+
+class FilterSearchSchema(Schema):
+    min_price: Optional[float] = None
+    max_price: Optional[float] = None
+    min_quantity: Optional[int] = None
+    max_quantity: Optional[int] = None
 
 # class DiscountPolicySchemaOut(Schema):
 #     store: StoreSchemaOut
