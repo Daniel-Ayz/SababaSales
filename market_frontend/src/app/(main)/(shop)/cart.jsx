@@ -1,6 +1,7 @@
-import { Fragment, useState } from 'react'
+import { Fragment, useEffect, useState } from 'react'
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import axios from 'axios'
 
 
 const products = [
@@ -27,9 +28,74 @@ const products = [
   },
   // More products...
 ]
+async function removeProductFromCart(product, setDeletedProduct) {
+
+
+    axios.delete(`http://localhost:8000/api/users/cart/${product.id}`,
+    {headers: {'Content-Type': 'application/json'}, withCredentials: true})
+    .then(function (response) {
+      // set the user context and redirect:
+      console.log(response.data)
+      setDeletedProduct(true)
+
+
+    })
+    .catch(function (error) {
+      console.log('delete failed');
+      setDeletedProduct(false)
+
+    });
+  }
 
 // Cart.js
 function Cart({ isOpen, setCart }) {
+ const [cartData, setCartData] = useState(
+  {
+    products: [],
+  }
+ );
+ const [deletedProduct, setDeletedProduct] = useState(false);
+ const [totalPrice, setTotalPrice] = useState(0);
+
+ useEffect(() => {
+  if (isOpen) {
+    axios.get('http://localhost:8000/api/users/cart', {
+      headers: { 'Content-Type': 'application/json' },
+      withCredentials: true
+    })
+    .then(response => {
+      const cartData = response.data;
+      const productsList = [];
+      var price = 0;
+
+      cartData.baskets.forEach(basket => {
+        basket.basket_products.forEach(product => {
+          price += product.price * product.quantity;
+          productsList.push({
+            id: product.id,
+            store_product_id: product.store_product_id,
+            store_id: basket.store_id,
+            quantity: product.quantity,
+            name: product.name,
+            price: product.price,
+          });
+        });
+      });
+
+      // Update the cart state with fetched data
+      setCartData({ products: productsList });
+      setTotalPrice(price);
+      setDeletedProduct(false);
+    })
+    .catch(error => {
+      console.log(error)
+      // console.log('fetching cart failed');
+      // Handle errors here if needed
+    });
+  }
+}, [isOpen,deletedProduct]); // Dependency array includes isOpen to refetch when cart is opened
+
+
     return (
         <Transition show={isOpen}>
         <Dialog className="relative z-10" onClose={() => setCart(false)}>
@@ -76,12 +142,13 @@ function Cart({ isOpen, setCart }) {
                         <div className="mt-8">
                           <div className="flow-root">
                             <ul role="list" className="-my-6 divide-y divide-gray-200">
-                              {products.map((product) => (
+                              {cartData.products.map((product) => (
                                 <li key={product.id} className="flex py-6">
                                   <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                                     <img
-                                      src={product.imageSrc}
-                                      alt={product.imageAlt}
+                                    // this is a temporary image, replace with actual image
+                                      src={"https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-02.jpg"}
+                                      alt={"temp"}
                                       className="h-full w-full object-cover object-center"
                                     />
                                   </div>
@@ -92,7 +159,7 @@ function Cart({ isOpen, setCart }) {
                                         <h3>
                                           <a href={product.href}>{product.name}</a>
                                         </h3>
-                                        <p className="ml-4">{product.price}</p>
+                                        <p className="ml-4">${product.price}</p>
                                       </div>
                                       <p className="mt-1 text-sm text-gray-500">{product.color}</p>
                                     </div>
@@ -103,6 +170,7 @@ function Cart({ isOpen, setCart }) {
                                         <button
                                           type="button"
                                           className="font-medium text-indigo-600 hover:text-indigo-500"
+                                          onClick={() => removeProductFromCart(product,setDeletedProduct)}
                                         >
                                           Remove
                                         </button>
@@ -119,7 +187,7 @@ function Cart({ isOpen, setCart }) {
                       <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
                         <div className="flex justify-between text-base font-medium text-gray-900">
                           <p>Subtotal</p>
-                          <p>$262.00</p>
+                          <p>${totalPrice}</p>
                         </div>
                         <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
                         <div className="mt-6">

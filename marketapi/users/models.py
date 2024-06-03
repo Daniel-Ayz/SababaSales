@@ -64,8 +64,10 @@ class BasketProduct(models.Model):
     """
 
     # product_id = models.IntegerField()
+    store_product_id = models.IntegerField(default=0)
     quantity = models.IntegerField()
     name = models.CharField(max_length=100, default="product")
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     # many-to-one relationship with Basket
     basket = models.ForeignKey(
         Basket, on_delete=models.CASCADE, related_name="products"
