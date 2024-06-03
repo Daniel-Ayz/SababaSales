@@ -743,17 +743,52 @@ class StoreController:
         return total_discount
 
     def create_fake_data(self, request):
+        store_data = {
+            "Hummus Heaven": {
+                "category": "Food",
+                "products": ["Classic Hummus", "Spicy Hummus", "Garlic Hummus"],
+            },
+            "Falafel Fiesta": {
+                "category": "Food",
+                "products": ["Falafel Wrap", "Falafel Plate", "Falafel Salad"],
+            },
+            "Startup Nation Tech": {
+                "category": "Technology",
+                "products": [
+                    "Israeli Smartphone",
+                    "Kibbutz Laptop",
+                    "Jerusalem Smartwatch",
+                ],
+            },
+            "Tel Aviv Trends": {
+                "category": "Clothing",
+                "products": [
+                    "Sabra Designer Dress",
+                    "Negev Leather Jacket",
+                    "Eilat Running Shoes",
+                ],
+            },
+            "Book Bazaar Israel": {
+                "category": "Books",
+                "products": [
+                    "Hebrew Science Fiction Novel",
+                    "Israeli Cookbook",
+                    "Zionist Historical Biography",
+                ],
+            },
+            "Toy Town Israel": {
+                "category": "Toys",
+                "products": [
+                    "David Ben-Gurion Action Figure",
+                    "Israeli Board Game",
+                    "Jerusalem Puzzle Set",
+                ],
+            },
+        }
+
         stores = []
+        store_names = store_data.keys()
         for i in range(1, 7):
-            # fake name list - be creative
-            store_names = [
-                "Hummus Heaven",
-                "Falafel Fiesta",
-                "Shawarma Shenanigans",
-                "Sabich Surprise",
-                "Pita Paradise",
-                "Burekas Bonanza",
-            ]
             stores.append(
                 Store.objects.create(
                     name=store_names[i - 1],
@@ -761,19 +796,6 @@ class StoreController:
                     is_active=True,
                 )
             )
-
-        store_products = {
-            "Hummus Heaven": ["Classic Hummus", "Spicy Hummus", "Garlic Hummus"],
-            "Falafel Fiesta": ["Falafel Wrap", "Falafel Plate", "Falafel Salad"],
-            "Shawarma Shenanigans": [
-                "Chicken Shawarma",
-                "Beef Shawarma",
-                "Lamb Shawarma",
-            ],
-            "Sabich Surprise": ["Classic Sabich", "Spicy Sabich", "Sabich Salad"],
-            "Pita Paradise": ["Pita Bread", "Stuffed Pita", "Pita Chips"],
-            "Burekas Bonanza": ["Cheese Burekas", "Potato Burekas", "Spinach Burekas"],
-        }
 
         for i in range(0, 6):
             owner = Owner.objects.create(user_id=i, store=stores[i], is_founder=True)
@@ -793,7 +815,7 @@ class StoreController:
             for j in range(3):
                 product = StoreProduct.objects.create(
                     store=stores[i],
-                    name=store_products[stores[i]][j],
+                    name=store_data[stores[i]]["products"][j],
                     quantity=10,
                     initial_price=100,
                 )
@@ -804,7 +826,9 @@ class StoreController:
                     store=stores[i],
                     is_root=True,
                     percentage=10,
-                    applicable_categories=json.dumps(["Food"]),
+                    applicable_categories=json.dumps(
+                        [store_data[stores[i]]["category"]]
+                    ),
                 )
 
         return {"message": "Fake data created successfully"}
