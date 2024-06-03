@@ -202,10 +202,8 @@ class StoreAPITestCase(TestCase):
         # Verify the added simple discount policy is in the response
         added_policy = next((policy for policy in policies if policy["percentage"] == 15.0), None)
         assert added_policy is not None
-        print(added_policy["applicable_products"][0]["name"])
         assert added_policy["applicable_products"][0]["name"] == "Milk"
         assert added_policy["store"]["id"] == self.store_id
-        print(string_to_list(added_policy["applicable_categories"]))
         assert string_to_list(added_policy["applicable_categories"]) == ["Dairy"]
         assert added_policy["is_root"] is True
 
@@ -217,11 +215,19 @@ class StoreAPITestCase(TestCase):
             "applicable_products": ["Milk"]
         }
 
+        condition = {
+            "applies_to": "products",
+            "name_of_apply": "Milk",
+            "condition": "at_least",
+            "value": 5
+
+        }
+
         # Add the conditional discount policy
         conditional_discount_payload = {
             "store_id": self.store_id,
             "is_root": True,
-            "condition_name": "min_items_5",
+            "condition": condition,
             "discount": simple_discount_payload
         }
 
@@ -249,7 +255,7 @@ class StoreAPITestCase(TestCase):
         assert len(policies) > 0
 
         # Verify the added conditional discount policy is in the response
-        added_policy = next((policy for policy in policies if policy["condition_name"] == "min_items_5"), None)
+        added_policy = next((policy for policy in policies), None)
         category = string_to_list(added_policy["discount"]["applicable_categories"])
         assert added_policy is not None
         assert added_policy["store"]["id"] == self.store_id
@@ -268,7 +274,23 @@ class StoreAPITestCase(TestCase):
             "percentage": 10.0,
             "applicable_products": ["Cheese"]
         }
-        conditions = ['has_dairy', 'has_pastries']
+
+        condition1 = {
+            "applies_to": "category",
+            "name_of_apply": "Dairy",
+            "condition": "at_least",
+            "value": 1
+        }
+
+        condition2 = {
+            "applies_to": "category",
+            "name_of_apply": "Pastry",
+            "condition": "at_least",
+            "value": 1
+        }
+
+
+        conditions = [condition1, condition2]
         combine_function = 'logical_and'
 
         composite_discount_payload = {
@@ -290,7 +312,7 @@ class StoreAPITestCase(TestCase):
         })
 
         policies = response.json()
-        added_policy = next((policy for policy in policies if policy["combine_function"] == combine_function), None)
+        added_policy = next((policy for policy in policies), None)
         assert added_policy is not None
         assert added_policy["store"]["id"] == self.store_id
         assert added_policy["is_root"] is True
@@ -408,10 +430,17 @@ class StoreAPITestCase(TestCase):
             "applicable_products": ["Milk"]
         }
 
+        condition = {
+            "applies_to": "price",
+            "name_of_apply": "total_price",
+            "condition": "greater_than",
+            "value": 200
+        }
+
         conditional_discount_payload = {
             "store_id": self.store_id,
             "is_root": True,
-            "condition_name": "total_price_greater_than_200",
+            "condition": condition,
             "discount": simple_discount_payload
         }
 
@@ -436,8 +465,6 @@ class StoreAPITestCase(TestCase):
                 "category": "Dairy",
                 "quantity": 20
             }])
-
-        print(response.json())
         # Verify the response status code and message
         assert response.status_code == 200
         assert response.json()["total_price"] == 615.0
@@ -451,10 +478,17 @@ class StoreAPITestCase(TestCase):
             "applicable_products": ["Milk"]
         }
 
+        condition = {
+            "applies_to": "price",
+            "name_of_apply": "total_price",
+            "condition": "greater_than",
+            "value": 200
+        }
+
         conditional_discount_payload = {
             "store_id": self.store_id,
             "is_root": True,
-            "condition_name": "total_price_greater_than_200",
+            "condition": condition,
             "discount": simple_discount_payload
         }
 
@@ -493,7 +527,21 @@ class StoreAPITestCase(TestCase):
             "applicable_categories": ["Dairy"]
         }
 
-        conditions = ['has_dairy', 'has_pastries']
+        condition1 = {
+            "applies_to": "category",
+            "name_of_apply": "Dairy",
+            "condition": "at_least",
+            "value": 1
+        }
+        condition2 = {
+            "applies_to": "category",
+            "name_of_apply": "Pastry",
+            "condition": "at_least",
+            "value": 1
+        }
+
+
+        conditions = [condition1, condition2]
         combine_function = 'logical_xor'
 
         composite_discount_payload = {
@@ -527,7 +575,20 @@ class StoreAPITestCase(TestCase):
             "applicable_categories": ["Dairy"]
         }
 
-        conditions = ['has_dairy', 'has_pastries']
+        condition1 = {
+            "applies_to": "category",
+            "name_of_apply": "Dairy",
+            "condition": "at_least",
+            "value": 1
+        }
+        condition2 = {
+            "applies_to": "category",
+            "name_of_apply": "Pastry",
+            "condition": "at_least",
+            "value": 1
+        }
+
+        conditions = [condition1, condition2]
         combine_function = 'logical_xor'
 
         composite_discount_payload = {
@@ -554,7 +615,6 @@ class StoreAPITestCase(TestCase):
                 "quantity": 5
             }])
 
-        print(response.json())
 
         assert response.status_code == 200
         assert response.json()["total_price"] == 60.0
@@ -568,7 +628,21 @@ class StoreAPITestCase(TestCase):
             "applicable_categories": ["Pastry"]
         }
 
-        conditions = ['at_least_5_buns', 'at_least_2_bread_loafs']
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Bun",
+            "condition": "at_least",
+            "value": 5
+        }
+
+        condition2 = {
+            "applies_to": "product",
+            "name_of_apply": "Bread Loaf",
+            "condition": "at_least",
+            "value": 2
+        }
+
+        conditions = [condition1, condition2]
         combine_function = 'logical_and'
 
         composite_discount_payload = {
@@ -607,7 +681,21 @@ class StoreAPITestCase(TestCase):
             "applicable_categories": ["Pastry"]
         }
 
-        conditions = ['at_least_5_buns', 'at_least_2_bread_loafs']
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Bun",
+            "condition": "at_least",
+            "value": 5
+        }
+
+        condition2 = {
+            "applies_to": "product",
+            "name_of_apply": "Bread Loaf",
+            "condition": "at_least",
+            "value": 2
+        }
+
+        conditions = [condition1, condition2]
         combine_function = 'logical_and'
 
         composite_discount_payload = {
@@ -633,6 +721,8 @@ class StoreAPITestCase(TestCase):
                 "category": "Pastry",
                 "quantity": 1
             }])
+
+        print(response.json())
         assert response.status_code == 200
         assert response.json()["total_price"] == 15
         assert response.json()["original_price"] == 15
@@ -645,7 +735,21 @@ class StoreAPITestCase(TestCase):
             "applicable_categories": ["Dairy"]
         }
 
-        conditions = ['at_least_3_cottage_cheese', 'at_least_2_yogurts']
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Cottage Cheese",
+            "condition": "at_least",
+            "value": 3
+        }
+
+        condition2 = {
+            "applies_to": "product",
+            "name_of_apply": "Yogurt",
+            "condition": "at_least",
+            "value": 2
+        }
+
+        conditions = [condition1, condition2]
         combine_function = 'logical_or'
 
         composite_discount_payload = {
@@ -673,6 +777,8 @@ class StoreAPITestCase(TestCase):
             }])
 
 
+        print(response.json())
+
         assert response.status_code == 200
         assert response.json()["total_price"] == 12.35
         assert response.json()["original_price"] == 13
@@ -685,7 +791,21 @@ class StoreAPITestCase(TestCase):
             "applicable_categories": ["Dairy"]
         }
 
-        conditions = ['at_least_3_cottage_cheese', 'at_least_2_yogurts']
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Cottage Cheese",
+            "condition": "at_least",
+            "value": 3
+        }
+
+        condition2 = {
+            "applies_to": "product",
+            "name_of_apply": "Yogurt",
+            "condition": "at_least",
+            "value": 2
+        }
+
+        conditions = [condition1, condition2]
         combine_function = 'logical_or'
 
         composite_discount_payload = {
@@ -711,6 +831,7 @@ class StoreAPITestCase(TestCase):
                 "category": "Dairy",
                 "quantity": 1
             }])
+
 
         assert response.status_code == 200
         assert response.json()["total_price"] == 10
@@ -792,7 +913,6 @@ class StoreAPITestCase(TestCase):
             "quantity": 5
         }])
 
-        print(response.json())
         assert response.status_code == 200
         assert response.json()["total_price"] == 26.25
         assert response.json()["original_price"] == 35

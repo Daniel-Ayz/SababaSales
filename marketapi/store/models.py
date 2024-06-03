@@ -102,8 +102,10 @@ class SimpleDiscount(DiscountBase):
 
 
 class ConditionalDiscount(DiscountBase):
-    condition_name = models.CharField(max_length=255)
+    #condition_name = models.CharField(max_length=255)
     discount = models.ForeignKey("DiscountBase", on_delete=models.CASCADE, related_name='conditional_discounts')
+
+
 
 
 @receiver(pre_delete, sender=ConditionalDiscount)
@@ -115,7 +117,17 @@ def delete_associated_discount(sender, instance, **kwargs):
 class CompositeDiscount(DiscountBase):
     discounts = models.ManyToManyField("DiscountBase", related_name='composite_discounts')
     combine_function = models.CharField(max_length=50)
-    conditions = models.TextField(null=True, blank=True)
+    #conditions = models.TextField(null=True, blank=True)
+
+class Condition(models.Model):
+    applies_to = models.CharField(max_length=255) #product, category, time, age, price
+    name_of_apply = models.CharField(max_length=255) #name of the product, category, etc.
+    condition = models.CharField(max_length=255) #greater than, less than, equal
+    value = models.FloatField()
+    discount = models.ForeignKey(DiscountBase, on_delete=models.CASCADE, related_name='conditions')
+
+    def __str__(self):
+        return "condition for " + self.applies_to + " " + self.name_of_apply + " " + self.condition + " " + self.value
 
 
 @receiver(pre_delete, sender=CompositeDiscount)
