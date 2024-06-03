@@ -173,6 +173,6 @@ def search_products(request, search_query: SearchSchema, filter_query: FilterSea
     return sc.search_products(request, search_query, filter_query)
 
 
-@router.put("/stores/{store_id}/return_products")
-def return_products(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
-    return sc.return_products(request, store_id, payload)
+# @router.put("/stores/{store_id}/return_products")
+# def return_products(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
+#     return sc.return_products(request, store_id, payload)
