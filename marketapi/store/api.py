@@ -7,7 +7,6 @@ import warnings
 from .models import SimpleDiscount
 
 warnings.filterwarnings("ignore", category=UserWarning)
-
 from .schemas import StoreSchemaIn, StoreSchemaOut, OwnerSchemaIn, ManagerPermissionSchemaIn, PurchasePolicySchemaIn, \
     DiscountBaseSchemaIn, StoreProductSchemaIn, ManagerSchemaIn, OwnerSchemaOut, RoleSchemaIn, StoreProductSchemaOut, \
     PurchaseStoreProductSchema, DiscountBaseSchemaOut, RemoveDiscountSchemaIn, PurchasePolicySchemaOut, \
@@ -15,6 +14,7 @@ from .schemas import StoreSchemaIn, StoreSchemaOut, OwnerSchemaIn, ManagerPermis
     RemoveManagerSchemaIn, ManagerSchemaOut, SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, \
     CompositeDiscountSchemaIn, SimpleDiscountSchemaOut, ConditionalDiscountSchemaOut, CompositeDiscountSchemaOut, \
     SearchSchema, FilterSearchSchema
+
 from django.shortcuts import get_object_or_404, aget_object_or_404
 
 from .store_controller import StoreController
@@ -65,8 +65,12 @@ def remove_manager(request, payload: RemoveManagerSchemaIn):
 
 
 @router.post("/stores/{store_id}/change_manager_permissions")
-def assign_manager_permissions(request, payload: ManagerPermissionSchemaIn, manager: RoleSchemaIn,
-                               assigning_owner_id: int):
+def assign_manager_permissions(
+    request,
+    payload: ManagerPermissionSchemaIn,
+    manager: RoleSchemaIn,
+    assigning_owner_id: int,
+):
     return sc.assign_manager_permissions(request, payload, manager, assigning_owner_id)
 
 
@@ -105,19 +109,24 @@ def remove_purchase_policy(request, store_id: int, role: RoleSchemaIn):
     return sc.remove_purchase_policy(request, store_id, role)
 
 
-@router.get("/stores/{store_id}/get_purchase_policies", response=List[PurchasePolicySchemaOut])
+@router.get(
+    "/stores/{store_id}/get_purchase_policies", response=List[PurchasePolicySchemaOut]
+)
 def get_purchase_policy(request, store_id: int, role: RoleSchemaIn):
     return sc.get_purchase_policy(request, store_id, role)
 
 
 @router.post("/stores/{store_id}/add_discount_policy")
+
 def add_discount_policy(request, role: RoleSchemaIn, payload: Union[
     SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, CompositeDiscountSchemaIn]):  # SimpleDiscountSchemaIn | ConditionalDiscountSchemaIn | CompositeDiscountSchemaIn
     return sc.add_discount_policy(request, role, payload).get("message")
 
 
 @router.delete("/stores/{store_id}/remove_discount_policy")
-def remove_discount_policy(request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn):
+def remove_discount_policy(
+    request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
+):
     return sc.remove_discount_policy(request, role, payload)
 
 
@@ -155,6 +164,10 @@ def purchase_product(request, store_id: int, payload: List[PurchaseStoreProductS
     return sc.purchase_product(request, store_id, payload)
 
 
-@router.get("/stores/{store_id}/search", response=List[StoreProductSchemaOut])
+@router.post("/stores")
+def create_fake_data(request, payload: StoreSchemaIn):
+    return sc.create_fake_data(request, payload)
+
+  @router.get("/stores/{store_id}/search", response=List[StoreProductSchemaOut])
 def search_products(request, search_query: SearchSchema, filter_query: FilterSearchSchema):
     return sc.search_products(request, search_query, filter_query)
