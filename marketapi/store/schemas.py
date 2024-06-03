@@ -116,6 +116,11 @@ class RemoveDiscountSchemaIn(Schema):
     store_id: int
     discount_id: int
 
+class ConditionSchemaIn(Schema):
+    applies_to: str
+    name_of_apply: str
+    condition: str
+    value: float
 
 class DiscountBaseSchemaIn(Schema):
     store_id: int
@@ -134,14 +139,21 @@ class SimpleDiscountSchemaIn(DiscountBaseSchemaIn):
 
 
 class ConditionalDiscountSchemaIn(DiscountBaseSchemaIn):
-    condition_name: str
+    condition: ConditionSchemaIn
     discount: Union[SimpleDiscountSchemaIn, 'ConditionalDiscountSchemaIn', 'CompositeDiscountSchemaIn']
 
 
 class CompositeDiscountSchemaIn(DiscountBaseSchemaIn):
     discounts: list[Union[SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, 'CompositeDiscountSchemaIn']]
     combine_function: str
-    conditions: list[str]
+    conditions: list[ConditionSchemaIn]
+
+
+class ConditionSchemaOut(Schema):
+    applies_to: str
+    name_of_apply: str
+    condition: str
+    value: float
 
 
 class DiscountBaseSchemaOut(Schema):
@@ -161,14 +173,12 @@ class SimpleDiscountSchemaOut(DiscountBaseSchemaOut):
 
 
 class ConditionalDiscountSchemaOut(DiscountBaseSchemaOut):
-    condition_name: str
     discount: Union[SimpleDiscountSchemaOut, 'ConditionalDiscountSchemaOut', 'CompositeDiscountSchemaOut']
 
 
 class CompositeDiscountSchemaOut(DiscountBaseSchemaOut):
     discounts: list[Union[SimpleDiscountSchemaOut, ConditionalDiscountSchemaOut, 'CompositeDiscountSchemaOut']]
     combine_function: str
-    conditions: str
 
 
 class SearchSchema(Schema):
