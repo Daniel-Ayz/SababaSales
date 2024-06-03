@@ -183,3 +183,64 @@ class UserController:
         user = CustomUser.objects.get(id=user_id)
         payment_info = PaymentInformationUser.objects.get(user=user)
         return payment_info
+
+    def create_fake_data(self, request):
+        usernames = [
+            "Yishay Butzim",
+            "Hana Tzirlin",
+            "Hanan Margilan",
+            "Or Gazma",
+            "Mor Tal Combat",
+            "Adi Das",
+            "Beti Paul",
+            "Micha Napo",
+            "Moti Batzia",
+            "Itzik Hagingi",
+            "Pupik Levi",
+            "Ortal Gabot",
+        ]
+        passwords = [
+            "user1",
+            "user2",
+            "user3",
+            "user4",
+            "user5",
+            "user6",
+            "user7",
+            "user8",
+            "user9",
+            "user10",
+            "user11",
+            "user12",
+        ]
+        emails = [
+            "user1@gmail.com",
+            "user2@gmail.com",
+            "user3@gmail.com",
+            "user4@gmail.com",
+            "user5@gmail.com",
+            "user6@gmail.com",
+            "user7@gmail.com",
+            "user8@gmail.com",
+            "user9@gmail.com",
+            "user10@gmail.com",
+            "user11@gmail.com",
+            "user12@gmail.com",
+        ]
+
+        for i in range(len(usernames)):
+            user = CustomUser.objects.create(
+                username=usernames[i],
+                email=emails[i],
+                password=make_password(passwords[i]),
+            )
+            user.save()
+            payment_info = PaymentInformationUser.objects.create(
+                user=user,
+                currency="USD",
+                billing_address="1234 Main St",
+                credit_card_number="1234567890",
+                expiration_date="12/25",
+                security_code="123",
+            )
+            payment_info.save()

@@ -5,13 +5,39 @@ from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.errors import HttpError
 
-from .discount import SimpleDiscountClass, ConditionalDiscountClass, CompositeDiscountClass
-from .models import Store, Owner, Manager, ManagerPermission, PurchasePolicy, StoreProduct, SimpleDiscount, \
-    ConditionalDiscount, CompositeDiscount, DiscountBase
-from .schemas import StoreSchemaIn, OwnerSchemaIn, ManagerPermissionSchemaIn, PurchasePolicySchemaIn, \
-    StoreProductSchemaIn, ManagerSchemaIn, RoleSchemaIn, PurchaseStoreProductSchema, RemoveOwnerSchemaIn, \
-    RemoveManagerSchemaIn, SimpleDiscountSchemaIn, CompositeDiscountSchemaIn, \
-    ConditionalDiscountSchemaIn, RemoveDiscountSchemaIn
+from .discount import (
+    SimpleDiscountClass,
+    ConditionalDiscountClass,
+    CompositeDiscountClass,
+)
+from .models import (
+    Store,
+    Owner,
+    Manager,
+    ManagerPermission,
+    PurchasePolicy,
+    StoreProduct,
+    SimpleDiscount,
+    ConditionalDiscount,
+    CompositeDiscount,
+    DiscountBase,
+)
+from .schemas import (
+    StoreSchemaIn,
+    OwnerSchemaIn,
+    ManagerPermissionSchemaIn,
+    PurchasePolicySchemaIn,
+    StoreProductSchemaIn,
+    ManagerSchemaIn,
+    RoleSchemaIn,
+    PurchaseStoreProductSchema,
+    RemoveOwnerSchemaIn,
+    RemoveManagerSchemaIn,
+    SimpleDiscountSchemaIn,
+    CompositeDiscountSchemaIn,
+    ConditionalDiscountSchemaIn,
+    RemoveDiscountSchemaIn,
+)
 
 router = Router()
 
@@ -22,7 +48,6 @@ def get_list_from_string(conditions):
 
 
 class StoreController:
-
     def get_store(self, request, store_id: int):
         return get_object_or_404(Store, pk=store_id)
         # return {"id": store.id,"created_at" : store.created_at, "name": store.name, "description": store.description, "is_active": store.is_active}
@@ -35,11 +60,7 @@ class StoreController:
         if Store.objects.filter(name=payload.name).exists():
             raise HttpError(403, "Store with this name already exists")
         store = Store.objects.create(**payload.dict(), is_active=True)
-        Owner.objects.create(
-            user_id=user_id,
-            store=store,
-            is_founder=True
-        )
+        Owner.objects.create(user_id=user_id, store=store, is_founder=True)
         return {"store_id": store.id}
 
     # @router.post("/stores")
@@ -63,7 +84,9 @@ class StoreController:
 
     def assign_owner(self, request, payload: OwnerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-        assigning_owner = get_object_or_404(Owner, user_id=payload.assigned_by, store=store)
+        assigning_owner = get_object_or_404(
+            Owner, user_id=payload.assigned_by, store=store
+        )
         if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
             raise HttpError(400, "User is already an owner")
 
@@ -71,7 +94,7 @@ class StoreController:
             user_id=payload.user_id,
             assigned_by=assigning_owner,
             store=store,
-            is_founder=False
+            is_founder=False,
         )
         return {"message": "Owner assigned successfully"}
 
@@ -105,11 +128,15 @@ class StoreController:
 
     def remove_owner(self, request, payload: RemoveOwnerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-        removing_owner = get_object_or_404(Owner, user_id=payload.removed_by, store=store)
+        removing_owner = get_object_or_404(
+            Owner, user_id=payload.removed_by, store=store
+        )
         removed_owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
 
         if removed_owner.assigned_by != removing_owner:
-            raise HttpError(403, "Owner can only be removed by the owner who assigned them")
+            raise HttpError(
+                403, "Owner can only be removed by the owner who assigned them"
+            )
 
         removed_owner.delete()
         return {"message": "Owner removed successfully"}
@@ -125,7 +152,9 @@ class StoreController:
 
     def assign_manager(self, request, payload: ManagerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-        assigning_owner = get_object_or_404(Owner, user_id=payload.assigned_by, store=store)
+        assigning_owner = get_object_or_404(
+            Owner, user_id=payload.assigned_by, store=store
+        )
         if Manager.objects.filter(user_id=payload.user_id, store=store).exists():
             raise HttpError(400, "User is already a manager")
         elif Owner.objects.filter(user_id=payload.user_id, store=store).exists():
@@ -136,33 +165,41 @@ class StoreController:
             raise HttpError(403, "Only owners can assign managers")
 
         manager = Manager.objects.create(
-            user_id=payload.user_id,
-            assigned_by=assigning_owner,
-            store=store
+            user_id=payload.user_id, assigned_by=assigning_owner, store=store
         )
         return {"message": "Manager assigned successfully"}
 
     def remove_manager(self, request, payload: RemoveManagerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-        removing_owner = get_object_or_404(Owner, user_id=payload.removed_by, store=store)
-        removed_manager = get_object_or_404(Manager, user_id=payload.user_id, store=store)
+        removing_owner = get_object_or_404(
+            Owner, user_id=payload.removed_by, store=store
+        )
+        removed_manager = get_object_or_404(
+            Manager, user_id=payload.user_id, store=store
+        )
 
         if removed_manager.assigned_by != removing_owner:
-            raise HttpError(403, "Manager can only be removed by the owner who assigned them")
+            raise HttpError(
+                403, "Manager can only be removed by the owner who assigned them"
+            )
 
         removed_manager.delete()
         return {"message": "Manager removed successfully"}
 
-    def assign_manager_permissions(self, request, payload: ManagerPermissionSchemaIn, manager: RoleSchemaIn,
-                                   assigning_owner_id: int):
+    def assign_manager_permissions(
+        self,
+        request,
+        payload: ManagerPermissionSchemaIn,
+        manager: RoleSchemaIn,
+        assigning_owner_id: int,
+    ):
         store = get_object_or_404(Store, pk=manager.store_id)
         manager = get_object_or_404(Manager, user_id=manager.user_id, store=store)
         if assigning_owner_id != manager.assigned_by.user_id:
             raise HttpError(403, "Only assigning owner can assign permissions")
         try:
             existing_permission, _ = ManagerPermission.objects.update_or_create(
-                manager=manager,
-                defaults=payload.dict()
+                manager=manager, defaults=payload.dict()
             )
         except Exception as e:
             raise HttpError(500, f"Error assigning permissions: {str(e)}")
@@ -215,7 +252,9 @@ class StoreController:
 
         return managers
 
-    def add_purchase_policy(self, request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn):
+    def add_purchase_policy(
+        self, request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn
+    ):
         store = get_object_or_404(Store, pk=role.store_id)
 
         # Check if the user is an owner or manager of the store
@@ -226,16 +265,15 @@ class StoreController:
             manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
             manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
             if not manager_permissions.can_add_purchase_policy:
-                raise HttpError(403, "Manager does not have permission to add purchase policy")
+                raise HttpError(
+                    403, "Manager does not have permission to add purchase policy"
+                )
 
         # Check if a purchase policy already exists for the store
         if PurchasePolicy.objects.filter(store=store).exists():
             raise HttpError(400, "Purchase policy already exists for the store")
 
-        policy = PurchasePolicy.objects.create(
-            store=store,
-            **payload.dict()
-        )
+        policy = PurchasePolicy.objects.create(store=store, **payload.dict())
 
         return {"message": "Purchase policy added successfully"}
 
@@ -250,7 +288,9 @@ class StoreController:
             manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
             manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
             if not manager_permissions.can_remove_purchase_policy:
-                raise HttpError(403, "Manager does not have permission to remove purchase policy")
+                raise HttpError(
+                    403, "Manager does not have permission to remove purchase policy"
+                )
 
         # Check if a purchase policy exists for the store
         try:
@@ -267,7 +307,9 @@ class StoreController:
         store = get_object_or_404(Store, pk=store_id)
         if not store.is_active:
             if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-                raise HttpError(403, "User is not an owner of the store and the store is closed")
+                raise HttpError(
+                    403, "User is not an owner of the store and the store is closed"
+                )
 
         policies = PurchasePolicy.objects.filter(store=store)
 
@@ -316,11 +358,19 @@ class StoreController:
     #
     #     return {"message": "Discount policy added successfully"}
 
-    def add_discount_policy(self, request, role: RoleSchemaIn, payload: Union[
-        SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, CompositeDiscountSchemaIn]):
+    def add_discount_policy(
+        self,
+        request,
+        role: RoleSchemaIn,
+        payload: Union[
+            SimpleDiscountSchemaIn,
+            ConditionalDiscountSchemaIn,
+            CompositeDiscountSchemaIn,
+        ],
+    ):
 
         # Check if the user is authorized to add a discount policy
-        if request is not None and role is not None:  #none only in recursive calls
+        if request is not None and role is not None:  # none only in recursive calls
             store = get_object_or_404(Store, pk=payload.store_id)
             self.validate_permissions(role, store, "can_add_discount_policy")
 
@@ -344,28 +394,38 @@ class StoreController:
             store=store,
             is_root=payload.is_root,
             percentage=payload.percentage,
-            applicable_categories=json.dumps(payload.applicable_categories)
+            applicable_categories=json.dumps(payload.applicable_categories),
         )
         if payload.applicable_products:
-            applicable_products = StoreProduct.objects.filter(store=store, name__in=payload.applicable_products)
+            applicable_products = StoreProduct.objects.filter(
+                store=store, name__in=payload.applicable_products
+            )
             discount.applicable_products.set(applicable_products)
 
-        return {"message": "Simple discount policy added successfully", "discount": discount}
+        return {
+            "message": "Simple discount policy added successfully",
+            "discount": discount,
+        }
 
     def add_conditional_discount_policy(self, payload: ConditionalDiscountSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
 
         # if ConditionalDiscount.objects.filter(store=store, discount_type=payload.discount_type).exists():
         #     raise HttpError(400, "Conditional discount policy with these parameters already exists")
-        base_discount = (self.add_discount_policy(None, None, payload.discount)).get("discount")
+        base_discount = (self.add_discount_policy(None, None, payload.discount)).get(
+            "discount"
+        )
         discount = ConditionalDiscount.objects.create(
             is_root=payload.is_root,
             store=store,
             condition_name=payload.condition_name,
-            discount=base_discount
+            discount=base_discount,
         )
 
-        return {"message": "Conditional discount policy added successfully", "discount": discount}
+        return {
+            "message": "Conditional discount policy added successfully",
+            "discount": discount,
+        }
 
     def add_composite_discount_policy(self, payload: CompositeDiscountSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
@@ -374,18 +434,25 @@ class StoreController:
         #     raise HttpError(400, "Composite discount policy with these parameters already exists")
         discounts = []
         for discount_payload in payload.discounts:
-            discounts.append((self.add_discount_policy(None, None, discount_payload)).get("discount"))
+            discounts.append(
+                (self.add_discount_policy(None, None, discount_payload)).get("discount")
+            )
         discount = CompositeDiscount.objects.create(
             is_root=payload.is_root,
             store=store,
             combine_function=payload.combine_function,
-            conditions=json.dumps(payload.conditions)
+            conditions=json.dumps(payload.conditions),
         )
         discount.discounts.set(discounts)
 
-        return {"message": "Composite discount policy added successfully", "discount": discount}
+        return {
+            "message": "Composite discount policy added successfully",
+            "discount": discount,
+        }
 
-    def remove_discount_policy(self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn):
+    def remove_discount_policy(
+        self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
+    ):
         store = get_object_or_404(Store, pk=payload.store_id)
 
         self.validate_permissions(role, store, "can_remove_discount_policy")
@@ -401,7 +468,9 @@ class StoreController:
         #         except ObjectDoesNotExist:
         #             raise HttpError(404, "Discount policy does not exist")
 
-        discount_instance = get_object_or_404(DiscountBase, pk=payload.discount_id, is_root=True)
+        discount_instance = get_object_or_404(
+            DiscountBase, pk=payload.discount_id, is_root=True
+        )
 
         discount_instance.delete()
 
@@ -435,7 +504,9 @@ class StoreController:
         store = get_object_or_404(Store, pk=role.store_id)
         if not store.is_active:
             if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-                raise HttpError(403, "User is not an owner of the store and the store is closed")
+                raise HttpError(
+                    403, "User is not an owner of the store and the store is closed"
+                )
 
         return DiscountBase.objects.filter(store=store, is_root=True)
 
@@ -466,7 +537,9 @@ class StoreController:
             manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
             manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
             if not getattr(manager_permissions, permission):
-                raise HttpError(403, "Manager does not have permission to perform this action")
+                raise HttpError(
+                    403, "Manager does not have permission to perform this action"
+                )
 
     def add_product(self, request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
         store = get_object_or_404(Store, pk=role.store_id)
@@ -482,7 +555,7 @@ class StoreController:
         #         raise HttpError(403, "Manager does not have permission to add product")
 
         all_products = StoreProduct.objects.filter(store=store)
-        if payload.name in all_products.values_list('name', flat=True):
+        if payload.name in all_products.values_list("name", flat=True):
             return HttpError(400, "Product with this name already exists in the store")
         if payload.quantity <= 0:
             raise HttpError(400, "Product quantity cannot be 0 or negative")
@@ -535,7 +608,10 @@ class StoreController:
 
         # Validate payload
         if payload.quantity <= 0:
-            raise HttpError(400, "Product quantity cannot be negative. To remove the product, delete it instead.")
+            raise HttpError(
+                400,
+                "Product quantity cannot be negative. To remove the product, delete it instead.",
+            )
         if payload.initial_price <= 0:
             raise HttpError(400, "Product price cannot be negative.")
 
@@ -551,67 +627,110 @@ class StoreController:
         store = get_object_or_404(Store, pk=store_id)
         if not store.is_active:
             if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-                raise HttpError(403, "User is not an owner of the store and the store is closed")
+                raise HttpError(
+                    403, "User is not an owner of the store and the store is closed"
+                )
 
         products = StoreProduct.objects.filter(store=store)
 
         return products
 
-    def purchase_product(self, request, store_id: int, payload: List[PurchaseStoreProductSchema]):
+    def purchase_product(
+        self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
+    ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to purchase")
         store = get_object_or_404(Store, pk=store_id)
 
         total_items = sum(item.quantity for item in payload)
-        products = [get_object_or_404(StoreProduct, store=store, name=item.product_name) for item in payload]
-        total_price = sum([product.initial_price * item.quantity for product, item in zip(products, payload)])
+        products = [
+            get_object_or_404(StoreProduct, store=store, name=item.product_name)
+            for item in payload
+        ]
+        total_price = sum(
+            [
+                product.initial_price * item.quantity
+                for product, item in zip(products, payload)
+            ]
+        )
         original_total_price = total_price
 
-        original_prices = [{product.name: product.initial_price * item.quantity} for product, item in
-                           zip(products, payload)]
+        original_prices = [
+            {product.name: product.initial_price * item.quantity}
+            for product, item in zip(products, payload)
+        ]
 
         # Check purchase policy limits
         store_purchase_policy = get_object_or_404(PurchasePolicy, store=store)
-        if store_purchase_policy.max_items_per_purchase and total_items > store_purchase_policy.max_items_per_purchase:
-            raise HttpError(400, "Total items exceeds the maximum items per purchase limit")
-        if store_purchase_policy.min_items_per_purchase and total_items < store_purchase_policy.min_items_per_purchase:
-            raise HttpError(400, "Total items is less than the minimum items per purchase limit")
+        if (
+            store_purchase_policy.max_items_per_purchase
+            and total_items > store_purchase_policy.max_items_per_purchase
+        ):
+            raise HttpError(
+                400, "Total items exceeds the maximum items per purchase limit"
+            )
+        if (
+            store_purchase_policy.min_items_per_purchase
+            and total_items < store_purchase_policy.min_items_per_purchase
+        ):
+            raise HttpError(
+                400, "Total items is less than the minimum items per purchase limit"
+            )
 
         # Apply discount policy
         total_price -= self.calculate_cart_discount(payload, store)
 
         for item in payload:
-            product = get_object_or_404(StoreProduct, store=store, name=item.product_name)
+            product = get_object_or_404(
+                StoreProduct, store=store, name=item.product_name
+            )
             if product.quantity < item.quantity:
-                raise HttpError(400, f"Insufficient quantity of {product.name} in store")
+                raise HttpError(
+                    400, f"Insufficient quantity of {product.name} in store"
+                )
             product.quantity -= item.quantity
             if product.quantity == 0:
                 product.delete()
             else:
                 product.save()
 
-        return {"message": "Products purchased successfully", "total_price": total_price,
-                "original_price": original_total_price, "original_prices": original_prices}
+        return {
+            "message": "Products purchased successfully",
+            "total_price": total_price,
+            "original_price": original_total_price,
+            "original_prices": original_prices,
+        }
 
     def get_discount_instance(self, discount_model: DiscountBase, store: Store):
         if isinstance(discount_model, SimpleDiscount):
             return SimpleDiscountClass(
                 percentage=discount_model.percentage,
                 applicable_products=discount_model.applicable_products.all(),
-                applicable_categories=get_list_from_string(discount_model.applicable_categories),
-                store=store
+                applicable_categories=get_list_from_string(
+                    discount_model.applicable_categories
+                ),
+                store=store,
             )
         elif isinstance(discount_model, ConditionalDiscount):
             condition_name = discount_model.condition_name
-            related_discount = self.get_discount_instance(discount_model.discount, store)
+            related_discount = self.get_discount_instance(
+                discount_model.discount, store
+            )
             return ConditionalDiscountClass(condition_name, related_discount, store)
         elif isinstance(discount_model, CompositeDiscount):
-            discounts = [self.get_discount_instance(d, store) for d in discount_model.discounts.all()]
+            discounts = [
+                self.get_discount_instance(d, store)
+                for d in discount_model.discounts.all()
+            ]
             conditions = get_list_from_string(discount_model.conditions)
-            return CompositeDiscountClass(discounts, discount_model.combine_function, conditions, store)
+            return CompositeDiscountClass(
+                discounts, discount_model.combine_function, conditions, store
+            )
         return None
 
-    def calculate_cart_discount(self, purchase_products: List[PurchaseStoreProductSchema], store: Store):
+    def calculate_cart_discount(
+        self, purchase_products: List[PurchaseStoreProductSchema], store: Store
+    ):
         total_discount = 0
         # Retrieve only root discount models to avoid duplicates
         all_discount_models = DiscountBase.objects.filter(is_root=True)
@@ -622,3 +741,70 @@ class StoreController:
                 if discount:
                     total_discount += discount
         return total_discount
+
+    def create_fake_data(self, request):
+        stores = []
+        for i in range(1, 7):
+            # fake name list - be creative
+            store_names = [
+                "Hummus Heaven",
+                "Falafel Fiesta",
+                "Shawarma Shenanigans",
+                "Sabich Surprise",
+                "Pita Paradise",
+                "Burekas Bonanza",
+            ]
+            stores.append(
+                Store.objects.create(
+                    name=store_names[i - 1],
+                    description=f"This is a fake store {i}",
+                    is_active=True,
+                )
+            )
+
+        store_products = {
+            "Hummus Heaven": ["Classic Hummus", "Spicy Hummus", "Garlic Hummus"],
+            "Falafel Fiesta": ["Falafel Wrap", "Falafel Plate", "Falafel Salad"],
+            "Shawarma Shenanigans": [
+                "Chicken Shawarma",
+                "Beef Shawarma",
+                "Lamb Shawarma",
+            ],
+            "Sabich Surprise": ["Classic Sabich", "Spicy Sabich", "Sabich Salad"],
+            "Pita Paradise": ["Pita Bread", "Stuffed Pita", "Pita Chips"],
+            "Burekas Bonanza": ["Cheese Burekas", "Potato Burekas", "Spinach Burekas"],
+        }
+
+        for i in range(0, 6):
+            owner = Owner.objects.create(user_id=i, store=stores[i], is_founder=True)
+            manager = Manager.objects.create(
+                user_id=2 * len(store_names) - i - 1, store=stores[i]
+            )
+            manager_permissions = ManagerPermission.objects.create(
+                manager=manager,
+                can_add_product=True,
+                can_delete_product=True,
+                can_edit_product=True,
+                can_add_discount_policy=True,
+                can_remove_discount_policy=True,
+                can_add_purchase_policy=True,
+                can_remove_purchase_policy=True,
+            )
+            for j in range(3):
+                product = StoreProduct.objects.create(
+                    store=stores[i],
+                    name=store_products[stores[i]][j],
+                    quantity=10,
+                    initial_price=100,
+                )
+                purchase_policy = PurchasePolicy.objects.create(
+                    store=stores[i], max_items_per_purchase=5, min_items_per_purchase=1
+                )
+                discount = SimpleDiscount.objects.create(
+                    store=stores[i],
+                    is_root=True,
+                    percentage=10,
+                    applicable_categories=json.dumps(["Food"]),
+                )
+
+        return {"message": "Fake data created successfully"}
