@@ -146,9 +146,22 @@ class UserController:
         store_id = payload.store_id
         basket, _ = Basket.objects.get_or_create(cart=cart, store_id=store_id)
         product = BasketProduct.objects.create(
-            quantity=payload.quantity, name=payload.name, basket=basket
+            store_product_id=payload.store_product_id,
+            quantity=payload.quantity,
+            name=payload.name,
+            basket=basket,
+            price=payload.price,
         )
         return product
+
+    def delete_user_cart_product(self, request, basket_product_id) -> any:
+        # delete basket product with the given id
+        try:
+            product = BasketProduct.objects.get(id=basket_product_id)
+            product.delete()
+            return {"msg": "Product deleted"}
+        except BasketProduct.DoesNotExist as e:
+            return {"error": "Product not found"}
 
     def get_user_basket(self, request, basket_id) -> BasketSchema:
         cart = self._get_cart(request)
@@ -168,6 +181,7 @@ class UserController:
         products = []
         for basket in baskets:
             products.extend(basket.products.all())
+
         return products
 
     # added 2 functions for the make purchase
