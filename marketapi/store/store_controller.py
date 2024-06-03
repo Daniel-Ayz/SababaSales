@@ -162,11 +162,11 @@ class StoreController:
         return {"message": "Manager removed successfully"}
 
     def assign_manager_permissions(
-        self,
-        request,
-        payload: ManagerPermissionSchemaIn,
-        manager: RoleSchemaIn,
-        assigning_owner_id: int,
+            self,
+            request,
+            payload: ManagerPermissionSchemaIn,
+            manager: RoleSchemaIn,
+            assigning_owner_id: int,
     ):
         store = get_object_or_404(Store, pk=manager.store_id)
         manager = get_object_or_404(Manager, user_id=manager.user_id, store=store)
@@ -228,7 +228,7 @@ class StoreController:
         return managers
 
     def add_purchase_policy(
-        self, request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn
+            self, request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn
     ):
         store = get_object_or_404(Store, pk=role.store_id)
 
@@ -334,14 +334,14 @@ class StoreController:
     #     return {"message": "Discount policy added successfully"}
 
     def add_discount_policy(
-        self,
-        request,
-        role: RoleSchemaIn,
-        payload: Union[
-            SimpleDiscountSchemaIn,
-            ConditionalDiscountSchemaIn,
-            CompositeDiscountSchemaIn,
-        ],
+            self,
+            request,
+            role: RoleSchemaIn,
+            payload: Union[
+                SimpleDiscountSchemaIn,
+                ConditionalDiscountSchemaIn,
+                CompositeDiscountSchemaIn,
+            ],
     ):
 
         # Check if the user is authorized to add a discount policy
@@ -432,12 +432,10 @@ class StoreController:
                 discount=discount
             )
 
-
-
         return {"message": "Composite discount policy added successfully", "discount": discount}
 
     def remove_discount_policy(
-        self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
+            self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
     ):
         store = get_object_or_404(Store, pk=payload.store_id)
 
@@ -622,7 +620,7 @@ class StoreController:
         return products
 
     def purchase_product(
-        self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
+            self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
     ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to purchase")
@@ -649,15 +647,15 @@ class StoreController:
         # Check purchase policy limits
         store_purchase_policy = get_object_or_404(PurchasePolicy, store=store)
         if (
-            store_purchase_policy.max_items_per_purchase
-            and total_items > store_purchase_policy.max_items_per_purchase
+                store_purchase_policy.max_items_per_purchase
+                and total_items > store_purchase_policy.max_items_per_purchase
         ):
             raise HttpError(
                 400, "Total items exceeds the maximum items per purchase limit"
             )
         if (
-            store_purchase_policy.min_items_per_purchase
-            and total_items < store_purchase_policy.min_items_per_purchase
+                store_purchase_policy.min_items_per_purchase
+                and total_items < store_purchase_policy.min_items_per_purchase
         ):
             raise HttpError(
                 400, "Total items is less than the minimum items per purchase limit"
@@ -687,6 +685,18 @@ class StoreController:
             "original_prices": original_prices,
         }
 
+    def return_products(self, request, store_id: int, payload: List[PurchaseStoreProductSchema]):
+        if payload is None or len(payload) == 0:
+            raise HttpError(400, "No products to return")
+        store = get_object_or_404(Store, pk=store_id)
+
+        for item in payload:
+            product = get_object_or_404(StoreProduct, store=store, name=item.product_name)
+            product.quantity += item.quantity
+            product.save()
+
+        return {"message": "Products returned successfully"}
+
     def get_discount_instance(self, discount_model: DiscountBase, store: Store):
         if isinstance(discount_model, SimpleDiscount):
             return SimpleDiscountClass(
@@ -708,7 +718,7 @@ class StoreController:
         return None
 
     def calculate_cart_discount(
-        self, purchase_products: List[PurchaseStoreProductSchema], store: Store
+            self, purchase_products: List[PurchaseStoreProductSchema], store: Store
     ):
         total_discount = 0
         # Retrieve only root discount models to avoid duplicates
@@ -720,6 +730,42 @@ class StoreController:
                 if discount:
                     total_discount += discount
         return total_discount
+
+    def search_products(self, request, search_query: SearchSchema, filter_query: FilterSearchSchema):
+        if search_query.store_id:
+            store = get_object_or_404(Store, pk=search_query.store_id)
+            if not store.is_active:
+                raise HttpError(403, "Store is closed")
+            if search_query.product_name and not search_query.category:
+                products = StoreProduct.objects.filter(store=store, name__icontains=search_query.product_name)
+            elif search_query.category and not search_query.product_name:
+                products = StoreProduct.objects.filter(store=store, category__icontains=search_query.category)
+            elif search_query.product_name and search_query.category:
+                products = StoreProduct.objects.filter(store=store, name__icontains=search_query.product_name,
+                                                       category__icontains=search_query.category)
+            else:
+                products = StoreProduct.objects.filter(store=store)
+        else:
+            if search_query.product_name and not search_query.category:
+                products = StoreProduct.objects.filter(name__icontains=search_query.product_name, store__is_active=True)
+            elif search_query.category and not search_query.product_name:
+                products = StoreProduct.objects.filter(category__icontains=search_query.category, store__is_ative=True)
+            elif search_query.product_name and search_query.category:
+                products = StoreProduct.objects.filter(name__icontains=search_query.product_name,
+                                                       category__icontains=search_query.category, store__is_active=True)
+            else:
+                products = StoreProduct.objects.filter(store__is_active=True)
+
+        if filter_query.min_price:
+            products = products.filter(initial_price__gte=filter_query.min_price)
+        if filter_query.max_price:
+            products = products.filter(initial_price__lte=filter_query.max_price)
+        if filter_query.min_quantity:
+            products = products.filter(quantity__gte=filter_query.min_quantity)
+        if filter_query.max_quantity:
+            products = products.filter(quantity__lte=filter_query.max_quantity)
+
+        return products
 
     def create_fake_data(self, request):
         store_data = {
@@ -811,42 +857,3 @@ class StoreController:
                 )
 
         return {"message": "Fake data created successfully"}
-
-      
-    def search_products(self, request, search_query: SearchSchema, filter_query: FilterSearchSchema):
-        if search_query.store_id:
-            store = get_object_or_404(Store, pk=search_query.store_id)
-            if not store.is_active:
-                raise HttpError(403, "Store is closed")
-            if search_query.product_name and not search_query.category:
-                products = StoreProduct.objects.filter(store=store, name__icontains=search_query.product_name)
-            elif search_query.category and not search_query.product_name:
-                products = StoreProduct.objects.filter(store=store, category__icontains=search_query.category)
-            elif search_query.product_name and search_query.category:
-                products = StoreProduct.objects.filter(store=store, name__icontains=search_query.product_name,
-                                                       category__icontains=search_query.category)
-            else:
-                products = StoreProduct.objects.filter(store=store)
-        else:
-            if search_query.product_name and not search_query.category:
-                products = StoreProduct.objects.filter(name__icontains=search_query.product_name, store__is_active=True)
-            elif search_query.category and not search_query.product_name:
-                products = StoreProduct.objects.filter(category__icontains=search_query.category, store__is_ative=True)
-            elif search_query.product_name and search_query.category:
-                products = StoreProduct.objects.filter(name__icontains=search_query.product_name,
-                                                       category__icontains=search_query.category, store__is_active=True)
-            else:
-                products = StoreProduct.objects.filter(store__is_active=True)
-
-        if filter_query.min_price:
-            products = products.filter(initial_price__gte=filter_query.min_price)
-        if filter_query.max_price:
-            products = products.filter(initial_price__lte=filter_query.max_price)
-        if filter_query.min_quantity:
-            products = products.filter(quantity__gte=filter_query.min_quantity)
-        if filter_query.max_quantity:
-            products = products.filter(quantity__lte=filter_query.max_quantity)
-
-        return products
-
-
