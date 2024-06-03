@@ -35,11 +35,7 @@ class PaymentMethod(models.Model):
     security_code = models.CharField(max_length=3)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     
-# Talia:
-# i think we should add product and product basket models here 
-# and then add them to the purchase model by "get" function when creating a purchase
-# and not as another field in the purchase model
-#copied this from the user models
+
 class HistoryBasket(models.Model):
     basket_id = models.AutoField(primary_key=True)
     store_id = models.IntegerField()

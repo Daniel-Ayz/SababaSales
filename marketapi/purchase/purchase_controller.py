@@ -39,11 +39,11 @@ class purchaseController:
 
     def get_purchase_history(self, request, user_id: int):
         try:
-            purchase_history = {}
+            purchase_history = []
             cart_ids = Cart.objects.filter(user_id=user_id).values_list("id", flat=True)
             purchase_ids = Purchase.objects.filter(cart_id__in=cart_ids).values_list("purchase_id", flat=True)
             for purchase_id in purchase_ids:
-                purchase_history[purchase_id] = self.get_purchase_receipt(request, purchase_id)
+                purchase_history.append(self.get_purchase_receipt(request, purchase_id))
             return purchase_history
 
         except CustomUser.DoesNotExist as e:
@@ -119,10 +119,8 @@ class purchaseController:
             # demo data
             # TODO: package details
             package_details = "Test package details"
-
             delivery_address = uc.get_user_address(user_id)
             payment_information_user = uc.get_user_payment_information(user_id)
-
             currency = payment_information_user["currency"]
             billing_address = payment_information_user["billing_address"]
             credit_card_number = payment_information_user["credit_card_number"]
