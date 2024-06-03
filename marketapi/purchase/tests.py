@@ -42,6 +42,7 @@ class TestPurchase(TestCase):
                     "name": "Test Product",
                     "quantity": self.Product_1_Quality,
                     "initial_price": 100,
+                    "category": "Test Category",
                 },
             },
         )

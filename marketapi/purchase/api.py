@@ -42,7 +42,7 @@ def make_purchase(request, user_id, cart_id: int):
 # those are for tests
 @router.post("/{user_id}/{cart_id}/make_purchase_delivery_fail")
 def make_purchase(request, user_id, cart_id: int):
-    return pc.make_purchase(request, cart_id, flag_delivery=True, flag_payment=False)
+    return pc.make_purchase(request,user_id, cart_id, flag_delivery=True, flag_payment=False)
 
 
 @router.post("/{user_id}/{cart_id}/make_purchase_payment_fail")
