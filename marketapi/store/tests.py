@@ -67,6 +67,11 @@ class StoreAPITestCase(TestCase):
         })
 
         response = self.client.post("/stores/{store_id}/add_product", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id2},
+            "payload": {"name": "Bread Loaf", "quantity": 20, "initial_price": 10, "category": "Pastry"}
+        })
+
+        response = self.client.post("/stores/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Test Product", "quantity": 5, "initial_price": 50, "category": "Test Category"}
         })
@@ -1098,6 +1103,74 @@ class StoreAPITestCase(TestCase):
 
         # The purchase request should fail
         self.assertEqual(purchase_response.status_code, 404)
+
+    def test_search_product_in_store_no_filter(self):
+        search = {
+            "store_id": 1,
+            "product_name": "Bread Loaf"
+        }
+
+        filter = {}
+
+        response = self.client.get(f'/stores/{self.store_id}/search', json={
+            "search_query": search, "filter_query": filter
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["name"], "Bread Loaf")
+
+    def test_search_product_in_store_with_filter(self):
+        search = {
+            "store_id": 1,
+            "product_name": "Bread Loaf"
+        }
+
+        filter = {
+            "max_price": 3
+        }
+
+        response = self.client.get(f'/stores/{self.store_id}/search', json={
+            "search_query": search, "filter_query": filter
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 0)
+
+    def test_search_product_in_market_no_filter(self):
+        search = {
+            "product_name": "Bread Loaf"
+        }
+
+        filter = {}
+
+        response = self.client.get(f'/stores/{self.store_id}/search', json={
+            "search_query": search, "filter_query": filter
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 2)
+        self.assertEqual(response.json()[0]["name"], "Bread Loaf")
+
+    def test_search_product_in_market_with_filter(self):
+        search = {
+            "product_name": "Bread Loaf"
+        }
+
+        filter = {
+            "max_price": 5
+        }
+
+        response = self.client.get(f'/stores/{self.store_id}/search', json={
+            "search_query": search, "filter_query": filter
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+
+
+
+
 
     # def test_concurrent_manager_appointment(self):
     #
