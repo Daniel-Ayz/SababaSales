@@ -114,6 +114,14 @@ def get_user_products(request):
     return uc.get_user_products(request)
 
 
+@router.delete("/cart/{int:productId}", response={200: Msg, 404: Error})
+def delete_user_cart_product(request, productId: int):
+    """
+    deletes a product from the current session user cart
+    """
+    return uc.delete_user_cart_product(request, productId)
+
+
 @router.post("/cart/products", response={200: BasketProductSchema, 404: Error})
 def add_user_product(request, payload: StoreProduct):
     """

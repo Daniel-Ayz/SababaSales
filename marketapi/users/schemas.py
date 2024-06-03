@@ -54,10 +54,16 @@ class BasketProductSchema(ModelSchema):
         exclude = ["id", "basket"]
 
 
+class BasketProductSchemaOut(ModelSchema):
+    class Meta:
+        model = BasketProduct
+        exclude = ["basket"]
+
+
 class BasketSchema(Schema):
     id: int
     store_id: int
-    basket_products: List[BasketProductSchema]
+    basket_products: List[BasketProductSchemaOut]
 
 
 class CartSchema(Schema):

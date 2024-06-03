@@ -11,7 +11,8 @@ from .models import Store, Owner, Manager, ManagerPermission, PurchasePolicy, St
 from .schemas import StoreSchemaIn, OwnerSchemaIn, ManagerPermissionSchemaIn, PurchasePolicySchemaIn, \
     StoreProductSchemaIn, ManagerSchemaIn, RoleSchemaIn, PurchaseStoreProductSchema, RemoveOwnerSchemaIn, \
     RemoveManagerSchemaIn, SimpleDiscountSchemaIn, CompositeDiscountSchemaIn, \
-    ConditionalDiscountSchemaIn, RemoveDiscountSchemaIn, ConditionalDiscountSchemaOut, CompositeDiscountSchemaOut
+    ConditionalDiscountSchemaIn, RemoveDiscountSchemaIn, ConditionalDiscountSchemaOut, CompositeDiscountSchemaOut, \
+    FilterSearchSchema, SearchSchema
 
 router = Router()
 
@@ -810,3 +811,42 @@ class StoreController:
                 )
 
         return {"message": "Fake data created successfully"}
+
+      
+    def search_products(self, request, search_query: SearchSchema, filter_query: FilterSearchSchema):
+        if search_query.store_id:
+            store = get_object_or_404(Store, pk=search_query.store_id)
+            if not store.is_active:
+                raise HttpError(403, "Store is closed")
+            if search_query.product_name and not search_query.category:
+                products = StoreProduct.objects.filter(store=store, name__icontains=search_query.product_name)
+            elif search_query.category and not search_query.product_name:
+                products = StoreProduct.objects.filter(store=store, category__icontains=search_query.category)
+            elif search_query.product_name and search_query.category:
+                products = StoreProduct.objects.filter(store=store, name__icontains=search_query.product_name,
+                                                       category__icontains=search_query.category)
+            else:
+                products = StoreProduct.objects.filter(store=store)
+        else:
+            if search_query.product_name and not search_query.category:
+                products = StoreProduct.objects.filter(name__icontains=search_query.product_name, store__is_active=True)
+            elif search_query.category and not search_query.product_name:
+                products = StoreProduct.objects.filter(category__icontains=search_query.category, store__is_ative=True)
+            elif search_query.product_name and search_query.category:
+                products = StoreProduct.objects.filter(name__icontains=search_query.product_name,
+                                                       category__icontains=search_query.category, store__is_active=True)
+            else:
+                products = StoreProduct.objects.filter(store__is_active=True)
+
+        if filter_query.min_price:
+            products = products.filter(initial_price__gte=filter_query.min_price)
+        if filter_query.max_price:
+            products = products.filter(initial_price__lte=filter_query.max_price)
+        if filter_query.min_quantity:
+            products = products.filter(quantity__gte=filter_query.min_quantity)
+        if filter_query.max_quantity:
+            products = products.filter(quantity__lte=filter_query.max_quantity)
+
+        return products
+
+

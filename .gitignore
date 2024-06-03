@@ -4,3 +4,4 @@
 /.venv
 /.idea
 /market_frontend/node_modules
+*.pyc
