@@ -1,5 +1,5 @@
-import '@/app/(shop)/product/productViewDesign.css'
-import '@/app/(shop)/homepage.css'
+import './productViewDesign.css'
+import '../homepage.css'
 import {FaStar} from 'react-icons/fa'
 import {useState} from 'react'
 export default function ProductRating() {

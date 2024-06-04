@@ -1,5 +1,5 @@
 
-import '@/app/(shop)/homepage.css'
+import './homepage.css'
 export default function ItemSquare({name, imgSource, imgDesc}) {
   return (
 

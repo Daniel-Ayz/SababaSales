@@ -1,5 +1,5 @@
-import '@/app/(shop)/product/productViewDesign.css'
-import '@/app/(shop)/homepage.css'
+import './productViewDesign.css'
+import '../homepage.css'
 import React, {useState, useRef} from "react";
 import { RECOMMENDED } from './recommendedProd'; 
 import { FaArrowRightLong , FaArrowLeftLong} from "react-icons/fa6";
@@ -19,7 +19,6 @@ export default function ProductScroll() {
     };
 
     return <div>
-        
                 <div className='container'>
                     <div ref={containerRef} style={{
                         width: "100vw",

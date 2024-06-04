@@ -1,5 +1,5 @@
 
-import '@/app/(shop)/homepage.css'
+import './homepage.css'
 import ItemSquare from './itemSquare';
 export default function ShopGrid() {
   return (
