@@ -8,7 +8,7 @@ export default function ProductView({prod}) {
   return (
     <div className='productPreview'>
         <div className="rectangle">
-          <a href={prod.productHref} className='imageRef'><img className="productImage" src={prod.imgSource} imgDesc={prod.imgDesc}/> </a>
+          <a href="/productBuying" className='imageRef'><img className="productImage" src={prod.imgSource} imgDesc={prod.imgDesc}/> </a>
           <a className="nameRef" href="/productBuying"><h3 className = "productName">{prod.prodName}</h3></a>
           <ProductStars className="rating" rating={prod.prodRat}/>
           <h4 className='info price'>{prod.prodPrice}</h4>

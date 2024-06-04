@@ -1,0 +1,72 @@
+.app {
+    display: flex;
+    margin-left: 8vw;
+    margin-top: 30px;
+    width: 20vw;
+}
+
+.slider{
+    width: 100%;
+    height: 2px;
+    background-color: #cdd9ed;
+    margin-top: 20px;
+}
+.slider .thumb{
+    width: 23px;
+    height: 23px;
+    cursor: grab;
+    background: #fff;
+    border-radius: 50%;
+    border: 2px solid #275efe;
+    top: -12px;
+}
+
+.track-1{
+    background-color: #275efe;
+}
+
+.box {
+    width: 320px;
+    padding: 36px 32px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(18, 22, 33, 0.12);
+}
+
+h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 10px 0;
+    color: #3f4656;
+}
+
+h3 span{
+    font-weight: 500;
+    font-family: "Roboto",sans-serif;
+}
+
+.values{
+    margin: 0;
+    font-weight: 500;
+    color: #275efe;
+}
+
+small{
+    font-size: 14px;
+    margin-top: 8px;
+    display: block;
+    color: #99a3ba;
+}
+.applyBtn{
+    border: 1px solid black;
+    font-weight: 500;
+    font-family: "Roboto", sans-serif;
+    border-radius: 10%;
+    padding: 5px 10px;
+    display: block;
+    margin: 20px auto -10px auto;
+}
+
+.applyBtn:hover {
+    box-shadow: 0 1px 4px #275efe;
+}

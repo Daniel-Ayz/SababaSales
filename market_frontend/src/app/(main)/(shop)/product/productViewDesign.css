@@ -15,6 +15,11 @@
     'imageRef footer footer footer'
     'imageRef footer footer footer';
 }
+
+.rectangle:hover{
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    background-color: aliceblue;
+}
 .productPreview{
     display: inline-block;
 }

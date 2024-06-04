@@ -11,7 +11,7 @@ export default function DeliverTo({location}) {
   return (
     <a href='#' className='deliveryContainer'>
         <CiDeliveryTruck className='deliveryTruck'/>
-        <h3 className='deliveryLoc'> <b>Deliver to</b><br />{location} </h3>
+        <h2 className='deliveryLoc'> <b>Deliver to</b><br />{location} </h2>
     </a>
   )
 }

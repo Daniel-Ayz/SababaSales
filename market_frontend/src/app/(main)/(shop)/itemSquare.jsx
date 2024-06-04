@@ -6,7 +6,7 @@ export default function ItemSquare({name, imgSource, imgDesc}) {
     <div className="square">
         <h5 className="topic">{name}</h5>
         <div className="itemGrid">
-            <div class="grid-item"><a href="#"><img className="itemImg" src= {imgSource[0]} alt={imgDesc[0]} /></a></div>
+            <div class="grid-item"><a href="/productSearch"><img className="itemImg" src= {imgSource[0]} alt={imgDesc[0]} /></a></div>
             <div class="grid-item"><a href="#"><img className="itemImg" src= {imgSource[1]} alt={imgDesc[1]} /></a></div>
             <div class="grid-item"><a href="#"><img className="itemImg" src= {imgSource[2]} alt={imgDesc[2]} /></a></div>
             <div class="grid-item"><a href="#"><img className="itemImg" src= {imgSource[3]} alt={imgDesc[3]} /></a></div>
