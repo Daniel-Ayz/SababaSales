@@ -1,9 +1,9 @@
 import './priceRange.css'
-//import Slider from 'react-slider';
+import Slider from 'react-slider';
 import {useState} from 'react';
-const MIN = 100;
-const MAX = 12000;
-export default function PriceRange(){
+const MIN = 1;
+const MAX = 10000;
+export default function PriceRange({min,max}){
     const [values,setValues] = useState([MIN, MAX])
     console.log('values: ', values)
     return(
@@ -16,11 +16,11 @@ export default function PriceRange(){
                 <small>
                     Current Range: ${values[1]-values[0]}
                 </small>
-                {/*<Slider className ={"slider"}
+                {<Slider className ={"slider"}
                         onChange={setValues}
                         value={values}
                         min={MIN}
-    max={MAX}/>*/}
+    max={MAX}/>}
                 <button className='applyBtn'>Apply</button>
             </div>
         </div>
