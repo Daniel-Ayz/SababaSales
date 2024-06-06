@@ -60,6 +60,25 @@ class StoreAPITestCase(TestCase):
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Pasta", "quantity": 100, "initial_price": 10, "category": "Pasta"}
         })
+        response = self.client.post("/stores/{store_id}/add_product", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": {"name": "Tomato", "quantity": 100, "initial_price": 7, "category": "Vegetable"}
+        })
+
+        response = self.client.post("/stores/{store_id}/add_product", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": {"name": "Eggplant", "quantity": 100, "initial_price": 7, "category": "Vegetable"}
+        })
+
+        response = self.client.post("/stores/{store_id}/add_product", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": {"name": "Vodka", "quantity": 100, "initial_price": 90, "category": "Alcohol"}
+        })
+
+        reponse = self.client.post("/stores/{store_id}/add_product", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": {"name": "Corn", "quantity": 10, "initial_price": 15, "category": "Vegetable"}
+        })
 
         response = self.client.post("/stores/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id2},
@@ -96,15 +115,15 @@ class StoreAPITestCase(TestCase):
             })
 
         # Set purchase policy
-        response = self.client.post("/stores/{store_id}/add_purchase_policy", json={
-            "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"min_items_per_purchase": 1}
-        })
+        # response = self.client.post("/stores/{store_id}/add_purchase_policy", json={
+        #     "role": {"user_id": self.user_id, "store_id": self.store_id},
+        #     "payload": {"min_items_per_purchase": 1}
+        # })
 
-        reponse = self.client.post("/stores/{store_id}/add_purchase_policy", json={
-            "role": {"user_id": self.user_id, "store_id": self.store_id2},
-            "payload": {"max_items_per_purchase": 10}
-        })
+        # reponse = self.client.post("/stores/{store_id}/add_purchase_policy", json={
+        #     "role": {"user_id": self.user_id, "store_id": self.store_id2},
+        #     "payload": {"max_items_per_purchase": 10}
+        # })
 
         # # Set discount policy
         # response = self.client.post("/stores/{store_id}/add_discount_policy", json={
@@ -161,7 +180,7 @@ class StoreAPITestCase(TestCase):
             "user_id": self.user_id, "store_id": self.store_id
         })
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(len(response.json()), 8)
+        self.assertEqual(len(response.json()), 12)
 
     def test_purchase_product(self):
         response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
@@ -293,7 +312,6 @@ class StoreAPITestCase(TestCase):
             "condition": "at_least",
             "value": 1
         }
-
 
         conditions = [condition1, condition2]
         combine_function = 'logical_and'
@@ -545,7 +563,6 @@ class StoreAPITestCase(TestCase):
             "value": 1
         }
 
-
         conditions = [condition1, condition2]
         combine_function = 'logical_xor'
 
@@ -619,7 +636,6 @@ class StoreAPITestCase(TestCase):
                 "category": "Pastry",
                 "quantity": 5
             }])
-
 
         assert response.status_code == 200
         assert response.json()["total_price"] == 60.0
@@ -727,7 +743,6 @@ class StoreAPITestCase(TestCase):
                 "quantity": 1
             }])
 
-        print(response.json())
         assert response.status_code == 200
         assert response.json()["total_price"] == 15
         assert response.json()["original_price"] == 15
@@ -781,9 +796,6 @@ class StoreAPITestCase(TestCase):
                 "quantity": 1
             }])
 
-
-        print(response.json())
-
         assert response.status_code == 200
         assert response.json()["total_price"] == 12.35
         assert response.json()["original_price"] == 13
@@ -836,7 +848,6 @@ class StoreAPITestCase(TestCase):
                 "category": "Dairy",
                 "quantity": 1
             }])
-
 
         assert response.status_code == 200
         assert response.json()["total_price"] == 10
@@ -922,7 +933,6 @@ class StoreAPITestCase(TestCase):
         assert response.json()["total_price"] == 26.25
         assert response.json()["original_price"] == 35
 
-
     def test_remove_discount_policy(self):
         simple_discount_payload = {
             "store_id": self.store_id,
@@ -970,12 +980,762 @@ class StoreAPITestCase(TestCase):
         assert response.json()["total_price"] == 35.0
         assert response.json()["original_price"] == 35.0
 
+    def test_add_simple_purchase_policy1(self):
+        condition = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+        purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": condition
+        }
 
+        # Add the simple purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": purchase_policy_payload
+        })
 
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Simple purchase policy added successfully"
 
+        # Get the purchase policies to verify the added purchase policy
+        response = self.client.get(f"/stores/{self.store_id}/get_purchase_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
 
+        # Verify the response status code
+        assert response.status_code == 200
+        assert len(response.json()) == 1
 
+    def test_add_simple_purchase_policy2(self):
+        condition = {
+            "applies_to": "time",
+            "name_of_apply": "",
+            "condition": "at_most",
+            "value": 23
+        }
+        purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": condition
+        }
 
+        # Add the simple purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Simple purchase policy added successfully"
+
+        # Get the purchase policies to verify the added purchase policy
+        response = self.client.get(f"/stores/{self.store_id}/get_purchase_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
+
+        # Verify the response status code
+        assert response.status_code == 200
+        assert len(response.json()) == 1
+
+    def test_add_composite_purchase_policy_and(self):
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+
+        condition2 = {
+            "applies_to": "product",
+            "name_of_apply": "Corn",
+            "condition": "at_least",
+            "value": 2
+        }
+
+        simple_purchase_policy_payload1 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition1
+        }
+
+        simple_purchase_policy_payload2 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition2
+        }
+
+        conditions = [simple_purchase_policy_payload1, simple_purchase_policy_payload2]
+        combine_function = 'logical_and'
+
+        composite_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "policies": conditions,
+            "combine_function": combine_function
+        }
+
+        # Add the composite purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": composite_purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Composite purchase policy added successfully"
+
+        # Get the purchase policies to verify the added purchase policy
+        response = self.client.get(f"/stores/{self.store_id}/get_purchase_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
+
+        # Verify the response status code
+        assert response.status_code == 200
+        assert len(response.json()) == 1
+
+    def add_composite_purchase_policy_or_condition(self):
+        #can buy alcohol only if time <=23 and tomato <= 5
+        #replaced with holiday because cant check that
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+        condition2 = {
+            "applies_to": "time",
+            "name_of_apply": "",
+            "condition": "at_most",
+            "value": 23
+        }
+        condition3 = {
+            "applies_to": "category",
+            "name_of_apply": "Alcohol",
+            "condition": "at_least",
+            "value": 1
+        }
+
+        simple_purchase_policy_payload1 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition1
+        }
+
+        simple_purchase_policy_payload2 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition2
+        }
+
+        simple_purchase_policy_payload3 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition3
+        }
+
+        composite_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "policies": [simple_purchase_policy_payload1, simple_purchase_policy_payload2],
+            "combine_function": "logical_and"
+        }
+
+        conditional_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": composite_purchase_policy_payload,
+            "restriction": simple_purchase_policy_payload3
+        }
+
+        # Add the conditional purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": conditional_purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Conditional purchase policy added successfully"
+
+        # Get the purchase policies to verify the added purchase policy
+        response = self.client.get(f"/stores/{self.store_id}/get_purchase_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
+
+        # Verify the response status code
+        assert response.status_code == 200
+        assert len(response.json()) == 1
+
+    def test_apply_simple_purchase_policy1(self):
+        condition = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+        purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": condition
+        }
+
+        # Add the simple purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Simple purchase policy added successfully"
+
+        # Purchase a product
+        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+            "product_name": "Tomato",
+            "category": "Vegetables",
+            "quantity": 6
+        }])
+
+        # Verify the response status code and message
+        assert response.status_code == 400
+        assert response.json().get("detail") == "Purchase policy validation failed"
+
+    def test_doesnt_apply_simple_purchase_policy1(self):
+        condition = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+        purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": condition
+        }
+
+        # Add the simple purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Simple purchase policy added successfully"
+
+        # Purchase a product
+        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+            "product_name": "Tomato",
+            "category": "Vegetables",
+            "quantity": 5
+        }])
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json()["total_price"] == 35.0
+
+    def test_apply_conditional_purchase_policy1(self):
+        #cant buy alcohol after 23 -> can buy alcohol only if time <= 23
+        condition1 = {
+            "applies_to": "time",
+            "name_of_apply": "",
+            "condition": "at_most",
+            "value": 8  #set time as you like
+        }
+
+        condition2 = {
+            "applies_to": "category",
+            "name_of_apply": "Alcohol",
+            "condition": "at_least",
+            "value": 1
+        }
+        simple_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition1
+        }
+
+        simple_purchase_policy_payload2 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition2
+        }
+
+        conditional_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": simple_purchase_policy_payload,
+            "restriction": simple_purchase_policy_payload2
+        }
+
+        # Add the conditional purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": conditional_purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Conditional purchase policy added successfully"
+
+        # Purchase a product
+        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+            "product_name": "Tomato",
+            "category": "Vegetables",
+            "quantity": 5
+        },
+            {
+                "product_name": "Vodka",
+                "category": "Alcohol",
+                "quantity": 1
+            }])
+
+        assert response.status_code == 400
+        assert response.json().get("detail") == "Purchase policy validation failed"
+
+    def test_doesnt_apply_conditional_purchase_policy1(self):
+        # cant buy alcohol after 23 -> can buy alcohol only if time <= 23
+        condition1 = {
+            "applies_to": "time",
+            "name_of_apply": "",
+            "condition": "at_most",
+            "value": 8  # set time as you like
+        }
+
+        condition2 = {
+            "applies_to": "category",
+            "name_of_apply": "Alcohol",
+            "condition": "at_least",
+            "value": 1
+        }
+        simple_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition1
+        }
+
+        simple_purchase_policy_payload2 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition2
+        }
+
+        conditional_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": simple_purchase_policy_payload,
+            "restriction": simple_purchase_policy_payload2
+        }
+
+        # Add the conditional purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": conditional_purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Conditional purchase policy added successfully"
+
+        # Purchase a product
+        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+            "product_name": "Tomato",
+            "category": "Vegetables",
+            "quantity": 5
+        }])
+
+        assert response.status_code == 200
+        assert response.json()["total_price"] == 35.0
+
+    def test_apply_composite_purchase_policy_and(self):
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+
+        condition2 = {
+            "applies_to": "product",
+            "name_of_apply": "Corn",
+            "condition": "at_least",
+            "value": 2
+        }
+
+        simple_purchase_policy_payload1 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition1
+        }
+
+        simple_purchase_policy_payload2 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition2
+        }
+
+        conditions = [simple_purchase_policy_payload1, simple_purchase_policy_payload2]
+        combine_function = 'logical_and'
+
+        composite_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "policies": conditions,
+            "combine_function": combine_function
+        }
+
+        # Add the composite purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": composite_purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Composite purchase policy added successfully"
+
+        # Purchase a product
+        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+            "product_name": "Tomato",
+            "category": "Vegetables",
+            "quantity": 5
+        },
+            {
+                "product_name": "Corn",
+                "category": "Vegetables",
+                "quantity": 1
+            }])
+
+        assert response.status_code == 400
+        assert response.json().get("detail") == "Purchase policy validation failed"
+
+    def test_doesnt_apply_composite_purchase_policy_and(self):
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+
+        condition2 = {
+            "applies_to": "product",
+            "name_of_apply": "Corn",
+            "condition": "at_least",
+            "value": 2
+        }
+
+        simple_purchase_policy_payload1 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition1
+        }
+
+        simple_purchase_policy_payload2 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition2
+        }
+
+        conditions = [simple_purchase_policy_payload1, simple_purchase_policy_payload2]
+        combine_function = 'logical_and'
+
+        composite_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "policies": conditions,
+            "combine_function": combine_function
+        }
+
+        # Add the composite purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": composite_purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Composite purchase policy added successfully"
+
+        # Purchase a product
+        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+            "product_name": "Tomato",
+            "category": "Vegetables",
+            "quantity": 5
+        },
+            {
+                "product_name": "Corn",
+                "category": "Vegetables",
+                "quantity": 2
+            }])
+
+        assert response.status_code == 200
+        assert response.json()["total_price"] == 65.0
+
+    def test_apply_conditional_composite_purchase_policy1(self):
+        # can buy alcohol only if time <=23 and tomato <= 5
+        # replaced with holiday because cant check that
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+        condition2 = {
+            "applies_to": "time",
+            "name_of_apply": "",
+            "condition": "at_most",
+            "value": 8
+        }
+        condition3 = {
+            "applies_to": "category",
+            "name_of_apply": "Alcohol",
+            "condition": "at_least",
+            "value": 1
+        }
+
+        simple_purchase_policy_payload1 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition1
+        }
+
+        simple_purchase_policy_payload2 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition2
+        }
+
+        simple_purchase_policy_payload3 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition3
+        }
+
+        composite_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "policies": [simple_purchase_policy_payload1, simple_purchase_policy_payload2],
+            "combine_function": "logical_and"
+        }
+
+        conditional_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": composite_purchase_policy_payload,
+            "restriction": simple_purchase_policy_payload3
+        }
+
+        # Add the conditional purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": conditional_purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Conditional purchase policy added successfully"
+
+        # Purchase a product
+        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+            "product_name": "Tomato",
+            "category": "Vegetables",
+            "quantity": 5
+        },
+            {
+                "product_name": "Vodka",
+                "category": "Alcohol",
+                "quantity": 1
+            }])
+
+        assert response.status_code == 400
+        assert response.json().get("detail") == "Purchase policy validation failed"
+
+    def test_doesnt_apply_conditional_composite_purchase_policy1(self):
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+        condition2 = {
+            "applies_to": "time",
+            "name_of_apply": "",
+            "condition": "at_most",
+            "value": 8
+        }
+        condition3 = {
+            "applies_to": "category",
+            "name_of_apply": "Alcohol",
+            "condition": "at_least",
+            "value": 1
+        }
+
+        simple_purchase_policy_payload1 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition1
+        }
+
+        simple_purchase_policy_payload2 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition2
+        }
+
+        simple_purchase_policy_payload3 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition3
+        }
+
+        composite_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "policies": [simple_purchase_policy_payload1, simple_purchase_policy_payload2],
+            "combine_function": "logical_and"
+        }
+
+        conditional_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": composite_purchase_policy_payload,
+            "restriction": simple_purchase_policy_payload3
+        }
+
+        # Add the conditional purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": conditional_purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Conditional purchase policy added successfully"
+
+        # Purchase a product
+        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+            "product_name": "Tomato",
+            "category": "Vegetables",
+            "quantity": 5
+        },
+        ])
+
+        assert response.status_code == 200
+        assert response.json()["total_price"] == 35.0
+
+    def test_apply_conditional_purchase_policy2(self):
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Eggplant",
+            "condition": "at_least",
+            "value": 1
+        }
+
+        condition2 = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_least",
+            "value": 5
+        }
+
+        simple_condition1 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition1
+        }
+        simple_condition2 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition2
+        }
+        conditional_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": simple_condition1,
+            "restriction": simple_condition2
+        }
+
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": conditional_purchase_policy_payload
+        })
+
+        assert response.status_code == 200
+        assert response.json() == "Conditional purchase policy added successfully"
+
+        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+            "product_name": "Tomato",
+            "category": "Vegetable",
+            "quantity": 5
+        }])
+
+        assert response.status_code == 400
+        assert response.json().get("detail") == "Purchase policy validation failed"
+
+    def test_doesnt_apply_conditional_purchase_policy2(self):
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Eggplant",
+            "condition": "at_least",
+            "value": 1
+        }
+
+        condition2 = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_least",
+            "value": 5
+        }
+
+        simple_condition1 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition1
+        }
+        simple_condition2 = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "condition": condition2
+        }
+        conditional_purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": simple_condition1,
+            "restriction": simple_condition2
+        }
+
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": conditional_purchase_policy_payload
+        })
+
+        assert response.status_code == 200
+        assert response.json() == "Conditional purchase policy added successfully"
+
+        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+            "product_name": "Tomato",
+            "category": "Vegetable",
+            "quantity": 5
+        },
+            {
+                "product_name": "Eggplant",
+                "category": "Vegetable",
+                "quantity": 1
+            }])
+
+        assert response.status_code == 200
+        assert response.json()["total_price"] == 42.0
 
         # Get the discount policies to verify the added discount
 
@@ -1021,21 +1781,17 @@ class StoreAPITestCase(TestCase):
         # response = self.client.post("/stores/{store_id}/assign_owner", json={
         #     "user_id": self.owner3_id, "store_id": self.store_id, "assigned_by": self.user_id
         # })
-        # print(response.content)
         # response = self.client.post("/stores/{store_id}/assign_manager", json={
         #                  "user_id": self.manager2_id, "store_id": self.store_id, "assigned_by": self.owner3_id
         # })
-        # print(response.content)
         response = self.client.delete("/stores/{store_id}/remove_owner", json={
             "user_id": self.owner2_id, "store_id": self.store_id, "removed_by": self.user_id
         })
-        # print(response.content)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Owner removed successfully"})
         response = self.client.get(f'/stores/{self.store_id}/get_managers', json={
             "user_id": self.user_id, "store_id": self.store_id
         })
-        # print(response.content)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 0)  #manager should have been removed because owner is removed
 
@@ -1086,20 +1842,17 @@ class StoreAPITestCase(TestCase):
         response = self.client.post("/stores/{store_id}/add_product", json={
             "role": {"user_id": self.owner2_id, "store_id": self.store_id},
             "payload": {"name": "Test Product 3", "quantity": 1, "initial_price": 100, "category": "Test Category"}})
-        # print(response.content)
 
         # Store owner deletes a product
         delete_response = self.client.delete("/stores/{store_id}/remove_product?product_name=Test Product 3", json={
             "user_id": self.user_id, "store_id": self.store_id
         })
-        # print(delete_response.content)
         # At the same time, another user tries to buy the product
         purchase_response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
             "product_name": "Test Product 3",
             "quantity": 1,
             "category": "Test Category"
         }])
-        # print(purchase_response.content)
 
         # The purchase request should fail
         self.assertEqual(purchase_response.status_code, 404)
@@ -1167,10 +1920,6 @@ class StoreAPITestCase(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
-
-
-
-
 
     # def test_concurrent_manager_appointment(self):
     #
