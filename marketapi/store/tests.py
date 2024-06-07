@@ -406,8 +406,7 @@ class StoreAPITestCase(TestCase):
 
         # Verify the response status code and message
         assert response.status_code == 200
-        assert response.json() == {"message": "Products purchased successfully", "total_price": 17.5,
-                                   "original_price": 35.0, "original_prices": [{'Milk': 35.0}]}
+        assert response.json() == {'message': 'Products purchased successfully', 'total_price': 17.5, 'original_price': 35.0, 'original_prices': [{'name': 'Milk', 'initial price': 7.0, 'quantity': 5, 'total price': 35.0}]}
         assert response.json()["total_price"] == 17.5
 
     def test_apply_simple_discount_policy_2(self):

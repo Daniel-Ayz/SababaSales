@@ -720,7 +720,7 @@ class StoreController:
             {"name": product.name,
              "initial price": product.initial_price,
              "quantity": item.quantity,
-             "total quantity": product.initial_price * item.quantity}
+             "total price": product.initial_price * item.quantity}
             for product, item in zip(products, payload)
         ]
 
