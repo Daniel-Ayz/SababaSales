@@ -726,8 +726,6 @@ class StoreAPITestCase(TestCase):
                 "category": "Pastry",
                 "quantity": 1
             }])
-
-        print(response.json())
         assert response.status_code == 200
         assert response.json()["total_price"] == 15
         assert response.json()["original_price"] == 15
@@ -780,9 +778,6 @@ class StoreAPITestCase(TestCase):
                 "category": "Dairy",
                 "quantity": 1
             }])
-
-
-        print(response.json())
 
         assert response.status_code == 200
         assert response.json()["total_price"] == 12.35
@@ -1168,6 +1163,24 @@ class StoreAPITestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
 
+    # def test_return_products(self):
+    #     response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+    #         "product_name": "Milk",
+    #         "category": "Dairy",
+    #         "quantity": 5
+    #     }])
+    #     self.assertEqual(response.status_code, 200)
+    #     response = self.client.put(f'/stores/{self.store_id}/return_products', json=[{
+    #         "product_name": "Milk",
+    #         "category": "Dairy",
+    #         "quantity": 5
+    #     }])
+    #     self.assertEqual(response.status_code, 200)
+    #     response = self.client.get(f'/stores/{self.store_id}/get_products', json={
+    #         "user_id": self.user_id, "store_id": self.store_id
+    #     })
+    #     self.assertEqual(response.status_code, 200)
+    #     self.assertEqual(response.json()[0]["quantity"], 100)
 
 
 

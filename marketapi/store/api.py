@@ -66,10 +66,10 @@ def remove_manager(request, payload: RemoveManagerSchemaIn):
 
 @router.post("/stores/{store_id}/change_manager_permissions")
 def assign_manager_permissions(
-    request,
-    payload: ManagerPermissionSchemaIn,
-    manager: RoleSchemaIn,
-    assigning_owner_id: int,
+        request,
+        payload: ManagerPermissionSchemaIn,
+        manager: RoleSchemaIn,
+        assigning_owner_id: int,
 ):
     return sc.assign_manager_permissions(request, payload, manager, assigning_owner_id)
 
@@ -117,7 +117,6 @@ def get_purchase_policy(request, store_id: int, role: RoleSchemaIn):
 
 
 @router.post("/stores/{store_id}/add_discount_policy")
-
 def add_discount_policy(request, role: RoleSchemaIn, payload: Union[
     SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, CompositeDiscountSchemaIn]):  # SimpleDiscountSchemaIn | ConditionalDiscountSchemaIn | CompositeDiscountSchemaIn
     return sc.add_discount_policy(request, role, payload).get("message")
@@ -125,7 +124,7 @@ def add_discount_policy(request, role: RoleSchemaIn, payload: Union[
 
 @router.delete("/stores/{store_id}/remove_discount_policy")
 def remove_discount_policy(
-    request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
+        request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
 ):
     return sc.remove_discount_policy(request, role, payload)
 
@@ -164,10 +163,16 @@ def purchase_product(request, store_id: int, payload: List[PurchaseStoreProductS
     return sc.purchase_product(request, store_id, payload)
 
 
-@router.post("/stores")
+@router.post("/stores/create_fake_data")
 def create_fake_data(request, payload: StoreSchemaIn):
     return sc.create_fake_data(request, payload)
 
+  
 @router.get("/stores/{store_id}/search", response=List[StoreProductSchemaOut])
 def search_products(request, search_query: SearchSchema, filter_query: FilterSearchSchema):
     return sc.search_products(request, search_query, filter_query)
+
+
+# @router.put("/stores/{store_id}/return_products")
+# def return_products(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
+#     return sc.return_products(request, store_id, payload)
