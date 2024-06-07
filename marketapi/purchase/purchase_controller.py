@@ -112,15 +112,27 @@ class purchaseController:
         request,
         user_id: int,  # the user that purchases this cart
         cart_id: int,
-        flag_delivery: bool = True,
-        flag_payment: bool = True,
+        flag_delivery: bool = False,
+        flag_payment: bool = False,
     ):
         try:
             # demo data
             # TODO: package details
             package_details = "Test package details"
-            delivery_address = uc.get_user_address(user_id)
-            payment_information_user = uc.get_user_payment_information(user_id)
+            if flag_delivery:
+                delivery_address = uc.get_user_address(request, user_id)
+            else:
+                delivery_address = "Test delivery address"
+            if flag_payment:
+                payment_information_user = uc.get_user_payment_information(request, user_id)
+            else:
+                payment_information_user = {
+                    "currency": "USD",
+                    "billing_address": "Test billing address",
+                    "credit_card_number": "1234 5678 1234 5678",
+                    "expiration_date": "12/23",
+                    "security_code": "123",
+                }
             currency = payment_information_user["currency"]
             billing_address = payment_information_user["billing_address"]
             credit_card_number = payment_information_user["credit_card_number"]
@@ -137,8 +149,7 @@ class purchaseController:
 
             # if payment is ok:
             cart = get_object_or_404(Cart, id=cart_id)
-
-            purchase = Purchase.objects.create(cart=cart, purchase_date=datetime.now())
+            purchase = Purchase.objects.create(cart=cart, purchase_date=datetime.now(), total_price=0, total_quantity=0)
             total_price = 0
             total_quantity = 0
             item_counter = 0  # this is for the delivery service - idk why not
@@ -150,40 +161,39 @@ class purchaseController:
                 ).values():
                     name = product["name"]
                     quantity = product["quantity"]
+                    category = product["category"]
                     schema = PurchaseStoreProductSchema(
-                        product_name=name, quantity=quantity
+                        product_name=name, quantity=quantity, category=category
                     )
                     products_list.append(schema)
                     item_counter += quantity
 
-                # print(products_list)
                 response = sc.purchase_product(
                     request=None, store_id=store_id, payload=products_list
-                )["total_price"]
+                )
                 
                 # calculate total price and quantity per basket
                 total_price += response["total_price"] 
                 total_basket_quantity = 0
-                for basket_product in response["history products basket"]:
-                    total_basket_quantity += basket_product.quantity
+                for basket_product in response["original_prices"]:
+                    total_basket_quantity += basket_product["quantity"]
 
                 total_quantity += total_basket_quantity
-
                 history_basket = HistoryBasket.objects.create(
                     store_id=store_id,
-                    purchase_id=purchase.purchase_id,
+                    purchase_id=purchase,
                     total_price=response["total_price"],
                     total_quantity=total_basket_quantity,
-                    discount=response["discount"],
+                    discount=response["original_price"] - response["total_price"],
                 )
                 history_basket.save()
+                
 
-                for basket_product_schema in response["history products basket"]:
+                for basket_product_schema in response["original_prices"]:
                     history_basket_product = HistoryBasketProduct.objects.create(
-                        quantity = basket_product_schema.quantity,
-                        name=basket_product_schema.product_name,
-                        initial_price=basket_product_schema.initial_price,
-                        post_discount_price=basket_product_schema.post_discount_price,
+                        quantity = basket_product_schema["quantity"],
+                        name=basket_product_schema["name"],
+                        initial_price=basket_product_schema["initial price"],
                         history_basket_id= history_basket.basket_id
                     )
                     history_basket_product.save()
@@ -191,10 +201,9 @@ class purchaseController:
             delivery_result = delivery_service.create_shipment(
                 delivery_address, item_counter, flag_delivery
             )  # we are passing address, total amount of items and a flag for the delivery service
-
             if delivery_result["result"]:
                 raise HttpError(400, f'error": "Delivery failed')
-                
+            
             total_price += delivery_result["delivery_fee"]
 
             payment_details["total_price"] = total_price
@@ -203,9 +212,8 @@ class purchaseController:
             )
             if payment_result["result"]:
                 raise HttpError(400, f'error": "Payment failed')
-
-            Purchase.objects.update(
-                total_price=total_price, total_quantity=total_quantity, purchase=purchase
+            Purchase.objects.filter(purchase_id=purchase.purchase_id).update(
+                total_price=total_price, total_quantity=total_quantity
             )
 
             purchase.save()

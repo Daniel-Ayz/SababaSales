@@ -640,10 +640,12 @@ class StoreController:
         original_total_price = total_price
 
         original_prices = [
-            {product.name: product.initial_price * item.quantity}
+            {"name": product.name,
+             "initial price": product.initial_price,
+             "quantity": item.quantity,
+             "total quantity": product.initial_price * item.quantity}
             for product, item in zip(products, payload)
         ]
-
         # Check purchase policy limits
         store_purchase_policy = get_object_or_404(PurchasePolicy, store=store)
         if (
@@ -677,7 +679,6 @@ class StoreController:
                 product.delete()
             else:
                 product.save()
-
         return {
             "message": "Products purchased successfully",
             "total_price": total_price,
