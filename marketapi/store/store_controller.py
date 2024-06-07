@@ -1,6 +1,7 @@
 import json
 from typing import List, Union
 
+from django.db import transaction, connection
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.errors import HttpError
@@ -59,18 +60,25 @@ class StoreController:
 
     def assign_owner(self, request, payload: OwnerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-        assigning_owner = get_object_or_404(
-            Owner, user_id=payload.assigned_by, store=store
-        )
-        if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
-            raise HttpError(400, "User is already an owner")
+        store_lock_id = f"{store.pk}_assign_owner_lock"
 
-        owner = Owner.objects.create(
-            user_id=payload.user_id,
-            assigned_by=assigning_owner,
-            store=store,
-            is_founder=False,
-        )
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                # Acquire an advisory lock on the store
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(store_lock_id)});")
+
+                assigning_owner = get_object_or_404(
+                    Owner, user_id=payload.assigned_by, store=store
+                )
+                if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
+                    raise HttpError(400, "User is already an owner")
+
+                owner = Owner.objects.create(
+                    user_id=payload.user_id,
+                    assigned_by=assigning_owner,
+                    store=store,
+                    is_founder=False,
+                )
         return {"message": "Owner assigned successfully"}
 
     # @router.post("/stores/{store_id}/assign_owner")
@@ -127,21 +135,29 @@ class StoreController:
 
     def assign_manager(self, request, payload: ManagerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-        assigning_owner = get_object_or_404(
-            Owner, user_id=payload.assigned_by, store=store
-        )
-        if Manager.objects.filter(user_id=payload.user_id, store=store).exists():
-            raise HttpError(400, "User is already a manager")
-        elif Owner.objects.filter(user_id=payload.user_id, store=store).exists():
-            raise HttpError(400, "User is already an owner")
+        store_lock_id = hash(f"{store.pk}_assign_manager_lock")
 
-            # Check if the assigning user is an owner
-        if not Owner.objects.filter(user_id=payload.assigned_by, store=store).exists():
-            raise HttpError(403, "Only owners can assign managers")
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                # Acquire an advisory lock on the store
+                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [store_lock_id])
 
-        manager = Manager.objects.create(
-            user_id=payload.user_id, assigned_by=assigning_owner, store=store
-        )
+                assigning_owner = get_object_or_404(
+                    Owner, user_id=payload.assigned_by, store=store
+                )
+                if Manager.objects.filter(user_id=payload.user_id, store=store).exists():
+                    raise HttpError(400, "User is already a manager")
+                elif Owner.objects.filter(user_id=payload.user_id, store=store).exists():
+                    raise HttpError(400, "User is already an owner")
+
+                # Check if the assigning user is an owner
+                if not Owner.objects.filter(user_id=payload.assigned_by, store=store).exists():
+                    raise HttpError(403, "Only owners can assign managers")
+
+                manager = Manager.objects.create(
+                    user_id=payload.user_id, assigned_by=assigning_owner, store=store
+                )
+
         return {"message": "Manager assigned successfully"}
 
     def remove_manager(self, request, payload: RemoveManagerSchemaIn):
@@ -432,8 +448,6 @@ class StoreController:
                 discount=discount
             )
 
-
-
         return {"message": "Composite discount policy added successfully", "discount": discount}
 
     def remove_discount_policy(
@@ -622,63 +636,70 @@ class StoreController:
         return products
 
     def purchase_product(
-        self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
+            self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
     ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to purchase")
+
         store = get_object_or_404(Store, pk=store_id)
+        store_lock_id = hash(f"{store.pk}_purchase_product_lock")
 
-        total_items = sum(item.quantity for item in payload)
-        products = [
-            get_object_or_404(StoreProduct, store=store, name=item.product_name)
-            for item in payload
-        ]
-        total_price = sum(
-            [
-                product.initial_price * item.quantity
-                for product, item in zip(products, payload)
-            ]
-        )
-        original_total_price = total_price
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                # Acquire an advisory lock on the store
+                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [store_lock_id])
 
-        original_prices = [
-            {product.name: product.initial_price * item.quantity}
-            for product, item in zip(products, payload)
-        ]
-
-        # Check purchase policy limits
-        store_purchase_policy = get_object_or_404(PurchasePolicy, store=store)
-        if (
-            store_purchase_policy.max_items_per_purchase
-            and total_items > store_purchase_policy.max_items_per_purchase
-        ):
-            raise HttpError(
-                400, "Total items exceeds the maximum items per purchase limit"
-            )
-        if (
-            store_purchase_policy.min_items_per_purchase
-            and total_items < store_purchase_policy.min_items_per_purchase
-        ):
-            raise HttpError(
-                400, "Total items is less than the minimum items per purchase limit"
-            )
-
-        # Apply discount policy
-        total_price -= self.calculate_cart_discount(payload, store)
-
-        for item in payload:
-            product = get_object_or_404(
-                StoreProduct, store=store, name=item.product_name
-            )
-            if product.quantity < item.quantity:
-                raise HttpError(
-                    400, f"Insufficient quantity of {product.name} in store"
+                total_items = sum(item.quantity for item in payload)
+                products = [
+                    get_object_or_404(StoreProduct, store=store, name=item.product_name)
+                    for item in payload
+                ]
+                total_price = sum(
+                    [
+                        product.initial_price * item.quantity
+                        for product, item in zip(products, payload)
+                    ]
                 )
-            product.quantity -= item.quantity
-            if product.quantity == 0:
-                product.delete()
-            else:
-                product.save()
+                original_total_price = total_price
+
+                original_prices = [
+                    {product.name: product.initial_price * item.quantity}
+                    for product, item in zip(products, payload)
+                ]
+
+                # Check purchase policy limits
+                store_purchase_policy = get_object_or_404(PurchasePolicy, store=store)
+                if (
+                        store_purchase_policy.max_items_per_purchase
+                        and total_items > store_purchase_policy.max_items_per_purchase
+                ):
+                    raise HttpError(
+                        400, "Total items exceeds the maximum items per purchase limit"
+                    )
+                if (
+                        store_purchase_policy.min_items_per_purchase
+                        and total_items < store_purchase_policy.min_items_per_purchase
+                ):
+                    raise HttpError(
+                        400, "Total items is less than the minimum items per purchase limit"
+                    )
+
+                # Apply discount policy
+                total_price -= self.calculate_cart_discount(payload, store)
+
+                for item in payload:
+                    product = get_object_or_404(
+                        StoreProduct, store=store, name=item.product_name
+                    )
+                    if product.quantity < item.quantity:
+                        raise HttpError(
+                            400, f"Insufficient quantity of {product.name} in store"
+                        )
+                    product.quantity -= item.quantity
+                    if product.quantity == 0:
+                        product.delete()
+                    else:
+                        product.save()
 
         return {
             "message": "Products purchased successfully",
