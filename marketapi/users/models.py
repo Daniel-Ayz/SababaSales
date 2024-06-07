@@ -72,3 +72,4 @@ class BasketProduct(models.Model):
     basket = models.ForeignKey(
         Basket, on_delete=models.CASCADE, related_name="products"
     )
+    category = models.CharField(max_length=100, default="category")
