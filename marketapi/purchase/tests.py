@@ -179,6 +179,7 @@ class TestPurchase(TestCase):
         # Perform the test
         response = self.client.get(f"/{self.user_id}/get_purchase_history")
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
 
     # Test 6: Negative test case, get purchase history of a user that does not exist
     def test_get_purchase_history_store_not_exist(self):

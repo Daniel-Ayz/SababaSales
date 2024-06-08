@@ -62,7 +62,7 @@ class purchaseController:
                 "purchase_date": purchase.purchase_date,
                 "total_price": purchase.total_price,
                 "total_quantity": purchase.total_quantity,
-                "cart_id": purchase.cart, #not sure
+                "cart_id": purchase.cart.id, 
                 "baskets": [],
             }
 
@@ -91,7 +91,6 @@ class purchaseController:
                     )
 
                 purchase_receipt["baskets"].append(history_basket_schema)
-
             return purchase_receipt
 
         except Purchase.DoesNotExist as e:
@@ -167,10 +166,13 @@ class purchaseController:
                     )
                     products_list.append(schema)
                     item_counter += quantity
-
-                response = sc.purchase_product(
-                    request=None, store_id=store_id, payload=products_list
-                )
+                try:
+                    response = sc.purchase_product(
+                        request=None, store_id=store_id, payload=products_list
+                    )
+                except HttpError as e:
+                    Purchase.objects.filter(purchase_id=purchase.purchase_id).delete()
+                    raise HttpError(400, str(e))
                 
                 # calculate total price and quantity per basket
                 total_price += response["total_price"] 
@@ -217,7 +219,12 @@ class purchaseController:
             )
 
             purchase.save()
-            return {"message": "Purchase added successfully"}
+            return {"message": "Purchase added successfully", 
+                    "purchase_id": purchase.purchase_id, 
+                    "purchase_date": purchase.purchase_date, 
+                    "total_price": purchase.total_price, 
+                    "total_quantity": purchase.total_quantity,
+                    "cart_id": purchase.cart_id}
 
         except CustomUser.DoesNotExist as e:
             raise HttpError(404, f'error": "User not found')
@@ -226,7 +233,7 @@ class purchaseController:
         except Basket.DoesNotExist as e:
             raise HttpError(404, f'error": "Basket not found')
         except BasketProduct.DoesNotExist as e:
-            raise HttpError(404, f'error": "BasketProduct not found')
+            raise HttpError(404, f'error": "BasketProduct not found')   
         except HttpError as e:
             raise e
         except Exception as e:
