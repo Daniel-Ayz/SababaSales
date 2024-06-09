@@ -218,7 +218,9 @@ class purchaseController:
                 total_price=total_price, total_quantity=total_quantity
             )
 
+            purchase = Purchase.objects.get(purchase_id=purchase.purchase_id)
             purchase.save()
+
             return {"message": "Purchase added successfully", 
                     "purchase_id": purchase.purchase_id, 
                     "purchase_date": purchase.purchase_date, 
