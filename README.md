@@ -103,6 +103,24 @@ This will install pre-commit hooks that will run automatically before each commi
   pre-commit install
 ```
 
+### Set up database
+We use PostgreSQL so make sure you download it online, 
+you can set it up with any password you'd like, just make sure it matches the password in `settings.py`.
+in order to create a database:
+```bash
+  createdb -U postgres db
+```
+
+if your tests require a specific number to work, for example if the test depends on store_id being 1,
+you'll need to change your test class to be as follows:
+```python
+class StoreAPITestCase(TransactionTestCase):
+    reset_sequences = True
+```
+The rest is the same, define functions and test them, nocie you should only change under the circumstances mentioned
+because the tests run slower this way.
+
+
 ### Start Up server
 Initialize the database (if we don't have one already):
 ```bash
@@ -114,6 +132,7 @@ Start the server instance
   python manage.py runserver
 ```
 The application should be available at [http://localhost:8000/](http://127.0.0.1:8000/api/docs) through your browser
+
 
 ### Setup Pycharm
 Click the Python Interpreter selector and choose Add Interpreter (Add the existing one you created in the virtual environment)
