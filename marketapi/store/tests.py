@@ -1,9 +1,12 @@
 import json
 
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from ninja.testing import TestClient
 
 from .api import router
+import threading
+import queue
+
 
 
 def string_to_list(string):
@@ -11,7 +14,9 @@ def string_to_list(string):
     return jsonDec.decode(string)
 
 
-class StoreAPITestCase(TestCase):
+class StoreAPITestCase(TransactionTestCase):
+    reset_sequences = True
+
 
     def setUp(self):
         self.client = TestClient(router)
@@ -132,7 +137,7 @@ class StoreAPITestCase(TestCase):
         # })
 
     def test_get_store(self):
-        response = self.client.get(f'/stores/1')
+        response = self.client.get(f'/stores/{self.store_id}')
         self.assertEqual(response.status_code, 200)
         json_data = response.json()
         json_data_excluded = {key: value for key, value in json_data.items() if key != 'created_at'}
@@ -1822,20 +1827,36 @@ class StoreAPITestCase(TestCase):
             "role": {"user_id": self.owner2_id, "store_id": self.store_id},
             "payload": {"name": "Test Product 2", "quantity": 1, "initial_price": 100, "category": "Test Category"}})
 
-        # Both users try to purchase the last product at the same time
-        response1 = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
-            "product_name": "Test Product 2",
-            "quantity": 1,
-            "category": "Test Category"
+        def purchase_product(queue):
+            response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+                "product_name": "Test Product 2",
+                "quantity": 1,
+                "category": "Test Category"
+            }])
+            queue.put(response)  # Put response in the queue
 
-        }])
-        response2 = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
-            "product_name": "Test Product 2",
-            "quantity": 1,
-            "category": "Test Category"
-        }])
-        # One of the requests should fail
-        self.assertTrue(response1.status_code == 404 or response2.status_code == 404)
+        # Create a queue to store responses
+        response_queue = queue.Queue()
+
+        # Create threads for each request
+        thread1 = threading.Thread(target=purchase_product, args=(response_queue,))
+        thread2 = threading.Thread(target=purchase_product, args=(response_queue,))
+
+        # Start both threads
+        thread1.start()
+        thread2.start()
+
+        # Wait for both threads to finish
+        thread1.join()
+        thread2.join()
+
+        # Get responses from the queue
+        response1 = response_queue.get()
+        response2 = response_queue.get()
+
+        # One of the requests should fail (return 404)
+        self.assertTrue(response1.status_code == 404 or response2.status_code == 404) and self.assertTrue(
+            response1.status_code == 200 or response2.status_code == 200)
 
     def test_concurrent_product_deletion_and_purchase(self):
         response = self.client.post("/stores/{store_id}/add_product", json={
@@ -1858,7 +1879,7 @@ class StoreAPITestCase(TestCase):
 
     def test_search_product_in_store_no_filter(self):
         search = {
-            "store_id": 1,
+            "store_id": self.store_id,
             "product_name": "Bread Loaf"
         }
 
@@ -1920,36 +1941,39 @@ class StoreAPITestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
 
-    # def test_return_products(self):
-    #     response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
-    #         "product_name": "Milk",
-    #         "category": "Dairy",
-    #         "quantity": 5
-    #     }])
-    #     self.assertEqual(response.status_code, 200)
-    #     response = self.client.put(f'/stores/{self.store_id}/return_products', json=[{
-    #         "product_name": "Milk",
-    #         "category": "Dairy",
-    #         "quantity": 5
-    #     }])
-    #     self.assertEqual(response.status_code, 200)
-    #     response = self.client.get(f'/stores/{self.store_id}/get_products', json={
-    #         "user_id": self.user_id, "store_id": self.store_id
-    #     })
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(response.json()[0]["quantity"], 100)
+    def test_concurrent_manager_appointment(self):
+        self.owner3_id = 100
 
-    # def test_concurrent_manager_appointment(self):
-    #
-    #     # Both owners try to appoint the same user as a manager at the same time
-    #     response1 = self.client.post("/stores/{store_id}/add_manager", json={
-    #         "role": {"user_id": self.user_id, "store_id": self.store_id},
-    #         "payload": {"user_id": self.owner2.id}
-    #     })
-    #     response2 = self.client.post("/stores/{store_id}/add_manager", json={
-    #         "role": {"user_id": self.user_id, "store_id": self.store_id},
-    #         "payload": {"user_id": self.owner2.id}
-    #     })
-    #
-    #     # One of the requests should fail
-    #     self.assertTrue(response1.status_code == 400 or response2.status_code == 400)
+        def make_request(queue, user_id, store_id, assigned_by):
+            response = self.client.post("/stores/{store_id}/assign_owner", json={
+                "user_id": user_id,
+                "store_id": self.store_id,
+                "assigned_by": assigned_by
+            })
+            queue.put(response)  # Put response in the queue
+
+        # Create a queue to store responses
+        response_queue = queue.Queue()
+
+        # Create threads for each request
+        thread1 = threading.Thread(target=make_request,
+                                   args=(response_queue, self.owner3_id, self.store_id, self.user_id))
+        thread2 = threading.Thread(target=make_request,
+                                   args=(response_queue, self.owner3_id, self.store_id, self.user_id))
+
+        # Start both threads
+        thread1.start()
+        thread2.start()
+
+        # Wait for both threads to finish
+        thread1.join()
+        thread2.join()
+
+        # Get responses from the queue
+        response1 = response_queue.get()
+        response2 = response_queue.get()
+
+
+        # Assert that at least one response has a conflict (400)
+        self.assertTrue(response1.status_code == 400 or response2.status_code == 400) and self.assertTrue(
+            response1.status_code == 200 or response2.status_code == 200)

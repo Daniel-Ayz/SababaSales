@@ -84,8 +84,13 @@ WSGI_APPLICATION = "marketapi.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "db",
+        "PASSWORD": "1234",
+        "USER": "postgres",
+        "HOST": "localhost",
+        "PORT": "5432",
+        'ATOMIC_REQUESTS': True,
     }
 }
 
@@ -106,7 +111,6 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/4.2/topics/i18n/

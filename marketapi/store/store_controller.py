@@ -3,6 +3,7 @@ import operator
 from functools import reduce
 from typing import List, Union
 
+from django.db import transaction, connection
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.errors import HttpError
@@ -64,18 +65,25 @@ class StoreController:
 
     def assign_owner(self, request, payload: OwnerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-        assigning_owner = get_object_or_404(
-            Owner, user_id=payload.assigned_by, store=store
-        )
-        if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
-            raise HttpError(400, "User is already an owner")
+        store_lock_id = f"{store.pk}_assign_owner_lock"
 
-        owner = Owner.objects.create(
-            user_id=payload.user_id,
-            assigned_by=assigning_owner,
-            store=store,
-            is_founder=False,
-        )
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                # Acquire an advisory lock on the store
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(store_lock_id)});")
+
+                assigning_owner = get_object_or_404(
+                    Owner, user_id=payload.assigned_by, store=store
+                )
+                if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
+                    raise HttpError(400, "User is already an owner")
+
+                owner = Owner.objects.create(
+                    user_id=payload.user_id,
+                    assigned_by=assigning_owner,
+                    store=store,
+                    is_founder=False,
+                )
         return {"message": "Owner assigned successfully"}
 
     # @router.post("/stores/{store_id}/assign_owner")
@@ -132,21 +140,29 @@ class StoreController:
 
     def assign_manager(self, request, payload: ManagerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-        assigning_owner = get_object_or_404(
-            Owner, user_id=payload.assigned_by, store=store
-        )
-        if Manager.objects.filter(user_id=payload.user_id, store=store).exists():
-            raise HttpError(400, "User is already a manager")
-        elif Owner.objects.filter(user_id=payload.user_id, store=store).exists():
-            raise HttpError(400, "User is already an owner")
+        store_lock_id = hash(f"{store.pk}_assign_manager_lock")
 
-            # Check if the assigning user is an owner
-        if not Owner.objects.filter(user_id=payload.assigned_by, store=store).exists():
-            raise HttpError(403, "Only owners can assign managers")
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                # Acquire an advisory lock on the store
+                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [store_lock_id])
 
-        manager = Manager.objects.create(
-            user_id=payload.user_id, assigned_by=assigning_owner, store=store
-        )
+                assigning_owner = get_object_or_404(
+                    Owner, user_id=payload.assigned_by, store=store
+                )
+                if Manager.objects.filter(user_id=payload.user_id, store=store).exists():
+                    raise HttpError(400, "User is already a manager")
+                elif Owner.objects.filter(user_id=payload.user_id, store=store).exists():
+                    raise HttpError(400, "User is already an owner")
+
+                # Check if the assigning user is an owner
+                if not Owner.objects.filter(user_id=payload.assigned_by, store=store).exists():
+                    raise HttpError(403, "Only owners can assign managers")
+
+                manager = Manager.objects.create(
+                    user_id=payload.user_id, assigned_by=assigning_owner, store=store
+                )
+
         return {"message": "Manager assigned successfully"}
 
     def remove_manager(self, request, payload: RemoveManagerSchemaIn):
@@ -259,7 +275,7 @@ class StoreController:
             purchase_policy=policy
         )
         return {"message": "Simple purchase policy added successfully", "policy": policy}
- 
+
 
     def add_conditional_purchase_policy(self, payload: ConditionalPurchasePolicySchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
@@ -291,6 +307,7 @@ class StoreController:
         self.validate_permissions(role, store, "can_remove_purchase_policy")
         policy = get_object_or_404(PurchasePolicyBase, pk=payload.policy_id, store=store)
         policy.delete()
+
         return {"message": "Purchase policy removed successfully"}
 
     def get_purchase_policies(self, request, role: RoleSchemaIn):
@@ -509,6 +526,8 @@ class StoreController:
                 discount=discount
             )
 
+
+
         return {"message": "Composite discount policy added successfully", "discount": discount}
 
     def remove_discount_policy(
@@ -701,48 +720,56 @@ class StoreController:
     ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to purchase")
+
         store = get_object_or_404(Store, pk=store_id)
+        store_lock_id = hash(f"{store.pk}_purchase_product_lock")
 
-        total_items = sum(item.quantity for item in payload)
-        products = [
-            get_object_or_404(StoreProduct, store=store, name=item.product_name)
-            for item in payload
-        ]
-        total_price = sum(
-            [
-                product.initial_price * item.quantity
-                for product, item in zip(products, payload)
-            ]
-        )
-        original_total_price = total_price
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                # Acquire an advisory lock on the store
+                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [store_lock_id])
 
-        original_prices = [
-            {"name": product.name,
-             "initial price": product.initial_price,
-             "quantity": item.quantity,
-             "total price": product.initial_price * item.quantity}
-            for product, item in zip(products, payload)
-        ]
-
-        if not self.validate_purchase_policy(store, payload):
-            raise HttpError(400, "Purchase policy validation failed")
-
-        # Apply discount policy
-        total_price -= self.calculate_cart_discount(payload, store)
-
-        for item in payload:
-            product = get_object_or_404(
-                StoreProduct, store=store, name=item.product_name
-            )
-            if product.quantity < item.quantity:
-                raise HttpError(
-                    400, f"Insufficient quantity of {product.name} in store"
+                total_items = sum(item.quantity for item in payload)
+                products = [
+                    get_object_or_404(StoreProduct, store=store, name=item.product_name)
+                    for item in payload
+                ]
+                total_price = sum(
+                    [
+                        product.initial_price * item.quantity
+                        for product, item in zip(products, payload)
+                    ]
                 )
-            product.quantity -= item.quantity
-            if product.quantity == 0:
-                product.delete()
-            else:
-                product.save()
+                original_total_price = total_price
+
+                original_prices = [
+                    {"name": product.name,
+                     "initial price": product.initial_price,
+                     "quantity": item.quantity,
+                     "total price": product.initial_price * item.quantity}
+                    for product, item in zip(products, payload)
+                ]
+
+                if not self.validate_purchase_policy(store, payload):
+                    raise HttpError(400, "Purchase policy validation failed")
+
+                # Apply discount policy
+                total_price -= self.calculate_cart_discount(payload, store)
+
+                for item in payload:
+                    product = get_object_or_404(
+                        StoreProduct, store=store, name=item.product_name
+                    )
+                    if product.quantity < item.quantity:
+                        raise HttpError(
+                            400, f"Insufficient quantity of {product.name} in store"
+                        )
+                    product.quantity -= item.quantity
+                    if product.quantity == 0:
+                        product.delete()
+                    else:
+                        product.save()
+
         return {
             "message": "Products purchased successfully",
             "total_price": total_price,
@@ -796,7 +823,7 @@ class StoreController:
                     total_discount += discount
         return total_discount
 
-      
+
     def get_purchase_policy_instance(self, purchase_model: PurchasePolicyBase, store: Store):
         if isinstance(purchase_model, SimplePurchasePolicy):
             return SimplePurchasePolicyClass(
@@ -954,3 +981,42 @@ class StoreController:
                 )
 
         return {"message": "Fake data created successfully"}
+
+      
+    def search_products(self, request, search_query: SearchSchema, filter_query: FilterSearchSchema):
+        if search_query.store_id:
+            store = get_object_or_404(Store, pk=search_query.store_id)
+            if not store.is_active:
+                raise HttpError(403, "Store is closed")
+            if search_query.product_name and not search_query.category:
+                products = StoreProduct.objects.filter(store=store, name__icontains=search_query.product_name)
+            elif search_query.category and not search_query.product_name:
+                products = StoreProduct.objects.filter(store=store, category__icontains=search_query.category)
+            elif search_query.product_name and search_query.category:
+                products = StoreProduct.objects.filter(store=store, name__icontains=search_query.product_name,
+                                                       category__icontains=search_query.category)
+            else:
+                products = StoreProduct.objects.filter(store=store)
+        else:
+            if search_query.product_name and not search_query.category:
+                products = StoreProduct.objects.filter(name__icontains=search_query.product_name, store__is_active=True)
+            elif search_query.category and not search_query.product_name:
+                products = StoreProduct.objects.filter(category__icontains=search_query.category, store__is_ative=True)
+            elif search_query.product_name and search_query.category:
+                products = StoreProduct.objects.filter(name__icontains=search_query.product_name,
+                                                       category__icontains=search_query.category, store__is_active=True)
+            else:
+                products = StoreProduct.objects.filter(store__is_active=True)
+
+        if filter_query.min_price:
+            products = products.filter(initial_price__gte=filter_query.min_price)
+        if filter_query.max_price:
+            products = products.filter(initial_price__lte=filter_query.max_price)
+        if filter_query.min_quantity:
+            products = products.filter(quantity__gte=filter_query.min_quantity)
+        if filter_query.max_quantity:
+            products = products.filter(quantity__lte=filter_query.max_quantity)
+
+        return products
+
+
