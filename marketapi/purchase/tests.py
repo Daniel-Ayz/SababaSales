@@ -117,6 +117,11 @@ class TestPurchase(TestCase):
         # Ensure that the purchase was not made
         history_after = self.client.get(f"/{self.user_id}/get_purchase_history")
         self.assertNotEqual(history_before.json(), history_after.json())
+        self.assertEqual(history_after.json()[0]["purchase_id"], 1)
+        self.assertEqual(history_after.json()[0]["cart"], self.cart_id)
+        self.assertEqual(history_after.json()[0]["total_price"], '1000.00')
+        self.assertEqual(history_after.json()[0]["total_quantity"], 10)
+
 
     # Test 2: Negative test case, make purchase of all products in cart with delivery failure
     def test_supply_service_failure(self):
@@ -190,6 +195,23 @@ class TestPurchase(TestCase):
         response = self.client.get(f"/{invalid_user_id}/get_purchase_history")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), [])
+
+    # Test 7: positive test case, get a purchase receipt after a successful purchase
+    def test_get_purchase_receipt_positive(self):
+
+        response = self.client.post(f"/{self.user_id}/{self.cart_id}/make_purchase")
+        self.assertEqual(response.status_code, 200)
+
+        # Verify that the purchase is successfully completed
+        self.assertEqual(response.json()["message"], "Purchase added successfully")
+
+        # Perform the test
+        response = self.client.get(f"/{self.user_id}/get_purchase_receipt?purchase_id=1")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["purchase_id"], 1)
+        self.assertEqual(response.json()["cart"], self.cart_id)
+        self.assertEqual(response.json()["total_price"], '1000.00')
+        self.assertEqual(response.json()["total_quantity"], 10) 
 
 
     # def test_get_purchase_history_actor_not_store_owner(self):
