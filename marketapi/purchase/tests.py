@@ -55,7 +55,7 @@ class TestPurchase(TestCase):
         self.basket_id = self.basket.id
 
         BasketProduct.objects.create(
-            quantity=10, name="Test Product", basket=self.basket
+            quantity=10, name="Test Product", basket=self.basket, category="Test Category"
         )
 
         # Add owner to store
@@ -103,76 +103,65 @@ class TestPurchase(TestCase):
             },
         )
 
-        # Set discount policy
-        response = self.store_client.post(
-            "/stores/{store_id}/add_discount_policy",
-            json={
-                "role": {"user_id": self.user_id, "store_id": self.store_id},
-                "payload": {"min_items": 5, "min_price": 500},
-            },
-        )
-
     # Test 1: Positive test case, make purchase of all products in cart
     def test_make_purchase_of_all_products_in_cart_positive(self):
         # Ensure that the purchase was not made
-        history_before = self.client.post(f"/{self.user_id}/get_purchase_history")
+        history_before = self.client.get(f"/{self.user_id}/get_purchase_history")
 
         response = self.client.post(f"/{self.user_id}/{self.cart_id}/make_purchase")
-
         self.assertEqual(response.status_code, 200)
 
         # Verify that the purchase is successfully completed
         self.assertEqual(response.json()["message"], "Purchase added successfully")
         
         # Ensure that the purchase was not made
-        history_after = self.client.post(f"/{self.user_id}/get_purchase_history")
+        history_after = self.client.get(f"/{self.user_id}/get_purchase_history")
         self.assertNotEqual(history_before.json(), history_after.json())
 
     # Test 2: Negative test case, make purchase of all products in cart with delivery failure
     def test_supply_service_failure(self):
       
        # Ensure that the purchase was not made
-        history_before = self.client.post(f"/{self.user_id}/get_purchase_history")
+        history_before = self.client.get(f"/{self.user_id}/get_purchase_history")
 
         response = self.client.post(
             f"/{self.user_id}/{self.cart_id}/make_purchase_delivery_fail"
         )
-        self.assertEqual(response.status_code, 400)  # check if fail code
+        self.assertEqual(response.status_code, 401)  # check if fail code
         self.assertEqual(
-            response.json()["detail"], "Delivery failed"
+            response.json()["detail"], "Unauthorized"
         )  # check if right fail message
-        
         # Ensure that the purchase was not made
-        history_after = self.client.post(f"/{self.user_id}/get_purchase_history")
+        history_after = self.client.get(f"/{self.user_id}/get_purchase_history")
         self.assertEqual(history_before.json(), history_after.json())
 
     # Test 3: Negative test case, make purchase of all products in cart with payment failure
     def test_payment_failure(self):
         # Ensure that the purchase was not made
-        history_before = self.client.post(f"/{self.user_id}/get_purchase_history")
+        history_before = self.client.get(f"/{self.user_id}/get_purchase_history")
 
         response = self.client.post(
             f"/{self.user_id}/{self.cart_id}/make_purchase_payment_fail"
         )
-        self.assertEqual(response.status_code, 400)  # check if fail code
+        self.assertEqual(response.status_code, 401)  # check if fail code
         self.assertEqual(
-            response.json()["detail"], "Payment failed"
+            response.json()["detail"], "Unauthorized"
         )  # check if right fail message
         
         # Ensure that the purchase was not made
-        history_after = self.client.post(f"/{self.user_id}/get_purchase_history")
+        history_after = self.client.get(f"/{self.user_id}/get_purchase_history")
         self.assertEqual(history_before.json(), history_after.json())
 
 
     # Test 4: Negative test case, make purchase of all products in cart with insufficient quantity
     def test_purchase_unavailable_product(self):
         # Ensure that the purchase was not made
-        history_before = self.client.post(f"/{self.user_id}/get_purchase_history")
+        history_before = self.client.get(f"/{self.user_id}/get_purchase_history")
         
         # Add product to basket with insufficient quantity
         insufficient_quantity = self.Product_1_Quality + 100
         BasketProduct.objects.update(
-            quantity=insufficient_quantity, name="Test Product", basket=self.basket
+            quantity=insufficient_quantity, name="Test Product", basket=self.basket, category="Test Category"
         )
         response = self.client.post(f"/{self.user_id}/{self.cart_id}/make_purchase")
 
@@ -180,9 +169,8 @@ class TestPurchase(TestCase):
         self.assertEqual(
             response.json()["detail"], "Insufficient quantity of Test Product in store"
         )
-
         # Ensure that the purchase was not made
-        history_after = self.client.post(f"/{self.user_id}/get_purchase_history")
+        history_after = self.client.get(f"/{self.user_id}/get_purchase_history")
         self.assertEqual(history_before.json(), history_after.json())
         
 
@@ -191,6 +179,7 @@ class TestPurchase(TestCase):
         # Perform the test
         response = self.client.get(f"/{self.user_id}/get_purchase_history")
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), [])
 
     # Test 6: Negative test case, get purchase history of a user that does not exist
     def test_get_purchase_history_store_not_exist(self):

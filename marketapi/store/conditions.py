@@ -16,6 +16,8 @@ operator_map = {
 }
 
 
+
+
 def evaluate_condition(operator_name, value1, value2):
     if operator_name in operator_map:
         return operator_map[operator_name](value1, value2)
@@ -53,9 +55,9 @@ def build_price_condition(conditionModel):
 def build_time_condition(conditionModel):
     def time_condition(cart_products: List[PurchaseStoreProductSchema], products: List[StoreProduct]):
         current_hour = datetime.now().hour
-        total = sum([product.quantity for product in cart_products
-                     if (product.category == conditionModel.name_of_apply or conditionModel.name_of_apply == "all"
-                         or product.product_name == conditionModel.name_of_apply)]) #check products or categories this applies to
+        # total = sum([product.quantity for product in cart_products
+        #              if (product.category == conditionModel.name_of_apply or conditionModel.name_of_apply == "all"
+        #                  or product.product_name == conditionModel.name_of_apply)]) #check products or categories this applies to
         return evaluate_condition(conditionModel.condition, current_hour, conditionModel.value)
 
     return time_condition
@@ -86,3 +88,10 @@ def logical_or(condition_funcs, cart_products, products):
 
 def logical_xor(condition_funcs, cart_products, products):
     return sum(func(cart_products, products) for func in condition_funcs) == 1
+
+
+combine_operations = {
+            'logical_and': logical_and,
+            'logical_or': logical_or,
+            'logical_xor': logical_xor,
+        }
