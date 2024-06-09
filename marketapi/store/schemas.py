@@ -80,15 +80,74 @@ class ManagerPermissionSchemaIn(Schema):
     can_remove_discount_policy: Optional[bool] = False
 
 
+class ConditionSchema(Schema):
+    applies_to: str
+    name_of_apply: str
+    condition: str
+    value: float
+
+
+class PurchasePolicyBaseSchemaIn(Schema):
+    store_id: int
+    is_root: bool
+
+    class Meta:
+        abstract = True
+
+
+class SimplePurchasePolicySchemaIn(PurchasePolicyBaseSchemaIn):
+    condition: ConditionSchema
+
+
+class ConditionalPurchasePolicySchemaIn(PurchasePolicyBaseSchemaIn):
+    condition: Union[
+        SimplePurchasePolicySchemaIn, 'ConditionalPurchasePolicySchemaIn', 'CompositePurchasePolicySchemaIn']
+    restriction: Union[
+        SimplePurchasePolicySchemaIn, 'ConditionalPurchasePolicySchemaIn', 'CompositePurchasePolicySchemaIn']
+
+
+class CompositePurchasePolicySchemaIn(PurchasePolicyBaseSchemaIn):
+    policies: list[
+        Union[SimplePurchasePolicySchemaIn, ConditionalPurchasePolicySchemaIn, 'CompositePurchasePolicySchemaIn']]
+    combine_function: str
+
+
 class PurchasePolicySchemaOut(Schema):
     store: StoreSchemaOut
-    max_items_per_purchase: Optional[int] = None  # Optional
-    min_items_per_purchase: Optional[int] = None  # Optional
+    id: int
+    is_root: bool
+
+    class Meta:
+        abstract = True
 
 
-class PurchasePolicySchemaIn(Schema):
-    max_items_per_purchase: Optional[int] = None  # Optional
-    min_items_per_purchase: Optional[int] = None  # Optional
+class SimplePurchasePolicySchemaOut(PurchasePolicySchemaOut):
+    pass
+    #cant return condition from same reason as in discount
+
+
+class ConditionalPurchasePolicySchemaOut(PurchasePolicySchemaOut):
+    condition: Union[
+        SimplePurchasePolicySchemaOut, 'ConditionalPurchasePolicySchemaOut', 'CompositePurchasePolicySchemaOut']
+    restriction: Union[
+        SimplePurchasePolicySchemaOut, 'ConditionalPurchasePolicySchemaOut', 'CompositePurchasePolicySchemaOut']
+
+
+class CompositePurchasePolicySchemaOut(PurchasePolicySchemaOut):
+    policies: list[
+        Union[SimplePurchasePolicySchemaOut, ConditionalPurchasePolicySchemaOut, 'CompositePurchasePolicySchemaOut']]
+    combine_function: str
+
+
+# class PurchasePolicySchemaOut(Schema):
+#     store: StoreSchemaOut
+#     max_items_per_purchase: Optional[int] = None  # Optional
+#     min_items_per_purchase: Optional[int] = None  # Optional
+#
+#
+# class PurchasePolicySchemaIn(Schema):
+#     max_items_per_purchase: Optional[int] = None  # Optional
+#     min_items_per_purchase: Optional[int] = None  # Optional
 
 
 class StoreProductSchemaOut(Schema):
@@ -116,11 +175,11 @@ class RemoveDiscountSchemaIn(Schema):
     store_id: int
     discount_id: int
 
-class ConditionSchemaIn(Schema):
-    applies_to: str
-    name_of_apply: str
-    condition: str
-    value: float
+
+class RemovePurchasePolicySchemaIn(Schema):
+    store_id: int
+    policy_id: int
+
 
 class DiscountBaseSchemaIn(Schema):
     store_id: int
@@ -139,14 +198,14 @@ class SimpleDiscountSchemaIn(DiscountBaseSchemaIn):
 
 
 class ConditionalDiscountSchemaIn(DiscountBaseSchemaIn):
-    condition: ConditionSchemaIn
+    condition: ConditionSchema
     discount: Union[SimpleDiscountSchemaIn, 'ConditionalDiscountSchemaIn', 'CompositeDiscountSchemaIn']
 
 
 class CompositeDiscountSchemaIn(DiscountBaseSchemaIn):
     discounts: list[Union[SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, 'CompositeDiscountSchemaIn']]
     combine_function: str
-    conditions: list[ConditionSchemaIn]
+    conditions: list[ConditionSchema]
 
 
 class ConditionSchemaOut(Schema):

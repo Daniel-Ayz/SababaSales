@@ -1,8 +1,7 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
 from typing import List
 
-from .conditions import logical_and, logical_or, logical_xor, build_condition_funcs
+from .conditions import build_condition_funcs, combine_operations
 from .models import StoreProduct, Store, Condition
 from .schemas import PurchaseStoreProductSchema
 
@@ -63,12 +62,6 @@ class CompositeDiscountClass(Discount):
         self.store = store
 
     def apply_discount(self, cart_products: List[PurchaseStoreProductSchema]):
-        combine_operations = {
-            'logical_and': logical_and,
-            'logical_or': logical_or,
-            'logical_xor': logical_xor,
-            'max': max,
-        }
 
         products = [StoreProduct.objects.get(name=product.product_name, store=self.store) for product in cart_products]
         condition_funcs = build_condition_funcs(self.conditions)
@@ -76,4 +69,3 @@ class CompositeDiscountClass(Discount):
             return max(discount.apply_discount(cart_products) for discount in self.discounts)
         if combine_operations[self.combine_function](condition_funcs, cart_products, products):
             return sum(discount.apply_discount(cart_products) for discount in self.discounts)
-

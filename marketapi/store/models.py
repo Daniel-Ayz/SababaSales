@@ -46,20 +46,20 @@ class ManagerPermission(models.Model):
     can_remove_purchase_policy = models.BooleanField(default=False)
 
 
-class PurchasePolicy(models.Model):
-    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='purchase_policies')
-    max_items_per_purchase = models.IntegerField(null=True, blank=True)  # Optional
-    min_items_per_purchase = models.IntegerField(null=True, blank=True)  # Optional
-
-    def __str__(self):
-        policy_text = ""
-        if self.max_items_per_purchase:
-            policy_text += f"Max items per purchase: {self.max_items_per_purchase}"
-        if self.min_items_per_purchase:
-            if policy_text:
-                policy_text += " & "
-            policy_text += f"Min items per purchase: {self.min_items_per_purchase}"
-        return policy_text or "No restrictions"
+# class PurchasePolicy(models.Model):
+#     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='purchase_policies')
+#     max_items_per_purchase = models.IntegerField(null=True, blank=True)  # Optional
+#     min_items_per_purchase = models.IntegerField(null=True, blank=True)  # Optional
+#
+#     def __str__(self):
+#         policy_text = ""
+#         if self.max_items_per_purchase:
+#             policy_text += f"Max items per purchase: {self.max_items_per_purchase}"
+#         if self.min_items_per_purchase:
+#             if policy_text:
+#                 policy_text += " & "
+#             policy_text += f"Min items per purchase: {self.min_items_per_purchase}"
+#         return policy_text or "No restrictions"
 
 
 # class DiscountPolicy(models.Model):
@@ -106,8 +106,6 @@ class ConditionalDiscount(DiscountBase):
     discount = models.ForeignKey("DiscountBase", on_delete=models.CASCADE, related_name='conditional_discounts')
 
 
-
-
 @receiver(pre_delete, sender=ConditionalDiscount)
 def delete_associated_discount(sender, instance, **kwargs):
     if instance.discount:
@@ -119,19 +117,55 @@ class CompositeDiscount(DiscountBase):
     combine_function = models.CharField(max_length=50)
     #conditions = models.TextField(null=True, blank=True)
 
-class Condition(models.Model):
-    applies_to = models.CharField(max_length=255) #product, category, time, age, price
-    name_of_apply = models.CharField(max_length=255) #name of the product, category, etc.
-    condition = models.CharField(max_length=255) #greater than, less than, equal
-    value = models.FloatField()
-    discount = models.ForeignKey(DiscountBase, on_delete=models.CASCADE, related_name='conditions')
-
-    def __str__(self):
-        return "condition for " + self.applies_to + " " + self.name_of_apply + " " + self.condition + " " + self.value
-
 
 @receiver(pre_delete, sender=CompositeDiscount)
 def cascade_delete_discounts(sender, instance, **kwargs):
     # Delete all related discounts
     for discount in instance.discounts.all():
         discount.delete()
+
+
+class Condition(models.Model):
+    applies_to = models.CharField(max_length=255)  #product, category, time, age, price
+    name_of_apply = models.CharField(max_length=255)  #name of the product, category, etc.
+    condition = models.CharField(max_length=255)  #greater than, less than, equal
+    value = models.FloatField()
+    discount = models.ForeignKey(DiscountBase, on_delete=models.CASCADE, related_name='conditions', null=True,
+                                 blank=True)
+    purchase_policy = models.ForeignKey('PurchasePolicyBase', on_delete=models.CASCADE, related_name='conditions',
+                                        null=True, blank=True)
+
+    def __str__(self):
+        return "condition for " + self.applies_to + " " + self.name_of_apply + " " + self.condition + " " + self.value
+
+
+class PurchasePolicyBase(PolymorphicModel):
+    store = models.ForeignKey(Store, on_delete=models.CASCADE)
+    is_root = models.BooleanField(default=False)
+
+
+class SimplePurchasePolicy(PurchasePolicyBase):
+    pass  # no additional fields because this model actually just represents the condition
+
+
+class ConditionalPurchasePolicy(PurchasePolicyBase):
+    restriction = models.ForeignKey(PurchasePolicyBase, on_delete=models.CASCADE,
+                                            related_name='restriction_policies')
+    condition = models.ForeignKey(PurchasePolicyBase, on_delete=models.CASCADE, related_name='condition_policies')
+
+
+@receiver(pre_delete, sender=ConditionalPurchasePolicy)
+def delete_associated_condition_restriction(sender, instance, **kwargs):
+    if instance.discount:
+        instance.restriction.delete()
+        instance.condition.delete()
+
+class CompositePurchasePolicy(PurchasePolicyBase):
+    policies = models.ManyToManyField(PurchasePolicyBase, related_name='composite_purchase_policies')
+    combine_function = models.CharField(max_length=50)
+
+@receiver(pre_delete, sender=CompositePurchasePolicy)
+def cascade_delete_policies(sender, instance, **kwargs):
+    # Delete all related policies
+    for policy in instance.policies.all():
+        policy.delete()

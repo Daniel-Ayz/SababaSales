@@ -7,13 +7,15 @@ import warnings
 from .models import SimpleDiscount
 
 warnings.filterwarnings("ignore", category=UserWarning)
-from .schemas import StoreSchemaIn, StoreSchemaOut, OwnerSchemaIn, ManagerPermissionSchemaIn, PurchasePolicySchemaIn, \
+from .schemas import StoreSchemaIn, StoreSchemaOut, OwnerSchemaIn, ManagerPermissionSchemaIn, \
     DiscountBaseSchemaIn, StoreProductSchemaIn, ManagerSchemaIn, OwnerSchemaOut, RoleSchemaIn, StoreProductSchemaOut, \
-    PurchaseStoreProductSchema, DiscountBaseSchemaOut, RemoveDiscountSchemaIn, PurchasePolicySchemaOut, \
+    PurchaseStoreProductSchema, DiscountBaseSchemaOut, RemoveDiscountSchemaIn, \
     RemoveOwnerSchemaIn, \
     RemoveManagerSchemaIn, ManagerSchemaOut, SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, \
     CompositeDiscountSchemaIn, SimpleDiscountSchemaOut, ConditionalDiscountSchemaOut, CompositeDiscountSchemaOut, \
-    SearchSchema, FilterSearchSchema
+    SearchSchema, FilterSearchSchema, SimplePurchasePolicySchemaIn, ConditionalPurchasePolicySchemaIn, \
+    CompositePurchasePolicySchemaIn, RemovePurchasePolicySchemaIn, SimplePurchasePolicySchemaOut, \
+    ConditionalPurchasePolicySchemaOut, CompositePurchasePolicySchemaOut
 
 from django.shortcuts import get_object_or_404, aget_object_or_404
 
@@ -100,20 +102,39 @@ def get_managers(request, payload: RoleSchemaIn):
 
 
 @router.post("/stores/{store_id}/add_purchase_policy")
-def add_purchase_policy(request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn):
-    return sc.add_purchase_policy(request, role, payload)
+def add_purchase_policy(request, role: RoleSchemaIn,
+                        payload: Union[SimplePurchasePolicySchemaIn, ConditionalPurchasePolicySchemaIn,
+                        CompositePurchasePolicySchemaIn]):
+    return sc.add_purchase_policy(request, role, payload).get("message")
 
 
 @router.delete("/stores/{store_id}/remove_purchase_policy")
-def remove_purchase_policy(request, store_id: int, role: RoleSchemaIn):
-    return sc.remove_purchase_policy(request, store_id, role)
+def remove_purchase_policy(request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn):
+    return sc.remove_purchase_policy(request, role, payload)
 
 
-@router.get(
-    "/stores/{store_id}/get_purchase_policies", response=List[PurchasePolicySchemaOut]
-)
-def get_purchase_policy(request, store_id: int, role: RoleSchemaIn):
-    return sc.get_purchase_policy(request, store_id, role)
+@router.get("/stores/{store_id}/get_purchase_policies",
+            response=List[Union[SimplePurchasePolicySchemaOut, ConditionalPurchasePolicySchemaOut,
+            CompositePurchasePolicySchemaOut]])
+def get_purchase_policies(request, role: RoleSchemaIn):
+    return sc.get_purchase_policies(request, role)
+
+
+# @router.post("/stores/{store_id}/add_purchase_policy")
+# def add_purchase_policy(request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn):
+#     return sc.add_purchase_policy(request, role, payload)
+#
+#
+# @router.delete("/stores/{store_id}/remove_purchase_policy")
+# def remove_purchase_policy(request, store_id: int, role: RoleSchemaIn):
+#     return sc.remove_purchase_policy(request, store_id, role)
+#
+#
+# @router.get(
+#     "/stores/{store_id}/get_purchase_policies", response=List[PurchasePolicySchemaOut]
+# )
+# def get_purchase_policy(request, store_id: int, role: RoleSchemaIn):
+#     return sc.get_purchase_policy(request, store_id, role)
 
 
 @router.post("/stores/{store_id}/add_discount_policy")
