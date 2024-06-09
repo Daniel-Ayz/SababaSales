@@ -1973,8 +1973,6 @@ class StoreAPITestCase(TransactionTestCase):
         response1 = response_queue.get()
         response2 = response_queue.get()
 
-        print(response1.content)
-        print(response2.content)
 
         # Assert that at least one response has a conflict (400)
         self.assertTrue(response1.status_code == 400 or response2.status_code == 400) and self.assertTrue(
