@@ -1,0 +1,107 @@
+.navContainer{
+    height: 70px;
+    background-color: rgba(222, 221, 221, 1);
+    padding: 0 !important;
+}
+
+.gridLayout{
+    padding: 0 !important;
+    margin-left:4vw;
+    margin-top: 10px;
+    display: grid;
+    column-gap: 0px;
+    grid-template-areas: 'logo search categories space cart sign';
+}
+
+.logo{
+    grid-area: logo;
+    width: 100px;
+    height: 60px;
+    margin-top: -5px;
+}
+
+.search{
+    grid-area: search;
+    width: 25vw;
+    margin-top: -5px;
+    margin-right:5vw ;
+}
+
+.categories{
+    grid-area: categories;
+    width: 50px !important;
+    margin-top: -10px !important;
+}
+.categoriesDrop {
+    grid-area: categories;
+    margin-top: 7px !important;
+}
+
+.delivery{
+    grid-area: delivery;
+}
+
+
+.shoppingCart{
+    grid-area: cart;
+    display: block;
+    margin-left:5vw;
+    margin-right:5vw;
+    margin-top:5px;
+}
+
+
+.shoppingCartRef{
+    grid-area: cart;
+    width: 80px;
+    height: 45px;
+    border-radius: 5px;
+}
+
+.shoppingCartRef:hover {
+    background-color: white;
+}
+
+.signIn{
+    grid-area: sign;
+    width: 100px;
+    height: 50px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+.space{
+    grid-area: space;
+    width: 30vw;
+}
+
+
+.signInName{
+    display: inline-block;
+    margin-top: 13px;
+    margin-left: 23px;
+}
+
+.deliveryTruck{
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    margin:auto;
+
+}
+
+.deliveryLoc{
+    display: inline-block;
+    margin:auto;
+}
+
+.deliveryContainer{
+    display: flex;
+    width:170px;
+    height: 50px;
+    border-radius: 5px;
+}
+
+.deliveryContainer:hover {
+    background-color: white;
+}
+

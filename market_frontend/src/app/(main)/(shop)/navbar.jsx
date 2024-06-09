@@ -1,5 +1,8 @@
 import React, { useContext, useState } from 'react'; // Import React and hooks
 import Link from 'next/link';
+import './navDesign.css';
+import { CATEGORIES } from './categoriesMock'; 
+import Categories from './categories';
 import { UserContext } from '../layout'; // Import the UserContext
 import {
   Disclosure,
@@ -67,13 +70,12 @@ export default function NavBar({setCart}) {
   };
 
   return (
-    <Disclosure as="nav" className="bg-gray-800">
+    <Disclosure as="nav" className="navContainer">
       {({ open }) => (
         <>
-          <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
-            <div className="relative flex h-16 items-center justify-between">
-              <div className="absolute inset-y-0 left-0 flex items-center sm:hidden">
-                {/* Mobile menu button*/}
+          <div className="gridLayout ">
+            <div className="relative flex ">
+              {/*<div className="absolute inset-y-0 flex">
                 <DisclosureButton className="relative inline-flex items-center justify-center rounded-md p-2 text-gray-400 hover:bg-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white">
                   <span className="absolute -inset-0.5" />
                   <span className="sr-only">Open main menu</span>
@@ -83,38 +85,21 @@ export default function NavBar({setCart}) {
                     <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
                   )}
                 </DisclosureButton>
-              </div>
-              <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
+                </div>*/}
+              <div className="logo flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                 <div className="flex flex-shrink-0 items-center">
                   <img
-                    className="h-8 w-auto"
+                    className="h-12 w-auto"
                     src="SababaSales-logoB.png"
                     alt="Your Company"
                   />
-                </div>
-                <div className="hidden sm:ml-6 sm:flex sm:flex-grow">
-                  <div className="flex space-x-4">
-                    {navigation.map((item) => (
-                      <a
-                        key={item.name}
-                        href={item.href}
-                        className={classNames(
-                          item.current ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white',
-                          'rounded-md px-3 py-2 text-sm font-medium'
-                        )}
-                        aria-current={item.current ? 'page' : undefined}
-                      >
-                        {item.name}
-                      </a>
-                    ))}
-                  </div>
                 </div>
               </div>
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                 <div className="relative flex items-center w-full mx-auto flex-grow">
                   <input
                     type="text"
-                    className="bg-white text-gray-800 placeholder-gray-500 border-none focus:ring-0 focus:border-transparent w-full rounded-lg py-3 pl-10 pr-4 sm:text-base"
+                    className="search bg-white text-gray-800 placeholder-gray-500 border-none focus:ring-0 focus:border-transparent w-full rounded-lg py-3 pl-10 pr-4 sm:text-base"
                     placeholder="Search..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -138,6 +123,9 @@ export default function NavBar({setCart}) {
                       />
                     </svg>
                   </button>
+                  
+                  <Categories className="categories" categoriesDict={CATEGORIES}/>
+                  <div className='space'></div>
                 </div>
                 {user.loggedIn && <button
                   type="button"
@@ -152,7 +140,7 @@ export default function NavBar({setCart}) {
                 <button
                   onClick={() => setCart(true)}
                   type="button"
-                  className="ml-3 relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
+                  className="shoppingCart ml-5 relative rounded-full bg-gray-800 p-1 text-gray-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-gray-800"
                 >
                   <span className="sr-only">View cart</span>
                   <ShoppingCartIcon className="h-6 w-6" aria-hidden="true" />
@@ -209,7 +197,7 @@ export default function NavBar({setCart}) {
                               onClick={() => handleLogout(setUser)}
                               href="#"
                               className={classNames(
-                                focus ? 'bg-gray-100' : '',
+                                focus ? ' bg-gray-100' : '',
                                 'block px-4 py-2 text-sm text-gray-700'
                               )}
                             >
@@ -223,7 +211,7 @@ export default function NavBar({setCart}) {
                 ) : (
                   <Link
                     href="/login"
-                    className="ml-3 text-sm text-white hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md whitespace-nowrap"
+                    className="ml-4  hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md whitespace-nowrap"
                   >
                     Sign in
                   </Link>
