@@ -85,12 +85,12 @@ WSGI_APPLICATION = "marketapi.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "db",
+        "NAME": "postgres",
         "PASSWORD": "1234",
         "USER": "postgres",
-        "HOST": "localhost",
+        "HOST": "db",
         "PORT": "5432",
-        'ATOMIC_REQUESTS': True,
+        "ATOMIC_REQUESTS": True,
     }
 }
 
