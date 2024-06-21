@@ -89,11 +89,17 @@ export default function NavBar({setCart}) {
                 </div>*/}
               <div className="logo flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                 <div className="flex flex-shrink-0 items-center">
-                  <img
-                    className="h-12 w-auto"
-                    src="SababaSales-logoB.png"
-                    alt="Your Company"
-                  />
+<Link href="/">
+  <div className="relative inline-block overflow-hidden rounded-md transform transition-transform duration-300 hover:scale-105">
+    <img
+      className="h-12 w-auto"
+      src="SababaSales-logoB.png"
+      alt="Your Company"
+    />
+    <div className="absolute inset-0 bg-gray-100 opacity-0 rounded-md hover:opacity-50"></div>
+  </div>
+</Link>
+
                 </div>
               </div>
               <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
@@ -212,7 +218,8 @@ export default function NavBar({setCart}) {
                 ) : (
                   <Link
                     href="/login"
-                    className="ml-4  hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md whitespace-nowrap"
+                    className="ml-4 text-white  hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md whitespace-nowrap"
+
                   >
                     Sign in
                   </Link>

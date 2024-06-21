@@ -53,22 +53,22 @@ const [error, setError] = useState(null);
 
 
   return (
-    <div>
-      {error && <p>Error: {error}</p>}
-      {stores.length > 0 ? (
-        <div className="itemGrid">
-          {stores.map((store) => (
-            <ItemSquare
-              key={store.id}
-              store={store} // Pass the entire store object
-              products={storesProducts[store.id] || []} // Pass the products of the store
-            />
-          ))}
-        </div>
-      ) : (
-        <p>No products available</p>
-      )}
+ <div>
+  {error && <p>Error: {error}</p>}
+  {stores.length > 0 ? (
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {stores.map((store) => (
+        <ItemSquare
+          key={store.id}
+          store={store} // Pass the entire store object
+          products={storesProducts[store.id] || []} // Pass the products of the store
+        />
+      ))}
     </div>
+  ) : (
+    <p>No products available</p>
+  )}
+</div>
 
   //   <div className="itemGrid">
   //      {stores.map((store) => (
