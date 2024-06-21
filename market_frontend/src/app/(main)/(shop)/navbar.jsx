@@ -1,9 +1,10 @@
 import React, { useContext, useState } from 'react'; // Import React and hooks
 import Link from 'next/link';
 import './navDesign.css';
-import { CATEGORIES } from './categoriesMock'; 
+import { CATEGORIES } from './categoriesMock';
 import Categories from './categories';
 import { UserContext } from '../layout'; // Import the UserContext
+import Notifications from './notifications';
 import {
   Disclosure,
   DisclosureButton,
@@ -123,7 +124,7 @@ export default function NavBar({setCart}) {
                       />
                     </svg>
                   </button>
-                  
+
                   <Categories className="categories" categoriesDict={CATEGORIES}/>
                   <div className='space'></div>
                 </div>
@@ -133,7 +134,7 @@ export default function NavBar({setCart}) {
                 >
                   <span className="absolute -inset-1.5" />
                   <span className="sr-only">View notifications</span>
-                  <BellIcon className="h-6 w-6" aria-hidden="true" />
+                  <Notifications/>
                 </button>}
 
                 {/* Cart icon */}
