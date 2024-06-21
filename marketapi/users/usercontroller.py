@@ -67,7 +67,11 @@ class UserController:
         returns the user with the given id,if the id matches the current session user id
         """
         user = CustomUser.objects.get(id=request.user.id)
-        return user
+        cart = self._get_cart(request)
+        cart_id = cart.id
+        return UserSchema(
+            id=user.id, username=user.username, email=user.email, cart_id=cart_id
+        )
 
     def delete_user(self, request, user_id) -> any:
         """

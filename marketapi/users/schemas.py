@@ -2,6 +2,7 @@ from typing import List
 
 from ninja import Schema
 from ninja.orm import ModelSchema
+from typing import Optional
 
 from .models import CustomUser, Notification, Cart, Basket, BasketProduct
 
@@ -35,6 +36,14 @@ class UserSchema(ModelSchema):
     class Meta:
         model = CustomUser
         fields = ["id", "username", "email"]
+
+
+class UserSetupSchema(Schema):
+    class Meta:
+        model = CustomUser
+        fields = ["id", "username", "email"]
+
+    cart_id: int
 
 
 class NotificationIn(Schema):

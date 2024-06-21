@@ -27,6 +27,7 @@ const Layout = ({ children }) => {
           loggedIn: true,
           userName: userData.username, // Replace with actual field name from your API response
           id: userData.id, // Replace with actual field name from your API response
+          cart_id: userData.cart_id,
         });
         console.log(user)
 
