@@ -1,7 +1,7 @@
-import './productViewDesign.css'
-import '../homepage/homepage.css'
-import ProductRating from './productRating'
-import ProductStars from './productStars'
+import '../../product/productViewDesign.css'
+import '../../homepage/homepage.css'
+import ProductRating from '../../product/productRating'
+import ProductStars from '../../product/productStars'
 import Link from 'next/link'
 
 // Function to generate a random star rating between 1 and 5
@@ -13,16 +13,17 @@ function getRandomRating(id) {
 const placeholderImage = "https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-01.jpg";
 ;
 
-export default function ProductView({ prod }) {
+export default function ProductView({ prod ,store_id}) {
   const randomRating = getRandomRating(prod.id);
 
   return (
     <div className='productPreview'>
       <div className="rectangle">
-        <a href="/productBuying" className='imageRef'>
+
+        <a href={`/stores/${store_id}/${prod.name}`} className='imageRef'>
           <img className="productImage" src={placeholderImage} alt={prod.name} />
         </a>
-        <a className="nameRef" href="/productBuying">
+        <a className="nameRef" href={`/stores/${store_id}/${prod.name}`}>
           <h3 className="productName">{prod.name}</h3>
         </a>
         <ProductStars className="rating" rating={randomRating} />

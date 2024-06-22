@@ -10,28 +10,65 @@ const ItemSquare = ({ store, products }) => {
     name: 'Mock Store'
   };
 
-  const mockProducts = [
-    {
+const mockProducts = [
+  {
+    name: 'Orange pouch',
+    initial_price: 10.00,
+    quantity: 0,
+    store: {
       id: 1,
-      image: 'https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-01.jpg',
-      description: 'Orange pouch'
+      name: 'Store 1',
+      description: 'A store description',
+      created_at: '2024-06-22T13:40:11.259Z',
+      is_active: true
     },
-    {
+    category: 'Accessories',
+    // image: 'https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-01.jpg',
+  },
+  {
+    name: 'Blue bag',
+    initial_price: 10.00,
+    quantity: 0,
+    store: {
       id: 2,
-      image: 'https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-02.jpg',
-      description: 'Blue bag'
+      name: 'Store 2',
+      description: 'A store description',
+      created_at: '2024-06-22T13:40:11.259Z',
+      is_active: true
     },
-    {
+    category: 'Bags',
+    // image: 'https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-02.jpg',
+  },
+  {
+    name: 'Green hat',
+    initial_price: 10.00,
+    quantity: 0,
+    store: {
       id: 3,
-      image: 'https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-03-product-01.jpg',
-      description: 'Green hat'
+      name: 'Store 3',
+      description: 'A store description',
+      created_at: '2024-06-22T13:40:11.259Z',
+      is_active: true
     },
-    {
+    category: 'Hats',
+    // image: 'https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-03-product-01.jpg',
+  },
+  {
+    name: 'Red shoes',
+    initial_price: 10.00,
+    quantity: 0,
+    store: {
       id: 4,
-      image: 'https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-04-product-01.jpg',
-      description: 'Red shoes'
-    }
-  ];
+      name: 'Store 4',
+      description: 'A store description',
+      created_at: '2024-06-22T13:40:11.259Z',
+      is_active: true
+    },
+    category: 'Shoes',
+    // image: 'https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-04-product-01.jpg',
+  }
+];
+
 
   // Use mock data for testing
   products = products.length > 0 ? products : mockProducts;
@@ -43,16 +80,16 @@ const ItemSquare = ({ store, products }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {products.map((product, index) => (
           <div key={index} className="bg-gray-100 rounded-lg overflow-hidden shadow-sm">
-            <img src={product.image} alt={product.description} className="w-full h-32 object-cover" />
+            <img src={product.image} alt={product.name} className="w-full h-32 object-cover" />
             <div className="p-2">
-              <h3 className="text-sm font-semibold mb-2">{product.description}</h3>
+              <h3 className="text-sm font-semibold mb-2">{product.name}</h3>
             </div>
           </div>
         ))}
       </div>
       <Link
         className="block mt-4 bg-blue-600 hover:bg-blue-800 text-white py-2 px-3 rounded text-center"
-        href={`/productSearch/${store.id}`}
+        href={`/stores/${store.id}`}
       >
         Continue shopping at {store.name}
       </Link>

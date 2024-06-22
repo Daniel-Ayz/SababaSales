@@ -8,8 +8,10 @@ import { createContext } from 'react';
 axios.defaults.withCredentials = true;
 
 const UserContext = createContext();
+const StoreProductsContext = createContext();
 const Layout = ({ children }) => {
-
+  const [storesProducts, setStoresProducts] = useState({
+  });
   const [user, setUser] = useState({
     loggedIn: false,
     userName: null,
@@ -41,10 +43,13 @@ const Layout = ({ children }) => {
 
   return (
     <UserContext.Provider value={{ user, setUser }}>
+      <StoreProductsContext.Provider value={{ storesProducts, setStoresProducts }}>
       {children}
+      </StoreProductsContext.Provider>
     </UserContext.Provider>
   );
 };
 
 export default Layout;
 export { UserContext}
+export { StoreProductsContext}

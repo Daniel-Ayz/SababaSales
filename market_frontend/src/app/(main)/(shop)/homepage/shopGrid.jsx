@@ -5,12 +5,16 @@ import './homepage.css'
 import ItemSquare from './itemSquare';
 import axios from 'axios';
 import React from 'react';
+import {StoreProductsContext} from '../../layout';
 import { useEffect, useState } from 'react';
+import { useContext } from 'react';
+import { UserContext } from '../../layout'; // Import the UserContext
 
 export default function ShopGrid() {
-const [storesProducts, setStoresProducts] = useState({});
+// const [storesProducts, setStoresProducts] = useState({});
 const [stores, setStores] = useState([]);
 const [error, setError] = useState(null);
+const {storesProducts, setStoresProducts}= useContext(StoreProductsContext);
 
   useEffect(() => {
     const fetchStores = async () => {
@@ -30,7 +34,12 @@ const [error, setError] = useState(null);
               headers: { 'Content-Type': 'application/json' },
               withCredentials: true
             });
+            for (let i = 0; i < storeResponse.data.length; i++) {
+              storeResponse.data[i]['image'] =  "https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-01.jpg";
+
+            }
             storesProducts[store.id] = storeResponse.data;
+
           } catch (error) {
             console.error(`Error fetching products for store ${store.id}:`, error);
             setError(error.message); // Set error if fetching products fails
@@ -40,8 +49,11 @@ const [error, setError] = useState(null);
         await Promise.all(fetchProducts);
 
         setStoresProducts(storesProducts);
-        console.log('Stores:', stores);
-        console.log('Stores products:', storesProducts)
+        // setProducts({stores:["store1", "store2", "store3"]});
+
+
+        // console.log('Stores:', stores);
+        // console.log('Stores products:', storesProducts)
       } catch (error) {
         console.error('Error fetching stores:', error);
         setError(error.message); // Set error if fetching stores fails
