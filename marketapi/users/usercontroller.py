@@ -185,12 +185,17 @@ class UserController:
 
         return products
 
-    # added 2 functions for the make purchase
-    def get_user_address(self, request, user_id: int) -> str:
+    def get_user_full_name(self, request, user_id: int) -> str:
         if not self._verify_user_id(request, user_id):
             raise HttpError(401, "Unauthorized")
         user = CustomUser.objects.get(id=request.user.id)
-        return user.address
+        return user.Full_Name
+
+    def get_user_identification_number(self, request, user_id: int) -> int:
+        if not self._verify_user_id(request, user_id):
+            raise HttpError(401, "Unauthorized")
+        user = CustomUser.objects.get(id=request.user.id)
+        return user.Id
 
     def get_user_payment_information(self, request, user_id: int) -> dict:
         if not self._verify_user_id(request, user_id):
@@ -258,7 +263,8 @@ class UserController:
             payment_info = PaymentInformationUser.objects.create(
                 user=user,
                 currency="USD",
-                billing_address="1234 Main St",
+                holder=user.Full_Name,
+                holder_id=user.Id,
                 credit_card_number="1234567890",
                 expiration_date=expiration_date,
                 security_code="123",
