@@ -1977,3 +1977,8 @@ class StoreAPITestCase(TransactionTestCase):
         # Assert that at least one response has a conflict (400)
         self.assertTrue(response1.status_code == 400 or response2.status_code == 400) and self.assertTrue(
             response1.status_code == 200 or response2.status_code == 200)
+
+    def test_fake_data(self):
+        response = self.client.put(f'/stores/{self.store_id}/create_fake_data')
+        print(response.content)
+        assert response.status_code == 200

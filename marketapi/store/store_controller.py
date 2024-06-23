@@ -189,17 +189,17 @@ class StoreController:
                     Owner, user_id=payload.assigned_by, store=store
                 )
                 if Manager.objects.filter(
-                    user_id=payload.user_id, store=store
+                        user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
                 elif Owner.objects.filter(
-                    user_id=payload.user_id, store=store
+                        user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already an owner")
 
                 # Check if the assigning user is an owner
                 if not Owner.objects.filter(
-                    user_id=payload.assigned_by, store=store
+                        user_id=payload.assigned_by, store=store
                 ).exists():
                     raise HttpError(403, "Only owners can assign managers")
 
@@ -227,11 +227,11 @@ class StoreController:
         return {"message": "Manager removed successfully"}
 
     def assign_manager_permissions(
-        self,
-        request,
-        payload: ManagerPermissionSchemaIn,
-        manager: RoleSchemaIn,
-        assigning_owner_id: int,
+            self,
+            request,
+            payload: ManagerPermissionSchemaIn,
+            manager: RoleSchemaIn,
+            assigning_owner_id: int,
     ):
         store = get_object_or_404(Store, pk=manager.store_id)
         manager = get_object_or_404(Manager, user_id=manager.user_id, store=store)
@@ -293,14 +293,14 @@ class StoreController:
         return managers
 
     def add_purchase_policy(
-        self,
-        request,
-        role: RoleSchemaIn,
-        payload: Union[
-            SimplePurchasePolicySchemaIn,
-            ConditionalPurchasePolicySchemaIn,
-            CompositePurchasePolicySchemaIn,
-        ],
+            self,
+            request,
+            role: RoleSchemaIn,
+            payload: Union[
+                SimplePurchasePolicySchemaIn,
+                ConditionalPurchasePolicySchemaIn,
+                CompositePurchasePolicySchemaIn,
+            ],
     ):
         if request is not None and role is not None:
             store = get_object_or_404(Store, pk=payload.store_id)
@@ -331,7 +331,7 @@ class StoreController:
         }
 
     def add_conditional_purchase_policy(
-        self, payload: ConditionalPurchasePolicySchemaIn
+            self, payload: ConditionalPurchasePolicySchemaIn
     ):
         store = get_object_or_404(Store, pk=payload.store_id)
         restriction = self.add_purchase_policy(None, None, payload.restriction).get(
@@ -370,7 +370,7 @@ class StoreController:
         }
 
     def remove_purchase_policy(
-        self, request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
+            self, request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
     ):
         store = get_object_or_404(Store, pk=payload.store_id)
         self.validate_permissions(role, store, "can_remove_purchase_policy")
@@ -498,14 +498,14 @@ class StoreController:
     #     return {"message": "Discount policy added successfully"}
 
     def add_discount_policy(
-        self,
-        request,
-        role: RoleSchemaIn,
-        payload: Union[
-            SimpleDiscountSchemaIn,
-            ConditionalDiscountSchemaIn,
-            CompositeDiscountSchemaIn,
-        ],
+            self,
+            request,
+            role: RoleSchemaIn,
+            payload: Union[
+                SimpleDiscountSchemaIn,
+                ConditionalDiscountSchemaIn,
+                CompositeDiscountSchemaIn,
+            ],
     ):
 
         # Check if the user is authorized to add a discount policy
@@ -603,7 +603,7 @@ class StoreController:
         }
 
     def remove_discount_policy(
-        self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
+            self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
     ):
         store = get_object_or_404(Store, pk=payload.store_id)
 
@@ -788,7 +788,7 @@ class StoreController:
         return products
 
     def purchase_product(
-        self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
+            self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
     ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to purchase")
@@ -852,7 +852,7 @@ class StoreController:
         }
 
     def return_products(
-        self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
+            self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
     ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to return")
@@ -895,7 +895,7 @@ class StoreController:
         return None
 
     def calculate_cart_discount(
-        self, purchase_products: List[PurchaseStoreProductSchema], store: Store
+            self, purchase_products: List[PurchaseStoreProductSchema], store: Store
     ):
         total_discount = 0
         # Retrieve only root discount models to avoid duplicates
@@ -909,7 +909,7 @@ class StoreController:
         return total_discount
 
     def get_purchase_policy_instance(
-        self, purchase_model: PurchasePolicyBase, store: Store
+            self, purchase_model: PurchasePolicyBase, store: Store
     ):
         if isinstance(purchase_model, SimplePurchasePolicy):
             return SimplePurchasePolicyClass(
@@ -938,7 +938,7 @@ class StoreController:
         return None
 
     def validate_purchase_policy(
-        self, store, payload
+            self, store, payload
     ):  # Retrieve only root purchase models to avoid duplicates
         all_purchase_models = PurchasePolicyBase.objects.filter(is_root=True)
         if len(all_purchase_models) == 0:
@@ -952,7 +952,7 @@ class StoreController:
         )  # all purchase policies should work
 
     def search_products(
-        self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
+            self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
     ):
         if search_query.store_id:
             store = get_object_or_404(Store, pk=search_query.store_id)
@@ -1048,7 +1048,7 @@ class StoreController:
         }
 
         stores = []
-        store_names = store_data.keys()
+        store_names = list(store_data.keys())
         for i in range(1, 7):
             stores.append(
                 Store.objects.create(
@@ -1061,7 +1061,8 @@ class StoreController:
         for i in range(0, 6):
             owner = Owner.objects.create(user_id=i, store=stores[i], is_founder=True)
             manager = Manager.objects.create(
-                user_id=2 * len(store_names) - i - 1, store=stores[i]
+                user_id=2 * len(store_names) - i - 1, store=stores[i],
+                assigned_by=owner
             )
             manager_permissions = ManagerPermission.objects.create(
                 manager=manager,
@@ -1076,7 +1077,7 @@ class StoreController:
             for j in range(3):
                 product = StoreProduct.objects.create(
                     store=stores[i],
-                    name=store_data[stores[i]]["products"][j],
+                    name=store_data[store_names[i]]["products"][j],
                     quantity=10,
                     initial_price=100,
                 )
@@ -1088,14 +1089,14 @@ class StoreController:
                     is_root=True,
                     percentage=10,
                     applicable_categories=json.dumps(
-                        [store_data[stores[i]]["category"]]
+                        [store_data[store_names[i]]["category"]]
                     ),
                 )
 
         return {"message": "Fake data created successfully"}
 
     def search_products(
-        self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
+            self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
     ):
         if search_query.store_id:
             store = get_object_or_404(Store, pk=search_query.store_id)
