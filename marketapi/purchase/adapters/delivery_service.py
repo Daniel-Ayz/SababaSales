@@ -1,18 +1,18 @@
 import requests
-
+from purchase.models import DeliveryMethod
 from purchase.interfaces import DeliveryServiceInterface
 
 
 class AbstractDeliveryService(DeliveryServiceInterface):
-    def create_shipment(self, address: str, item_quantity: float, **kwargs) -> dict:
+    def create_shipment(self, delivery_method: DeliveryMethod) -> dict:
         url = "https://damp-lynna-wsep-1984852e.koyeb.app/"
         payload = {
             "action_type": "supply",
-            "name": kwargs.get("name", "Default Name"),
-            "address": address,
-            "city": kwargs.get("city", "Default City"),
-            "country": kwargs.get("country", "Default Country"),
-            "zip": kwargs.get("zip", "0000000"),
+            "address": delivery_method.address,
+            "city": delivery_method.city,
+            "country": delivery_method.country,
+            "zip": delivery_method.zip,
+            "name": delivery_method.name,
         }
         response = requests.post(url, data=payload)
         if response.status_code == 200:

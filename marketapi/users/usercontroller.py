@@ -204,6 +204,13 @@ class UserController:
         payment_info = PaymentInformationUser.objects.get(user=user)
         return payment_info
 
+    def get_user_delivery_information(self, request, user_id: int) -> dict:
+        if not self._verify_user_id(request, user_id):
+            raise HttpError(401, "Unauthorized")
+        user = CustomUser.objects.get(id=user_id)
+        delivery_info = DeliveryInformationUser.objects.get(user=user)
+        return delivery_info
+
     def create_fake_data(self):
         usernames = [
             "Yishay Butzim",

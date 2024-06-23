@@ -118,12 +118,21 @@ class purchaseController:
     ):
         try:
             # demo data
-            # TODO: package details
-            package_details = "Test package details"
             if flag_delivery:
-                delivery_address = uc.get_user_full_name(request, user_id)
+                delivery_information_user = uc.get_user_delivery_information(
+                    request, user_id
+                )
+                delivery_information_user["name"] = uc.get_user_full_name(
+                    request, user_id
+                )
             else:
-                delivery_address = "Test delivery address"
+                delivery_information_user = {
+                    "address": "Maze Pinat Yaffo 10",
+                    "city": "Tel Aviv",
+                    "country": "Israel",
+                    "zip": "1234567",
+                }
+                delivery_information_user["name"] = "Israel Israeli"
             if flag_payment:
                 payment_information_user = uc.get_user_payment_information(
                     request, user_id
@@ -205,8 +214,9 @@ class purchaseController:
                     history_basket_product.save()
 
             delivery_result = delivery_service.create_shipment(
-                delivery_address, item_counter, flag_delivery
-            )  # we are passing address, total amount of items and a flag for the delivery service
+                delivery_information_user
+            )
+
             if delivery_result["result"]:
                 raise HttpError(400, f'error": "Delivery failed')
 

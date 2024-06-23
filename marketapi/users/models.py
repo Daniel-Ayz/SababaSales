@@ -26,6 +26,18 @@ class PaymentInformationUser(models.Model):
         return f"Payment information for {self.user.username}"
 
 
+class DeliveryInformationUser(models.Model):
+    # one-to-one relationship with CustomUser
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    address = models.CharField(max_length=255)
+    city = models.CharField(max_length=100)
+    country = models.CharField(max_length=100)
+    zip = models.CharField(max_length=7)
+
+    def __str__(self):
+        return f"Delivery information for {self.user.username}"
+
+
 class Notification(models.Model):
     sent_by = models.CharField(max_length=100)
     message = models.TextField()

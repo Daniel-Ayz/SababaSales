@@ -36,6 +36,14 @@ class PaymentMethod(models.Model):
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
 
 
+class DeliveryMethod(models.Model):
+    address = models.CharField(max_length=255)
+    city = models.CharField(max_length=100)
+    country = models.CharField(max_length=100)
+    zip = models.CharField(max_length=10)
+    name = models.CharField(max_length=100)
+
+
 class HistoryBasket(models.Model):
     basket_id = models.AutoField(primary_key=True)
     store_id = models.IntegerField()
