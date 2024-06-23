@@ -175,6 +175,12 @@ To stop the running containers, press CTRL+C in the terminal where docker-compos
 ```bash
 docker-compose down
 ```
+
+💡 if does not work - try running:
+```bash
+docker-compose exec web python manage.py flush
+```
+
 ## Useful Docker Commands
 View running containers:
 ```bash
