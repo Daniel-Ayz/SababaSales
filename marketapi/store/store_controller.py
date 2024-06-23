@@ -59,6 +59,7 @@ from .schemas import (
 )
 
 router = Router()
+store_lock = hash("store_lock")
 
 
 def get_list_from_string(conditions):
@@ -76,26 +77,20 @@ class StoreController:
     #     return await aget_object_or_404(Store, pk=store_id)
 
     def create_store(self, request, payload: StoreSchemaIn, user_id: int):
-        if Store.objects.filter(name=payload.name).exists():
-            raise HttpError(403, "Store with this name already exists")
-        store = Store.objects.create(**payload.dict(), is_active=True)
-        Owner.objects.create(user_id=user_id, store=store, is_founder=True)
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [store_lock])
+                if Store.objects.filter(name=payload.name).exists():
+                    raise HttpError(403, "Store with this name already exists")
+                store = Store.objects.create(**payload.dict(), is_active=True)
+                Owner.objects.create(user_id=user_id, store=store, is_founder=True)
         return {"store_id": store.id}
 
-    # @router.post("/stores")
-    # async def create_store(request, payload: StoreSchemaIn, user_id: int):
-    #     if Store.objects.filter(name=payload.name).exists():
-    #         raise HttpError(403, "Store with this name already exists")
-    #     store = await Store.objects.acreate(**payload.dict(), is_active=True)
-    #     await Owner.objects.acreate(
-    #         user_id=user_id,
-    #         store=store,
-    #         is_founder=True
-    #     )
-    #     return {"store_id": store.id}
-
     def get_stores(self, request):
-        return Store.objects.all()
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                return Store.objects.all()
 
     # @router.get("/stores", response=List[StoreSchemaOut])
     # async def get_stores(request):
@@ -103,18 +98,19 @@ class StoreController:
 
     def assign_owner(self, request, payload: OwnerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-        store_lock_id = f"{store.pk}_assign_owner_lock"
+        managing_lock_id = f"{store.pk}_managing_lock"
 
         with transaction.atomic():
             with connection.cursor() as cursor:
-                # Acquire an advisory lock on the store
-                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(store_lock_id)});")
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});")
 
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
                 )
                 if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
                     raise HttpError(400, "User is already an owner")
+                if Manager.objects.filter(user_id=payload.user_id, store=store).exists():
+                    raise HttpError(400, "User is already a manager")
 
                 owner = Owner.objects.create(
                     user_id=payload.user_id,
@@ -124,66 +120,46 @@ class StoreController:
                 )
         return {"message": "Owner assigned successfully"}
 
-    # @router.post("/stores/{store_id}/assign_owner")
-    # async def assign_owner(request, payload: OwnerSchemaIn):
-    #     store = await aget_object_or_404(Store, pk=payload.store_id)
-    #     assigning_owner = await aget_object_or_404(Owner, user_id=payload.assigned_by, store=store)
-    #     if await Owner.objects.filter(user_id=payload.user_id, store=store).exists():
-    #         raise HttpError(400, "User is already an owner")
-    #
-    #
-    #     owner = await Owner.objects.acreate(
-    #         user_id=payload.user_id,
-    #         assigned_by=assigning_owner,
-    #         store=store,
-    #         is_founder=payload.is_founder
-    #     )
-    #     return {"message": "Owner assigned successfully"}
-
-    # @router.delete("/stores/{store_id}/remove_owner")
-    # async def remove_owner(request, payload: OwnerSchemaIn):
-    #     store = await aget_object_or_404(Store, pk=payload.store_id)
-    #     removing_owner = await aget_object_or_404(Owner, user_id=payload.removed_by, store=store)
-    #     removed_owner = await aget_object_or_404(Owner, user_id=payload.user_id, store=store)
-    #
-    #     if removed_owner.assigned_by != removing_owner:
-    #         raise HttpError(403, "Owner can only be removed by the owner who assigned them")
-    #
-    #     await removed_owner.adelete()
-    #     return {"message": "Owner removed success"}
-
     def remove_owner(self, request, payload: RemoveOwnerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-        removing_owner = get_object_or_404(
-            Owner, user_id=payload.removed_by, store=store
-        )
-        removed_owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
+        managing_lock_id = f"{store.pk}_managing_lock"
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});")
+                removing_owner = get_object_or_404(
+                    Owner, user_id=payload.removed_by, store=store
+                )
+                removed_owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
 
-        if removed_owner.assigned_by != removing_owner:
-            raise HttpError(
-                403, "Owner can only be removed by the owner who assigned them"
-            )
+                if removed_owner.assigned_by != removing_owner:
+                    raise HttpError(
+                        403, "Owner can only be removed by the owner who assigned them"
+                    )
 
-        removed_owner.delete()
+                removed_owner.delete()
         return {"message": "Owner removed successfully"}
 
     def leave_ownership(self, request, payload: RoleSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-        owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
-        if owner.is_founder:
-            raise HttpError(400, "Founder cannot leave ownership")
+        managing_lock_id = f"{store.pk}_managing_lock"
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});")
+                owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
+                if owner.is_founder:
+                    raise HttpError(400, "Founder cannot leave ownership")
 
-        owner.delete()
+                owner.delete()
         return {"message": "Ownership left successfully"}
 
     def assign_manager(self, request, payload: ManagerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-        store_lock_id = hash(f"{store.pk}_assign_manager_lock")
+        managing_lock_id = f"{store.pk}_managing_lock"
 
         with transaction.atomic():
             with connection.cursor() as cursor:
                 # Acquire an advisory lock on the store
-                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [store_lock_id])
+                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [managing_lock_id])
 
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
@@ -1093,55 +1069,3 @@ class StoreController:
                 )
 
         return {"message": "Fake data created successfully"}
-
-    def search_products(
-        self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
-    ):
-        if search_query.store_id:
-            store = get_object_or_404(Store, pk=search_query.store_id)
-            if not store.is_active:
-                raise HttpError(403, "Store is closed")
-            if search_query.product_name and not search_query.category:
-                products = StoreProduct.objects.filter(
-                    store=store, name__icontains=search_query.product_name
-                )
-            elif search_query.category and not search_query.product_name:
-                products = StoreProduct.objects.filter(
-                    store=store, category__icontains=search_query.category
-                )
-            elif search_query.product_name and search_query.category:
-                products = StoreProduct.objects.filter(
-                    store=store,
-                    name__icontains=search_query.product_name,
-                    category__icontains=search_query.category,
-                )
-            else:
-                products = StoreProduct.objects.filter(store=store)
-        else:
-            if search_query.product_name and not search_query.category:
-                products = StoreProduct.objects.filter(
-                    name__icontains=search_query.product_name, store__is_active=True
-                )
-            elif search_query.category and not search_query.product_name:
-                products = StoreProduct.objects.filter(
-                    category__icontains=search_query.category, store__is_ative=True
-                )
-            elif search_query.product_name and search_query.category:
-                products = StoreProduct.objects.filter(
-                    name__icontains=search_query.product_name,
-                    category__icontains=search_query.category,
-                    store__is_active=True,
-                )
-            else:
-                products = StoreProduct.objects.filter(store__is_active=True)
-
-        if filter_query.min_price:
-            products = products.filter(initial_price__gte=filter_query.min_price)
-        if filter_query.max_price:
-            products = products.filter(initial_price__lte=filter_query.max_price)
-        if filter_query.min_quantity:
-            products = products.filter(quantity__gte=filter_query.min_quantity)
-        if filter_query.max_quantity:
-            products = products.filter(quantity__lte=filter_query.max_quantity)
-
-        return products
