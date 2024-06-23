@@ -199,6 +199,6 @@ def add_user_product(request, payload: StoreProduct):
 #         return 404, {"error": "Basket not found"}
 #
 # -------------------- Update --------------------
-@router.post("/")
-def create_fake_data(request, payload):
-    return uc.create_fake_data(request, payload)
+@router.post("/fake_data")
+def create_fake_data(request):
+    return uc.create_fake_data()
