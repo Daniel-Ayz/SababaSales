@@ -131,7 +131,7 @@ export default function NavBar({setCart}) {
                     </svg>
                   </button>
 
-                  <Categories className="categories" categoriesDict={CATEGORIES}/>
+                  {/* <Categories className="categories" categoriesDict={CATEGORIES}/> */}
                   <div className='space'></div>
                 </div>
                 {user.loggedIn && <button

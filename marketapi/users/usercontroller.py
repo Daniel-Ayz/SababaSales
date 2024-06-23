@@ -62,14 +62,14 @@ class UserController:
         logout(request)
         return {"msg": "Logged out"}
 
-    def get_user(self, request) -> UserSchema:
+    def get_user(self, request) -> UserSetupSchema:
         """
         returns the user with the given id,if the id matches the current session user id
         """
         user = CustomUser.objects.get(id=request.user.id)
         cart = self._get_cart(request)
         cart_id = cart.id
-        return UserSchema(
+        return UserSetupSchema(
             id=user.id, username=user.username, email=user.email, cart_id=cart_id
         )
 
@@ -149,6 +149,14 @@ class UserController:
         cart = self._get_cart(request)
         store_id = payload.store_id
         basket, _ = Basket.objects.get_or_create(cart=cart, store_id=store_id)
+        # check if the product already exists in the basket:
+        try:
+            product = basket.products.get(name=payload.name)
+            product.quantity += payload.quantity
+            product.save()
+            return product
+        except BasketProduct.DoesNotExist:
+            pass
         product = BasketProduct.objects.create(
             store_product_id=payload.store_product_id,
             quantity=payload.quantity,

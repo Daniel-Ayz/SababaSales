@@ -60,7 +60,7 @@ const StorePage = ({ params }) => {
   return (
     <div className="flex flex-col h-screen">
       <main className="main flex-1 overflow-y-auto bg-gray-100">
-        <h2>Store</h2>
+        {/* <h2>Store</h2> */}
         <div className="productCont">
           {currentRecords.map(product => (
             <div key={product.id} className="card">

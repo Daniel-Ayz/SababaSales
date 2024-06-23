@@ -20,12 +20,12 @@ export default function ProductView({ prod ,store_id}) {
     <div className='productPreview'>
       <div className="rectangle">
 
-        <a href={`/stores/${store_id}/${prod.name}`} className='imageRef'>
+        <Link href={`/stores/${store_id}/${prod.name}`} className='imageRef'>
           <img className="productImage" src={placeholderImage} alt={prod.name} />
-        </a>
-        <a className="nameRef" href={`/stores/${store_id}/${prod.name}`}>
+        </Link>
+        <Link className="nameRef" href={`/stores/${store_id}/${prod.name}`}>
           <h3 className="productName">{prod.name}</h3>
-        </a>
+        </Link>
         <ProductStars className="rating" rating={randomRating} />
         <h4 className='info price'>${prod.initial_price}</h4>
         {/* <a href={`/store/${prod.store.id}`} className='info storeName'> */}

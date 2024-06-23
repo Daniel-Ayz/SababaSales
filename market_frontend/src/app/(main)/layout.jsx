@@ -16,6 +16,7 @@ const Layout = ({ children }) => {
     loggedIn: false,
     userName: null,
     id: null,
+    cart_id: null,
   });
 
   useMemo(() => {
