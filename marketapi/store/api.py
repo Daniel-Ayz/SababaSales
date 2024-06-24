@@ -15,7 +15,7 @@ from .schemas import StoreSchemaIn, StoreSchemaOut, OwnerSchemaIn, ManagerPermis
     SearchSchema, FilterSearchSchema, SimplePurchasePolicySchemaIn, ConditionalPurchasePolicySchemaIn, \
     CompositePurchasePolicySchemaIn, RemovePurchasePolicySchemaIn, SimplePurchasePolicySchemaOut, \
     ConditionalPurchasePolicySchemaOut, CompositePurchasePolicySchemaOut, \
-    BidSchemaIn, BidSchemaOut, DecisionBidSchemaIn
+    BidSchemaIn, BidSchemaOut, DecisionBidSchemaIn, MakePurchaseOnBidSchemaIn
 from django.shortcuts import get_object_or_404, aget_object_or_404
 
 
@@ -221,8 +221,8 @@ def get_bids(request, role: RoleSchemaIn, store_id: int):
 
 
 @router.put("/stores/{store_id}/make_purchase_on_bid")
-def make_purchase_on_bid(request, bid_id: int):
-    return sc.make_purchase_on_bid(request, bid_id)
+def make_purchase_on_bid(request, payload: MakePurchaseOnBidSchemaIn):
+    return sc.make_purchase_on_bid(request, payload)
 
 # @router.put("/stores/{store_id}/return_products")
 # def return_products(request, store_id: int, payload: List[PurchaseStoreProductSchema]):

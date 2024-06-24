@@ -274,3 +274,7 @@ class BidSchemaOut(Schema):
 class DecisionBidSchemaIn(Schema):  #manager makes a decision to accept or reject a bid
     bid_id: int
     decision: bool
+
+class MakePurchaseOnBidSchemaIn(Schema):
+    bid_id: int
+    store_id: int
