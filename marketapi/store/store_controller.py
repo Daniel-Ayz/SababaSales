@@ -3,60 +3,24 @@ import operator
 from functools import reduce
 from typing import List, Union
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction, connection
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.errors import HttpError
 
-from .discount import (
-    SimpleDiscountClass,
-    ConditionalDiscountClass,
-    CompositeDiscountClass,
-)
-from .models import (
-    Store,
-    Owner,
-    Manager,
-    ManagerPermission,
-    StoreProduct,
-    SimpleDiscount,
-    ConditionalDiscount,
-    CompositeDiscount,
-    DiscountBase,
-    Condition,
-    PurchasePolicyBase,
-    SimplePurchasePolicy,
-    ConditionalPurchasePolicy,
-    CompositePurchasePolicy,
-)
-from .purchasePolicy import (
-    SimplePurchasePolicyClass,
-    ConditionalPurchasePolicyClass,
-    CompositePurchasePolicyClass,
-)
-from .schemas import (
-    StoreSchemaIn,
-    OwnerSchemaIn,
-    ManagerPermissionSchemaIn,
-    SimplePurchasePolicySchemaIn,
-    ConditionalPurchasePolicySchemaIn,
-    CompositePurchasePolicySchemaIn,
-    StoreProductSchemaIn,
-    ManagerSchemaIn,
-    RoleSchemaIn,
-    PurchaseStoreProductSchema,
-    RemoveOwnerSchemaIn,
-    RemoveManagerSchemaIn,
-    SimpleDiscountSchemaIn,
-    CompositeDiscountSchemaIn,
-    ConditionalDiscountSchemaIn,
-    RemoveDiscountSchemaIn,
-    ConditionalDiscountSchemaOut,
-    CompositeDiscountSchemaOut,
-    FilterSearchSchema,
-    SearchSchema,
-    RemovePurchasePolicySchemaIn,
-)
+
+from .discount import SimpleDiscountClass, ConditionalDiscountClass, CompositeDiscountClass
+from .models import Store, Owner, Manager, ManagerPermission, StoreProduct, SimpleDiscount, \
+    ConditionalDiscount, CompositeDiscount, DiscountBase, Condition, PurchasePolicyBase, \
+    SimplePurchasePolicy, ConditionalPurchasePolicy, CompositePurchasePolicy, Bid, Role
+from .purchasePolicy import SimplePurchasePolicyClass, ConditionalPurchasePolicyClass, CompositePurchasePolicyClass
+from .schemas import StoreSchemaIn, OwnerSchemaIn, ManagerPermissionSchemaIn, SimplePurchasePolicySchemaIn, \
+    ConditionalPurchasePolicySchemaIn, CompositePurchasePolicySchemaIn, \
+    StoreProductSchemaIn, ManagerSchemaIn, RoleSchemaIn, PurchaseStoreProductSchema, RemoveOwnerSchemaIn, \
+    RemoveManagerSchemaIn, SimpleDiscountSchemaIn, CompositeDiscountSchemaIn, \
+    ConditionalDiscountSchemaIn, RemoveDiscountSchemaIn, ConditionalDiscountSchemaOut, CompositeDiscountSchemaOut, \
+    FilterSearchSchema, SearchSchema, RemovePurchasePolicySchemaIn, BidSchemaIn, DecisionBidSchemaIn
 
 router = Router()
 
@@ -69,11 +33,6 @@ def get_list_from_string(conditions):
 class StoreController:
     def get_store(self, request, store_id: int):
         return get_object_or_404(Store, pk=store_id)
-        # return {"id": store.id,"created_at" : store.created_at, "name": store.name, "description": store.description, "is_active": store.is_active}
-
-    # @router.get("/stores/{store_id}", response=StoreSchemaOut)
-    # async def get_store(request, store_id: int):
-    #     return await aget_object_or_404(Store, pk=store_id)
 
     def create_store(self, request, payload: StoreSchemaIn, user_id: int):
         if Store.objects.filter(name=payload.name).exists():
@@ -82,24 +41,8 @@ class StoreController:
         Owner.objects.create(user_id=user_id, store=store, is_founder=True)
         return {"store_id": store.id}
 
-    # @router.post("/stores")
-    # async def create_store(request, payload: StoreSchemaIn, user_id: int):
-    #     if Store.objects.filter(name=payload.name).exists():
-    #         raise HttpError(403, "Store with this name already exists")
-    #     store = await Store.objects.acreate(**payload.dict(), is_active=True)
-    #     await Owner.objects.acreate(
-    #         user_id=user_id,
-    #         store=store,
-    #         is_founder=True
-    #     )
-    #     return {"store_id": store.id}
-
     def get_stores(self, request):
         return Store.objects.all()
-
-    # @router.get("/stores", response=List[StoreSchemaOut])
-    # async def get_stores(request):
-    #     return await Store.objects.all()
 
     def assign_owner(self, request, payload: OwnerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
@@ -123,34 +66,6 @@ class StoreController:
                     is_founder=False,
                 )
         return {"message": "Owner assigned successfully"}
-
-    # @router.post("/stores/{store_id}/assign_owner")
-    # async def assign_owner(request, payload: OwnerSchemaIn):
-    #     store = await aget_object_or_404(Store, pk=payload.store_id)
-    #     assigning_owner = await aget_object_or_404(Owner, user_id=payload.assigned_by, store=store)
-    #     if await Owner.objects.filter(user_id=payload.user_id, store=store).exists():
-    #         raise HttpError(400, "User is already an owner")
-    #
-    #
-    #     owner = await Owner.objects.acreate(
-    #         user_id=payload.user_id,
-    #         assigned_by=assigning_owner,
-    #         store=store,
-    #         is_founder=payload.is_founder
-    #     )
-    #     return {"message": "Owner assigned successfully"}
-
-    # @router.delete("/stores/{store_id}/remove_owner")
-    # async def remove_owner(request, payload: OwnerSchemaIn):
-    #     store = await aget_object_or_404(Store, pk=payload.store_id)
-    #     removing_owner = await aget_object_or_404(Owner, user_id=payload.removed_by, store=store)
-    #     removed_owner = await aget_object_or_404(Owner, user_id=payload.user_id, store=store)
-    #
-    #     if removed_owner.assigned_by != removing_owner:
-    #         raise HttpError(403, "Owner can only be removed by the owner who assigned them")
-    #
-    #     await removed_owner.adelete()
-    #     return {"message": "Owner removed success"}
 
     def remove_owner(self, request, payload: RemoveOwnerSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
@@ -325,14 +240,15 @@ class StoreController:
             value=payload.condition.value,
             purchase_policy=policy,
         )
-        return {
-            "message": "Simple purchase policy added successfully",
-            "policy": policy,
-        }
+        return {"message": "Simple purchase policy added successfully", "policy": policy}
 
+<<<<<<< add-mock-data-for-testing-ui-super-important
     def add_conditional_purchase_policy(
             self, payload: ConditionalPurchasePolicySchemaIn
     ):
+=======
+    def add_conditional_purchase_policy(self, payload: ConditionalPurchasePolicySchemaIn):
+>>>>>>> main
         store = get_object_or_404(Store, pk=payload.store_id)
         restriction = self.add_purchase_policy(None, None, payload.restriction).get(
             "policy"
@@ -391,112 +307,6 @@ class StoreController:
         policies = PurchasePolicyBase.objects.filter(store=store, is_root=True)
         return policies
 
-    # def add_purchase_policy(
-    #     self, request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn
-    # ):
-    #     store = get_object_or_404(Store, pk=role.store_id)
-    #
-    #     # Check if the user is an owner or manager of the store
-    #     if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #         if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise HttpError(403, "User is not an owner or manager of the store")
-    #
-    #         manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-    #         manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-    #         if not manager_permissions.can_add_purchase_policy:
-    #             raise HttpError(
-    #                 403, "Manager does not have permission to add purchase policy"
-    #             )
-    #
-    #     # Check if a purchase policy already exists for the store
-    #     if PurchasePolicy.objects.filter(store=store).exists():
-    #         raise HttpError(400, "Purchase policy already exists for the store")
-    #
-    #     policy = PurchasePolicy.objects.create(store=store, **payload.dict())
-    #
-    #     return {"message": "Purchase policy added successfully"}
-    #
-    # def remove_purchase_policy(self, request, store_id: int, role: RoleSchemaIn):
-    #     store = get_object_or_404(Store, pk=store_id)
-    #
-    #     # Check if the user is an owner or manager of the store
-    #     if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #         if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise HttpError(403, "User is not an owner or manager of the store")
-    #
-    #         manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-    #         manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-    #         if not manager_permissions.can_remove_purchase_policy:
-    #             raise HttpError(
-    #                 403, "Manager does not have permission to remove purchase policy"
-    #             )
-    #
-    #     # Check if a purchase policy exists for the store
-    #     try:
-    #         policy = PurchasePolicy.objects.get(store=store)
-    #     except PurchasePolicy.DoesNotExist:
-    #         raise HttpError(404, "Purchase policy not found for the store")
-    #
-    #     # Delete the purchase policy
-    #     policy.delete()
-    #
-    #     return {"message": "Purchase policy removed successfully"}
-    #
-    # def get_purchase_policy(self, request, store_id: int, role: RoleSchemaIn):
-    #     store = get_object_or_404(Store, pk=store_id)
-    #     if not store.is_active:
-    #         if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise HttpError(
-    #                 403, "User is not an owner of the store and the store is closed"
-    #             )
-    #
-    #     policies = PurchasePolicy.objects.filter(store=store)
-    #
-    #     return policies
-
-    # @router.post("/stores/{store_id}/change_purchase_policy")
-    # def change_purchase_policy(request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn):
-    #     store = get_object_or_404(Store, pk=role.store_id)
-    #     if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #         if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise ValueError("User is not an owner or manager of the store")
-    #         manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-    #         manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-    #         if not manager_permissions.can_change_purchase_policy:
-    #             raise ValueError("Manager does not have permission to change purchase policy")
-    #
-    #     policy, _ = PurchasePolicy.objects.update_or_create(
-    #         store=store,
-    #         defaults=payload.dict()
-    #     )
-    #
-    #     return {"message": "Purchase policy updated successfully"}
-
-    # def add_discount_policy(self, request, role: RoleSchemaIn, payload: DiscountBaseSchema):
-    #     store = get_object_or_404(Store, pk=role.store_id)
-    #
-    #     # Check if the user is an owner or manager of the store
-    #     if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #         if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise HttpError(403, "User is not an owner or manager of the store")
-    #
-    #         manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-    #         manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-    #         if not manager_permissions.can_add_discount_policy:
-    #             raise HttpError(403, "Manager does not have permission to change discount policy")
-    #
-    #     # Check if a discount policy with the same parameters already exists for the store
-    #     if DiscountPolicy.objects.filter(store=store, min_items=payload.min_items,
-    #                                      min_price=payload.min_price).exists():
-    #         raise HttpError(400, "Discount policy with these parameters already exists")
-    #
-    #     policy = DiscountPolicy.objects.create(
-    #         store=store,
-    #         **payload.dict()
-    #     )
-    #
-    #     return {"message": "Discount policy added successfully"}
-
     def add_discount_policy(
             self,
             request,
@@ -523,12 +333,6 @@ class StoreController:
     def add_simple_discount_policy(self, payload: SimpleDiscountSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
 
-        # if SimpleDiscount.objects.filter(store=store, percentage=payload.percentage).exists():
-        #     raise HttpError(400, "Simple discount policy with these parameters already exists")
-
-        # if SimpleDiscount.objects.filter(store=store, percentage=payload.percentage,
-        #                                  applicable_products__in=applicable_products).exists():
-        #     raise HttpError(400, "Simple discount policy with these parameters already exists")
         discount = SimpleDiscount.objects.create(
             store=store,
             is_root=payload.is_root,
@@ -549,8 +353,6 @@ class StoreController:
     def add_conditional_discount_policy(self, payload: ConditionalDiscountSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
 
-        # if ConditionalDiscount.objects.filter(store=store, discount_type=payload.discount_type).exists():
-        #     raise HttpError(400, "Conditional discount policy with these parameters already exists")
         base_discount = (self.add_discount_policy(None, None, payload.discount)).get(
             "discount"
         )
@@ -573,9 +375,6 @@ class StoreController:
 
     def add_composite_discount_policy(self, payload: CompositeDiscountSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
-
-        # if CompositeDiscount.objects.filter(store=store, discount_type=payload.discount_type).exists():
-        #     raise HttpError(400, "Composite discount policy with these parameters already exists")
         discounts = []
         for discount_payload in payload.discounts:
             discounts.append(
@@ -597,10 +396,7 @@ class StoreController:
                 discount=discount,
             )
 
-        return {
-            "message": "Composite discount policy added successfully",
-            "discount": discount,
-        }
+        return {"message": "Composite discount policy added successfully", "discount": discount}
 
     def remove_discount_policy(
             self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
@@ -608,18 +404,6 @@ class StoreController:
         store = get_object_or_404(Store, pk=payload.store_id)
 
         self.validate_permissions(role, store, "can_remove_discount_policy")
-        # try:
-        #     # Try to get the discount instance by its ID in each subclass
-        #     discount_instance = SimpleDiscount.objects.get(pk=payload.discount_id, is_root=True)
-        # except ObjectDoesNotExist:
-        #     try:
-        #         discount_instance = ConditionalDiscount.objects.get(pk=payload.discount_id, is_root=True)
-        #     except ObjectDoesNotExist:
-        #         try:
-        #             discount_instance = CompositeDiscount.objects.get(pk=payload.discount_id, is_root=True)
-        #         except ObjectDoesNotExist:
-        #             raise HttpError(404, "Discount policy does not exist")
-
         discount_instance = get_object_or_404(
             DiscountBase, pk=payload.discount_id, is_root=True
         )
@@ -627,30 +411,6 @@ class StoreController:
         discount_instance.delete()
 
         return {"message": "Discount policy removed successfully"}
-
-    # def remove_discount_policy(self, request, role: RoleSchemaIn, payload: DiscountPolicySchemaIn):
-    #     store = get_object_or_404(Store, pk=role.store_id)
-    #
-    #     # Check if the user is an owner or manager of the store
-    #     if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #         if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise HttpError(403, "User is not an owner or manager of the store")
-    #
-    #         manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-    #         manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-    #         if not manager_permissions.can_remove_discount_policy:
-    #             raise HttpError(403, "Manager does not have permission to change discount policy")
-    #
-    #     # Check if a discount policy exists for the store
-    #     try:
-    #         policy = DiscountPolicy.objects.get(store=store, min_items=payload.min_items, min_price=payload.min_price)
-    #     except DiscountPolicy.DoesNotExist:
-    #         raise HttpError(404, "Discount policy not found for the store")
-    #
-    #     # Delete the discount policy
-    #     policy.delete()
-    #
-    #     return {"message": "Discount policy removed successfully"}
 
     def get_discount_policies(self, request, role: RoleSchemaIn):
         store = get_object_or_404(Store, pk=role.store_id)
@@ -661,25 +421,6 @@ class StoreController:
                 )
 
         return DiscountBase.objects.filter(store=store, is_root=True)
-
-    # not sure if editing discount policies is needed, can just delete and add new ones
-    #
-    # @router.put("/stores/{store_id}/edit_discount_policy")
-    # def edit_discount_policy(request, role: RoleSchemaIn, payload: DiscountPolicySchemaIn):
-    #     store = get_object_or_404(Store, pk=role.store_id)
-    #     if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #         if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise ValueError("User is not an owner or manager of the store")
-    #         manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-    #         manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-    #         if not manager_permissions.can_change_discount_policy:
-    #             raise ValueError("Manager does not have permission to change discount policy")
-    #
-    #     policy = get_object_or_404(DiscountPolicy, store=store)
-    #     policy.update(**payload.dict())
-    #
-    #     return {"message": "Discount policy edited successfully"}
-    #
 
     def validate_permissions(self, role: RoleSchemaIn, store: Store, permission: str):
         if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
@@ -697,14 +438,6 @@ class StoreController:
         store = get_object_or_404(Store, pk=role.store_id)
 
         self.validate_permissions(role, store, "can_add_product")
-        # if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-        #     if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-        #         raise HttpError(403, "User is not an owner or manager of the store")
-        #
-        #     manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-        #     manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-        #     if not manager_permissions.can_add_product:
-        #         raise HttpError(403, "Manager does not have permission to add product")
 
         all_products = StoreProduct.objects.filter(store=store)
         if payload.name in all_products.values_list("name", flat=True):
@@ -722,17 +455,6 @@ class StoreController:
         store = get_object_or_404(Store, pk=role.store_id)
         self.validate_permissions(role, store, "can_delete_product")
 
-        # Check if the user is an owner or manager of the store
-        # if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-        #     if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-        #         raise HttpError(403, "User is not an owner or manager of the store")
-        #
-        #     manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-        #     manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-        #     if not manager_permissions.can_delete_product:
-        #         raise HttpError(403, "Manager does not have permission to delete product")
-
-        # Check if the product exists
         product = get_object_or_404(StoreProduct, store=store, name=product_name)
 
         # Delete the product
@@ -744,16 +466,6 @@ class StoreController:
         store = get_object_or_404(Store, pk=role.store_id)
 
         self.validate_permissions(role, store, "can_edit_product")
-
-        # Check if the user is an owner or manager of the store
-        # if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-        #     if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-        #         raise HttpError(403, "User is not an owner or manager of the store")
-        #
-        #     manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-        #     manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-        #     if not manager_permissions.can_edit_product:
-        #         raise HttpError(403, "Manager does not have permission to edit product")
 
         # Get the product to edit
         product = get_object_or_404(StoreProduct, store=store, name=payload.name)
@@ -908,9 +620,14 @@ class StoreController:
                     total_discount += discount
         return total_discount
 
+<<<<<<< add-mock-data-for-testing-ui-super-important
     def get_purchase_policy_instance(
             self, purchase_model: PurchasePolicyBase, store: Store
     ):
+=======
+    def get_purchase_policy_instance(self, purchase_model: PurchasePolicyBase, store: Store):
+
+>>>>>>> main
         if isinstance(purchase_model, SimplePurchasePolicy):
             return SimplePurchasePolicyClass(
                 condition=purchase_model.conditions.all(), store=store
@@ -937,19 +654,19 @@ class StoreController:
             )
         return None
 
+<<<<<<< add-mock-data-for-testing-ui-super-important
     def validate_purchase_policy(
             self, store, payload
     ):  # Retrieve only root purchase models to avoid duplicates
+=======
+    def validate_purchase_policy(self, store, payload): \
+            # Retrieve only root purchase models to avoid duplicates
+>>>>>>> main
         all_purchase_models = PurchasePolicyBase.objects.filter(is_root=True)
         if len(all_purchase_models) == 0:
             return True
-        return reduce(
-            operator.and_,
-            [
-                self.get_purchase_policy_instance(policy, store).apply_policy(payload)
-                for policy in all_purchase_models
-            ],
-        )  # all purchase policies should work
+        return reduce(operator.and_, [self.get_purchase_policy_instance(policy, store).apply_policy(payload)
+                                      for policy in all_purchase_models])  #all purchase policies should work
 
     def search_products(
             self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
@@ -1095,6 +812,7 @@ class StoreController:
 
         return {"message": "Fake data created successfully"}
 
+<<<<<<< add-mock-data-for-testing-ui-super-important
     def search_products(
             self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
     ):
@@ -1118,31 +836,73 @@ class StoreController:
                 )
             else:
                 products = StoreProduct.objects.filter(store=store)
+=======
+    def make_bid(self, request, payload: BidSchemaIn):
+        store = get_object_or_404(Store, pk=payload.store_id)
+        product = get_object_or_404(StoreProduct, store=store, name=payload.product_name)
+        bid = Bid.objects.create(
+            store=store,
+            product=product,
+            price=payload.price,
+            user_id=payload.user_id,
+            quantity=payload.quantity
+        )
+        #TODO: notify all managers that a bid has been made on a product
+        return {"message": "Bid added successfully"}
+
+    def decide_on_bid(self, request, role: RoleSchemaIn, payload: DecisionBidSchemaIn):
+        bid = get_object_or_404(Bid, pk=payload.bid_id)
+        self.validate_permissions(role, bid.store, "can_decide_on_bid")
+        managers_with_permission = self.get_managers_with_permissions(role, "can_decide_on_bid")
+        manager = get_object_or_404(Role, user_id=role.user_id, store=bid.store)
+        if manager in bid.accepted_by.all():
+            raise HttpError(400, "Manager has already accepted the bid")
+        # if manager not in managers_with_permission:
+        #     raise HttpError(403, "Manager does not have permission to decide on bids")
+        if payload.decision:
+            bid.accepted_by.add(manager)
+            owners_count = self.get_owners(None, role).count()
+            count_managers_with_permission = len(managers_with_permission)
+            if bid.accepted_by.count() == owners_count + count_managers_with_permission:
+                bid.can_purchase = True
+                bid.save()  # Ensure bid is saved after setting can_purchase to True
+                #TODO: notify user that bid has been accepted
+>>>>>>> main
         else:
-            if search_query.product_name and not search_query.category:
-                products = StoreProduct.objects.filter(
-                    name__icontains=search_query.product_name, store__is_active=True
-                )
-            elif search_query.category and not search_query.product_name:
-                products = StoreProduct.objects.filter(
-                    category__icontains=search_query.category, store__is_ative=True
-                )
-            elif search_query.product_name and search_query.category:
-                products = StoreProduct.objects.filter(
-                    name__icontains=search_query.product_name,
-                    category__icontains=search_query.category,
-                    store__is_active=True,
-                )
-            else:
-                products = StoreProduct.objects.filter(store__is_active=True)
+            bid.delete()
+            ##TODO: notify user that bid has been rejected
 
-        if filter_query.min_price:
-            products = products.filter(initial_price__gte=filter_query.min_price)
-        if filter_query.max_price:
-            products = products.filter(initial_price__lte=filter_query.max_price)
-        if filter_query.min_quantity:
-            products = products.filter(quantity__gte=filter_query.min_quantity)
-        if filter_query.max_quantity:
-            products = products.filter(quantity__lte=filter_query.max_quantity)
+        return {"message": "Bid decision made successfully"}
 
-        return products
+    def get_bids(self, request, role: RoleSchemaIn, store_id: int):
+        store = get_object_or_404(Store, pk=store_id)
+        self.validate_permissions(role, store, "can_decide_on_bid")
+        return Bid.objects.filter(store=store)
+
+    def make_purchase_on_bid(self, request, bid_id: int):
+        bid = get_object_or_404(Bid, pk=bid_id)
+        if not bid.can_purchase:
+            raise HttpError(400, "Bid has not been accepted by all managers or owners")
+        product = bid.product
+        if product.quantity < bid.quantity:
+            raise HttpError(400, "Insufficient quantity of product in store")
+        product.quantity -= bid.quantity
+        price = bid.price
+        product.save()
+        bid.delete()  # delete bid after purchase
+        return {"message": "Purchase made successfully", "price": price}
+
+    def get_managers_with_permissions(self, role: RoleSchemaIn, permission: str):
+        store = get_object_or_404(Store, pk=role.store_id)
+        managers = Manager.objects.filter(store=store)
+        managers_with_permission = []
+        for manager in managers:
+            try:
+                manager_permissions = ManagerPermission.objects.get(manager=manager)
+                if getattr(manager_permissions, permission):
+                    managers_with_permission.append(manager)
+            except ObjectDoesNotExist:
+                pass
+        return managers_with_permission
+      
+  
