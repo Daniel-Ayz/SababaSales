@@ -46,38 +46,6 @@ class ManagerPermission(models.Model):
     can_remove_purchase_policy = models.BooleanField(default=False)
 
 
-# class PurchasePolicy(models.Model):
-#     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='purchase_policies')
-#     max_items_per_purchase = models.IntegerField(null=True, blank=True)  # Optional
-#     min_items_per_purchase = models.IntegerField(null=True, blank=True)  # Optional
-#
-#     def __str__(self):
-#         policy_text = ""
-#         if self.max_items_per_purchase:
-#             policy_text += f"Max items per purchase: {self.max_items_per_purchase}"
-#         if self.min_items_per_purchase:
-#             if policy_text:
-#                 policy_text += " & "
-#             policy_text += f"Min items per purchase: {self.min_items_per_purchase}"
-#         return policy_text or "No restrictions"
-
-
-# class DiscountPolicy(models.Model):
-#     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='discount_policies')
-#     min_items = models.IntegerField(null=True, blank=True)  # Optional
-#     min_price = models.FloatField(null=True, blank=True)  # Optional
-#
-#     def __str__(self):
-#         policy_text = ""
-#         if self.min_items:
-#             policy_text += f"Min items: {self.min_items}"
-#         if self.min_price:
-#             if policy_text:
-#                 policy_text += " & "
-#             policy_text += f"Min price: {self.min_price}"
-#         return policy_text or "No restrictions"
-
-
 class StoreProduct(models.Model):
     store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='store_products')
     initial_price = models.FloatField()

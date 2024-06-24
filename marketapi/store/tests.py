@@ -1741,22 +1741,116 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.status_code == 200
         assert response.json()["total_price"] == 42.0
 
-        # Get the discount policies to verify the added discount
+    def test_remove_purchase_policy_valid_user(self):
+        condition = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+        purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": condition
+        }
 
-    # def test_get_discount_policies(self):
-    #     response = self.client.get(f'/stores/{self.store_id}/get_discount_policies', json={
-    #         "user_id": self.user_id, "store_id": self.store_id
-    #     })
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(len(response.json()), 1)
+        # Add the simple purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": purchase_policy_payload
+        })
 
-    # def test_add_simple_discount_policy(self):
-    #     response = self.client.post("/stores/{store_id}/add_discount_policy", json={
-    #         "role": {"user_id": self.user_id, "store_id": self.store_id},
-    #         "payload": {"min_items": 5, "min_price": 500}
-    #     })
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(response.json(), {"message": "Discount policy added successfully"})
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Simple purchase policy added successfully"
+
+        # Get the purchase policies to verify the added purchase policy
+        response = self.client.get(f"/stores/{self.store_id}/get_purchase_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
+
+        # Verify the response status code
+        assert response.status_code == 200
+        policies = response.json()
+        assert len(policies) == 1
+
+        # Remove the purchase policy
+        response = self.client.delete(f"/stores/{self.store_id}/remove_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": {"store_id": self.store_id, "policy_id": 1}
+        })
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json().get("message") == "Purchase policy removed successfully"
+
+        # Get the purchase policies to verify the removed purchase policy
+        response = self.client.get(f"/stores/{self.store_id}/get_purchase_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
+
+        # Verify the response status code
+        assert response.status_code == 200
+        policies = response.json()
+        assert len(policies) == 0
+
+    def test_remove_purchase_policy_invalid_user(self):
+        condition = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+        purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": condition
+        }
+
+        # Add the simple purchase policy
+        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Simple purchase policy added successfully"
+
+        # Get the purchase policies to verify the added purchase policy
+        response = self.client.get(f"/stores/{self.store_id}/get_purchase_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
+
+        # Verify the response status code
+        assert response.status_code == 200
+        policies = response.json()
+        assert len(policies) == 1
+
+        # Remove the purchase policy
+        response = self.client.delete(f"/stores/{self.store_id}/remove_purchase_policy", json={
+            "role": {"user_id": 30, "store_id": self.store_id},
+            "payload": {"store_id": self.store_id, "policy_id": 1}
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 403
+        assert response.json().get("detail") == "User is not an owner or manager of the store"
+
+        # Get the purchase policies to verify the removed purchase policy
+        response = self.client.get(f"/stores/{self.store_id}/get_purchase_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
+
+        # Verify the response status code
+        assert response.status_code == 200
+        policies = response.json()
+        assert len(policies) == 1
+
+
 
     def test_add_product_with_invalid_data(self):
         response = self.client.post("/stores/{store_id}/add_product", json={
@@ -1822,7 +1916,6 @@ class StoreAPITestCase(TransactionTestCase):
         self.assertEqual(response.json(), {"detail": "Insufficient quantity of Test Product in store"})
 
     def test_concurrent_product_purchase(self):
-        # Create a second user
         self.client.post("/stores/{store_id}/add_product", json={
             "role": {"user_id": self.owner2_id, "store_id": self.store_id},
             "payload": {"name": "Test Product 2", "quantity": 1, "initial_price": 100, "category": "Test Category"}})
@@ -1863,19 +1956,50 @@ class StoreAPITestCase(TransactionTestCase):
             "role": {"user_id": self.owner2_id, "store_id": self.store_id},
             "payload": {"name": "Test Product 3", "quantity": 1, "initial_price": 100, "category": "Test Category"}})
 
-        # Store owner deletes a product
-        delete_response = self.client.delete("/stores/{store_id}/remove_product?product_name=Test Product 3", json={
-            "user_id": self.user_id, "store_id": self.store_id
-        })
-        # At the same time, another user tries to buy the product
-        purchase_response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
-            "product_name": "Test Product 3",
-            "quantity": 1,
-            "category": "Test Category"
-        }])
+        def delete_product(queue):
+            response = self.client.delete("/stores/{store_id}/remove_product?product_name=Test Product 3", json={
+                "user_id": self.user_id, "store_id": self.store_id
+            })
+            queue.put(response)
 
-        # The purchase request should fail
-        self.assertEqual(purchase_response.status_code, 404)
+        def purchase_product(queue):
+            response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+                "product_name": "Test Product 3",
+                "quantity": 1,
+                "category": "Test Category"
+            }])
+            queue.put(response)
+
+        # Create a queue to store responses
+        response_queue = queue.Queue()
+
+        # Create threads for each request
+        thread1 = threading.Thread(target=delete_product, args=(response_queue,))
+        thread2 = threading.Thread(target=purchase_product, args=(response_queue,))
+
+        # Start both threads
+        thread1.start()
+        thread2.start()
+
+        # Wait for both threads to finish
+        thread1.join()
+        thread2.join()
+
+        # Get responses from the queue
+        response1 = response_queue.get()
+        response2 = response_queue.get()
+
+        # One of the requests should fail (return 404)
+        self.assertTrue(response1.status_code == 404 or response2.status_code == 404) and self.assertTrue(
+            response1.status_code == 200 or response2.status_code == 200)
+
+
+    def test_empty_search(self):
+        response = self.client.get(f'/stores/{self.store_id}/search', json={
+            "search_query": {}, "filter_query": {}
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 14)
 
     def test_search_product_in_store_no_filter(self):
         search = {
