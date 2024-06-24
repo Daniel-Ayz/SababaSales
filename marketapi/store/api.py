@@ -194,9 +194,9 @@ def purchase_product(request, store_id: int, payload: List[PurchaseStoreProductS
     return sc.purchase_product(request, store_id, payload)
 
 
-@router.post("/stores/create_fake_data")
+@router.put("/stores/{store_id}/create_fake_data")
 def create_fake_data(request):
-    return sc.create_fake_data(request)
+    return sc.create_fake_data()
 
 
 @router.get("/stores/{store_id}/search", response=List[StoreProductSchemaOut])

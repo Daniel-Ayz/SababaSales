@@ -1978,6 +1978,9 @@ class StoreAPITestCase(TransactionTestCase):
         self.assertTrue(response1.status_code == 400 or response2.status_code == 400) and self.assertTrue(
             response1.status_code == 200 or response2.status_code == 200)
 
+    def test_fake_data(self):
+        response = self.client.put(f'/stores/{self.store_id}/create_fake_data')
+        assert response.status_code == 200
     def test_make_bid(self):
         response = self.client.post("/stores/{store_id}/make_bid", json={
             "user_id": 100,
@@ -2108,3 +2111,4 @@ class StoreAPITestCase(TransactionTestCase):
         response = self.client.put(f'/stores/{self.store_id}/make_purchase_on_bid?bid_id=1')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["price"], 2)
+
