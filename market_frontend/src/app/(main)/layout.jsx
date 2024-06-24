@@ -7,6 +7,7 @@ import { createContext } from 'react';
 
 axios.defaults.withCredentials = true;
 
+const CategoryContext = createContext();
 const UserContext = createContext();
 const StoreProductsContext = createContext();
 const Layout = ({ children }) => {
@@ -18,6 +19,7 @@ const Layout = ({ children }) => {
     id: null,
     cart_id: null,
   });
+  const [categories, setCategories] = useState(null);
 
   useMemo(() => {
     axios.get('http://localhost:8000/api/users/', {
@@ -45,7 +47,9 @@ const Layout = ({ children }) => {
   return (
     <UserContext.Provider value={{ user, setUser }}>
       <StoreProductsContext.Provider value={{ storesProducts, setStoresProducts }}>
-      {children}
+        <CategoryContext.Provider value={{ categories, setCategories }}>
+        {children}
+      </CategoryContext.Provider>
       </StoreProductsContext.Provider>
     </UserContext.Provider>
   );
@@ -54,3 +58,4 @@ const Layout = ({ children }) => {
 export default Layout;
 export { UserContext}
 export { StoreProductsContext}
+export { CategoryContext}

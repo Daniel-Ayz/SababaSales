@@ -63,7 +63,7 @@ const StorePage = ({ params }) => {
         {/* <h2>Store</h2> */}
         <div className="productCont">
           {currentRecords.map(product => (
-            <div key={product.id} className="card">
+            <div key={product.name} className="card">
               <ProductView prod={product} store_id={storeid} />
             </div>
           ))}

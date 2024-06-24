@@ -102,7 +102,7 @@ export default function NavBar({setCart}) {
 
                 </div>
               </div>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+              <div className="flex inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                 <div className="relative flex items-center w-full mx-auto flex-grow">
                   <input
                     type="text"
@@ -131,8 +131,22 @@ export default function NavBar({setCart}) {
                     </svg>
                   </button>
 
-                  {/* <Categories className="categories" categoriesDict={CATEGORIES}/> */}
+
+
+<div className="flex items-center justify-between">
+      <div className="flex items-center">
+        <Link href="/productSearch" className="inline-block h-full px-4 py-2 text-white rounded hover:bg-gray-600">
+          Browse
+        </Link>
+        <Categories className="ml-4" categoriesDict={CATEGORIES} />
+      </div>
+      <div>
+        {/* Your login button or other content */}
+
                   <div className='space'></div>
+      </div>
+    </div>
+
                 </div>
                 {user.loggedIn && <button
                   type="button"
