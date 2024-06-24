@@ -69,9 +69,13 @@ class UserController:
         user = CustomUser.objects.get(id=request.user.id)
         cart = self._get_cart(request)
         cart_id = cart.id
-        return UserSetupSchema(
+        userSchema = UserSetupSchema(
             id=user.id, username=user.username, email=user.email, cart_id=cart_id
         )
+        print(user.username)
+        print(user.email)
+        print(userSchema)
+        return userSchema
 
     def delete_user(self, request, user_id) -> any:
         """

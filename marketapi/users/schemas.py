@@ -39,10 +39,10 @@ class UserSchema(ModelSchema):
 
 
 class UserSetupSchema(Schema):
-    class Meta:
-        model = CustomUser
-        fields = ["id", "username", "email"]
 
+    id: int  #
+    username: str  #
+    email: str  #
     cart_id: int
 
 

@@ -21,29 +21,29 @@ const Layout = ({ children }) => {
   });
   const [categories, setCategories] = useState(null);
 
-  useMemo(() => {
-    axios.get('http://localhost:8000/api/users/', {
-    headers: {'Content-Type': 'application/json'}, withCredentials: true })
-      .then(response => {
-        const userData = response.data;
+useEffect(() => {
+  axios.get('http://localhost:8000/api/users/', {
+    headers: {'Content-Type': 'application/json'},
+    withCredentials: true
+  })
+  .then(response => {
+    const userData = response.data;
 
-        // Update the user state with fetched data
-        setUser({
-          loggedIn: true,
-          userName: userData.username, // Replace with actual field name from your API response
-          id: userData.id, // Replace with actual field name from your API response
-          cart_id: userData.cart_id,
-        });
-        console.log(user)
+    // Update the user state with fetched data
+    setUser({
+      loggedIn: true,
+      userName: userData.username,
+      id: userData.id,
+      cart_id: userData.cart_id,
+    });
+    console.log(user); // Note: This will log the old state due to closure. Consider using 'userData' instead for accurate logging.
 
-      })
-      .catch(error => {
-        console.log('no logged in user');
-
-        // Handle errors here if needed
-      });
-  }, []);
-
+  })
+  .catch(error => {
+    console.log('no logged in user');
+    // Handle errors here if needed
+  });
+}, []); // Empty dependency array ensures this effect runs only once on mount
   return (
     <UserContext.Provider value={{ user, setUser }}>
       <StoreProductsContext.Provider value={{ storesProducts, setStoresProducts }}>
