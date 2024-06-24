@@ -242,13 +242,8 @@ class StoreController:
         )
         return {"message": "Simple purchase policy added successfully", "policy": policy}
 
-<<<<<<< add-mock-data-for-testing-ui-super-important
-    def add_conditional_purchase_policy(
-            self, payload: ConditionalPurchasePolicySchemaIn
-    ):
-=======
+
     def add_conditional_purchase_policy(self, payload: ConditionalPurchasePolicySchemaIn):
->>>>>>> main
         store = get_object_or_404(Store, pk=payload.store_id)
         restriction = self.add_purchase_policy(None, None, payload.restriction).get(
             "policy"
@@ -620,14 +615,8 @@ class StoreController:
                     total_discount += discount
         return total_discount
 
-<<<<<<< add-mock-data-for-testing-ui-super-important
-    def get_purchase_policy_instance(
-            self, purchase_model: PurchasePolicyBase, store: Store
-    ):
-=======
-    def get_purchase_policy_instance(self, purchase_model: PurchasePolicyBase, store: Store):
 
->>>>>>> main
+    def get_purchase_policy_instance(self, purchase_model: PurchasePolicyBase, store: Store):
         if isinstance(purchase_model, SimplePurchasePolicy):
             return SimplePurchasePolicyClass(
                 condition=purchase_model.conditions.all(), store=store
@@ -654,14 +643,7 @@ class StoreController:
             )
         return None
 
-<<<<<<< add-mock-data-for-testing-ui-super-important
-    def validate_purchase_policy(
-            self, store, payload
-    ):  # Retrieve only root purchase models to avoid duplicates
-=======
-    def validate_purchase_policy(self, store, payload): \
-            # Retrieve only root purchase models to avoid duplicates
->>>>>>> main
+    def validate_purchase_policy(self, store, payload):
         all_purchase_models = PurchasePolicyBase.objects.filter(is_root=True)
         if len(all_purchase_models) == 0:
             return True
@@ -812,31 +794,6 @@ class StoreController:
 
         return {"message": "Fake data created successfully"}
 
-<<<<<<< add-mock-data-for-testing-ui-super-important
-    def search_products(
-            self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
-    ):
-        if search_query.store_id:
-            store = get_object_or_404(Store, pk=search_query.store_id)
-            if not store.is_active:
-                raise HttpError(403, "Store is closed")
-            if search_query.product_name and not search_query.category:
-                products = StoreProduct.objects.filter(
-                    store=store, name__icontains=search_query.product_name
-                )
-            elif search_query.category and not search_query.product_name:
-                products = StoreProduct.objects.filter(
-                    store=store, category__icontains=search_query.category
-                )
-            elif search_query.product_name and search_query.category:
-                products = StoreProduct.objects.filter(
-                    store=store,
-                    name__icontains=search_query.product_name,
-                    category__icontains=search_query.category,
-                )
-            else:
-                products = StoreProduct.objects.filter(store=store)
-=======
     def make_bid(self, request, payload: BidSchemaIn):
         store = get_object_or_404(Store, pk=payload.store_id)
         product = get_object_or_404(StoreProduct, store=store, name=payload.product_name)
@@ -867,7 +824,6 @@ class StoreController:
                 bid.can_purchase = True
                 bid.save()  # Ensure bid is saved after setting can_purchase to True
                 #TODO: notify user that bid has been accepted
->>>>>>> main
         else:
             bid.delete()
             ##TODO: notify user that bid has been rejected
