@@ -3,60 +3,24 @@ import operator
 from functools import reduce
 from typing import List, Union
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction, connection
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.errors import HttpError
 
-from .discount import (
-    SimpleDiscountClass,
-    ConditionalDiscountClass,
-    CompositeDiscountClass,
-)
-from .models import (
-    Store,
-    Owner,
-    Manager,
-    ManagerPermission,
-    StoreProduct,
-    SimpleDiscount,
-    ConditionalDiscount,
-    CompositeDiscount,
-    DiscountBase,
-    Condition,
-    PurchasePolicyBase,
-    SimplePurchasePolicy,
-    ConditionalPurchasePolicy,
-    CompositePurchasePolicy,
-)
-from .purchasePolicy import (
-    SimplePurchasePolicyClass,
-    ConditionalPurchasePolicyClass,
-    CompositePurchasePolicyClass,
-)
-from .schemas import (
-    StoreSchemaIn,
-    OwnerSchemaIn,
-    ManagerPermissionSchemaIn,
-    SimplePurchasePolicySchemaIn,
-    ConditionalPurchasePolicySchemaIn,
-    CompositePurchasePolicySchemaIn,
-    StoreProductSchemaIn,
-    ManagerSchemaIn,
-    RoleSchemaIn,
-    PurchaseStoreProductSchema,
-    RemoveOwnerSchemaIn,
-    RemoveManagerSchemaIn,
-    SimpleDiscountSchemaIn,
-    CompositeDiscountSchemaIn,
-    ConditionalDiscountSchemaIn,
-    RemoveDiscountSchemaIn,
-    ConditionalDiscountSchemaOut,
-    CompositeDiscountSchemaOut,
-    FilterSearchSchema,
-    SearchSchema,
-    RemovePurchasePolicySchemaIn,
-)
+
+from .discount import SimpleDiscountClass, ConditionalDiscountClass, CompositeDiscountClass
+from .models import Store, Owner, Manager, ManagerPermission, StoreProduct, SimpleDiscount, \
+    ConditionalDiscount, CompositeDiscount, DiscountBase, Condition, PurchasePolicyBase, \
+    SimplePurchasePolicy, ConditionalPurchasePolicy, CompositePurchasePolicy, Bid, Role
+from .purchasePolicy import SimplePurchasePolicyClass, ConditionalPurchasePolicyClass, CompositePurchasePolicyClass
+from .schemas import StoreSchemaIn, OwnerSchemaIn, ManagerPermissionSchemaIn, SimplePurchasePolicySchemaIn, \
+    ConditionalPurchasePolicySchemaIn, CompositePurchasePolicySchemaIn, \
+    StoreProductSchemaIn, ManagerSchemaIn, RoleSchemaIn, PurchaseStoreProductSchema, RemoveOwnerSchemaIn, \
+    RemoveManagerSchemaIn, SimpleDiscountSchemaIn, CompositeDiscountSchemaIn, \
+    ConditionalDiscountSchemaIn, RemoveDiscountSchemaIn, ConditionalDiscountSchemaOut, CompositeDiscountSchemaOut, \
+    FilterSearchSchema, SearchSchema, RemovePurchasePolicySchemaIn, BidSchemaIn, DecisionBidSchemaIn
 
 router = Router()
 store_lock = hash("store_lock")
@@ -73,11 +37,7 @@ class StoreController:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
                 return get_object_or_404(Store, pk=store_id)
-        # return {"id": store.id,"created_at" : store.created_at, "name": store.name, "description": store.description, "is_active": store.is_active}
 
-    # @router.get("/stores/{store_id}", response=StoreSchemaOut)
-    # async def get_store(request, store_id: int):
-    #     return await aget_object_or_404(Store, pk=store_id)
 
     def create_store(self, request, payload: StoreSchemaIn, user_id: int):
         with transaction.atomic():
@@ -94,10 +54,6 @@ class StoreController:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
                 return Store.objects.all()
-
-    # @router.get("/stores", response=List[StoreSchemaOut])
-    # async def get_stores(request):
-    #     return await Store.objects.all()
 
     def assign_owner(self, request, payload: OwnerSchemaIn):
         with transaction.atomic():
@@ -352,10 +308,10 @@ class StoreController:
             "policy": policy,
         }
 
-    def add_conditional_purchase_policy(
-            self, payload: ConditionalPurchasePolicySchemaIn
-    ):
 
+
+    def add_conditional_purchase_policy(self, payload: ConditionalPurchasePolicySchemaIn):
+        store = get_object_or_404(Store, pk=payload.store_id)
         restriction = self.add_purchase_policy(None, None, payload.restriction).get(
             "policy"
         )
@@ -486,7 +442,7 @@ class StoreController:
                         store=store, name__in=payload.applicable_products
                     )
                     discount.applicable_products.set(applicable_products)
-
+                    
         return {
             "message": "Simple discount policy added successfully",
             "discount": discount,
@@ -494,8 +450,6 @@ class StoreController:
 
     def add_conditional_discount_policy(self, payload: ConditionalDiscountSchemaIn):
 
-        # if ConditionalDiscount.objects.filter(store=store, discount_type=payload.discount_type).exists():
-        #     raise HttpError(400, "Conditional discount policy with these parameters already exists")
         base_discount = (self.add_discount_policy(None, None, payload.discount)).get(
             "discount"
         )
@@ -523,15 +477,12 @@ class StoreController:
         }
 
     def add_composite_discount_policy(self, payload: CompositeDiscountSchemaIn):
-
-        # if CompositeDiscount.objects.filter(store=store, discount_type=payload.discount_type).exists():
-        #     raise HttpError(400, "Composite discount policy with these parameters already exists")
         discounts = []
         for discount_payload in payload.discounts:
             discounts.append(
                 (self.add_discount_policy(None, None, discount_payload)).get("discount")
             )
-
+            
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
@@ -630,6 +581,7 @@ class StoreController:
         return {"message": "Product added successfully"}
 
     def remove_product(self, request, role: RoleSchemaIn, product_name: str):
+
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
@@ -798,6 +750,7 @@ class StoreController:
 
     def calculate_cart_discount(
             self, purchase_products: List[PurchaseStoreProductSchema], store: Store, cursor
+
     ):
         total_discount = 0
         # Retrieve only root discount models to avoid duplicates
@@ -812,9 +765,9 @@ class StoreController:
                     total_discount += discount
         return total_discount
 
-    def get_purchase_policy_instance(
-            self, purchase_model: PurchasePolicyBase, store: Store
-    ):
+
+
+    def get_purchase_policy_instance(self, purchase_model: PurchasePolicyBase, store: Store):
         if isinstance(purchase_model, SimplePurchasePolicy):
             return SimplePurchasePolicyClass(
                 condition=purchase_model.conditions.all(), store=store
@@ -849,13 +802,8 @@ class StoreController:
         all_purchase_models = PurchasePolicyBase.objects.filter(is_root=True)
         if len(all_purchase_models) == 0:
             return True
-        return reduce(
-            operator.and_,
-            [
-                self.get_purchase_policy_instance(policy, store).apply_policy(payload)
-                for policy in all_purchase_models
-            ],
-        )  # all purchase policies should work
+        return reduce(operator.and_, [self.get_purchase_policy_instance(policy, store).apply_policy(payload)
+                                      for policy in all_purchase_models])  #all purchase policies should work
 
     def search_products(
             self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
@@ -959,7 +907,7 @@ class StoreController:
         }
 
         stores = []
-        store_names = store_data.keys()
+        store_names = list(store_data.keys())
         for i in range(1, 7):
             stores.append(
                 Store.objects.create(
@@ -972,7 +920,8 @@ class StoreController:
         for i in range(0, 6):
             owner = Owner.objects.create(user_id=i, store=stores[i], is_founder=True)
             manager = Manager.objects.create(
-                user_id=2 * len(store_names) - i - 1, store=stores[i]
+                user_id=2 * len(store_names) - i - 1, store=stores[i],
+                assigned_by=owner
             )
             manager_permissions = ManagerPermission.objects.create(
                 manager=manager,
@@ -987,7 +936,7 @@ class StoreController:
             for j in range(3):
                 product = StoreProduct.objects.create(
                     store=stores[i],
-                    name=store_data[stores[i]]["products"][j],
+                    name=store_data[store_names[i]]["products"][j],
                     quantity=10,
                     initial_price=100,
                 )
@@ -999,8 +948,76 @@ class StoreController:
                     is_root=True,
                     percentage=10,
                     applicable_categories=json.dumps(
-                        [store_data[stores[i]]["category"]]
+                        [store_data[store_names[i]]["category"]]
                     ),
                 )
 
         return {"message": "Fake data created successfully"}
+
+    def make_bid(self, request, payload: BidSchemaIn):
+        store = get_object_or_404(Store, pk=payload.store_id)
+        product = get_object_or_404(StoreProduct, store=store, name=payload.product_name)
+        bid = Bid.objects.create(
+            store=store,
+            product=product,
+            price=payload.price,
+            user_id=payload.user_id,
+            quantity=payload.quantity
+        )
+        #TODO: notify all managers that a bid has been made on a product
+        return {"message": "Bid added successfully"}
+
+    def decide_on_bid(self, request, role: RoleSchemaIn, payload: DecisionBidSchemaIn):
+        bid = get_object_or_404(Bid, pk=payload.bid_id)
+        self.validate_permissions(role, bid.store, "can_decide_on_bid")
+        managers_with_permission = self.get_managers_with_permissions(role, "can_decide_on_bid")
+        manager = get_object_or_404(Role, user_id=role.user_id, store=bid.store)
+        if manager in bid.accepted_by.all():
+            raise HttpError(400, "Manager has already accepted the bid")
+        # if manager not in managers_with_permission:
+        #     raise HttpError(403, "Manager does not have permission to decide on bids")
+        if payload.decision:
+            bid.accepted_by.add(manager)
+            owners_count = self.get_owners(None, role).count()
+            count_managers_with_permission = len(managers_with_permission)
+            if bid.accepted_by.count() == owners_count + count_managers_with_permission:
+                bid.can_purchase = True
+                bid.save()  # Ensure bid is saved after setting can_purchase to True
+                #TODO: notify user that bid has been accepted
+        else:
+            bid.delete()
+            ##TODO: notify user that bid has been rejected
+
+        return {"message": "Bid decision made successfully"}
+
+    def get_bids(self, request, role: RoleSchemaIn, store_id: int):
+        store = get_object_or_404(Store, pk=store_id)
+        self.validate_permissions(role, store, "can_decide_on_bid")
+        return Bid.objects.filter(store=store)
+
+    def make_purchase_on_bid(self, request, bid_id: int):
+        bid = get_object_or_404(Bid, pk=bid_id)
+        if not bid.can_purchase:
+            raise HttpError(400, "Bid has not been accepted by all managers or owners")
+        product = bid.product
+        if product.quantity < bid.quantity:
+            raise HttpError(400, "Insufficient quantity of product in store")
+        product.quantity -= bid.quantity
+        price = bid.price
+        product.save()
+        bid.delete()  # delete bid after purchase
+        return {"message": "Purchase made successfully", "price": price}
+
+    def get_managers_with_permissions(self, role: RoleSchemaIn, permission: str):
+        store = get_object_or_404(Store, pk=role.store_id)
+        managers = Manager.objects.filter(store=store)
+        managers_with_permission = []
+        for manager in managers:
+            try:
+                manager_permissions = ManagerPermission.objects.get(manager=manager)
+                if getattr(manager_permissions, permission):
+                    managers_with_permission.append(manager)
+            except ObjectDoesNotExist:
+                pass
+        return managers_with_permission
+   

@@ -1,47 +1,23 @@
-from ninja.errors import HttpError
 from typing import List, Union
+import warnings
+from typing import List, Union
+
 from ninja import Router
 
-import warnings
-
-from .models import SimpleDiscount
-
 warnings.filterwarnings("ignore", category=UserWarning)
-from .schemas import (
-    StoreSchemaIn,
-    StoreSchemaOut,
-    OwnerSchemaIn,
-    ManagerPermissionSchemaIn,
-    DiscountBaseSchemaIn,
-    StoreProductSchemaIn,
-    ManagerSchemaIn,
-    OwnerSchemaOut,
-    RoleSchemaIn,
-    StoreProductSchemaOut,
-    PurchaseStoreProductSchema,
-    DiscountBaseSchemaOut,
-    RemoveDiscountSchemaIn,
-    RemoveOwnerSchemaIn,
-    RemoveManagerSchemaIn,
-    ManagerSchemaOut,
-    SimpleDiscountSchemaIn,
-    ConditionalDiscountSchemaIn,
-    CompositeDiscountSchemaIn,
-    SimpleDiscountSchemaOut,
-    ConditionalDiscountSchemaOut,
-    CompositeDiscountSchemaOut,
-    SearchSchema,
-    FilterSearchSchema,
-    SimplePurchasePolicySchemaIn,
-    ConditionalPurchasePolicySchemaIn,
-    CompositePurchasePolicySchemaIn,
-    RemovePurchasePolicySchemaIn,
-    SimplePurchasePolicySchemaOut,
-    ConditionalPurchasePolicySchemaOut,
-    CompositePurchasePolicySchemaOut,
-)
 
+from .schemas import StoreSchemaIn, StoreSchemaOut, OwnerSchemaIn, ManagerPermissionSchemaIn, \
+    StoreProductSchemaIn, ManagerSchemaIn, OwnerSchemaOut, RoleSchemaIn, StoreProductSchemaOut, \
+    PurchaseStoreProductSchema, RemoveDiscountSchemaIn, \
+    RemoveOwnerSchemaIn, \
+    RemoveManagerSchemaIn, ManagerSchemaOut, SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, \
+    CompositeDiscountSchemaIn, SimpleDiscountSchemaOut, ConditionalDiscountSchemaOut, CompositeDiscountSchemaOut, \
+    SearchSchema, FilterSearchSchema, SimplePurchasePolicySchemaIn, ConditionalPurchasePolicySchemaIn, \
+    CompositePurchasePolicySchemaIn, RemovePurchasePolicySchemaIn, SimplePurchasePolicySchemaOut, \
+    ConditionalPurchasePolicySchemaOut, CompositePurchasePolicySchemaOut, \
+    BidSchemaIn, BidSchemaOut, DecisionBidSchemaIn
 from django.shortcuts import get_object_or_404, aget_object_or_404
+
 
 from .store_controller import StoreController
 
@@ -158,24 +134,6 @@ def remove_purchase_policy(
 def get_purchase_policies(request, role: RoleSchemaIn):
     return sc.get_purchase_policies(request, role)
 
-
-# @router.post("/stores/{store_id}/add_purchase_policy")
-# def add_purchase_policy(request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn):
-#     return sc.add_purchase_policy(request, role, payload)
-#
-#
-# @router.delete("/stores/{store_id}/remove_purchase_policy")
-# def remove_purchase_policy(request, store_id: int, role: RoleSchemaIn):
-#     return sc.remove_purchase_policy(request, store_id, role)
-#
-#
-# @router.get(
-#     "/stores/{store_id}/get_purchase_policies", response=List[PurchasePolicySchemaOut]
-# )
-# def get_purchase_policy(request, store_id: int, role: RoleSchemaIn):
-#     return sc.get_purchase_policy(request, store_id, role)
-
-
 @router.post("/stores/{store_id}/add_discount_policy")
 def add_discount_policy(
     request,
@@ -236,9 +194,9 @@ def purchase_product(request, store_id: int, payload: List[PurchaseStoreProductS
     return sc.purchase_product(request, store_id, payload)
 
 
-@router.post("/stores/create_fake_data")
+@router.put("/stores/{store_id}/create_fake_data")
 def create_fake_data(request):
-    return sc.create_fake_data(request)
+    return sc.create_fake_data()
 
 
 @router.get("/stores/{store_id}/search", response=List[StoreProductSchemaOut])
@@ -247,6 +205,24 @@ def search_products(
 ):
     return sc.search_products(request, search_query, filter_query)
 
+@router.post("/stores/{store_id}/make_bid")
+def make_bid(request, payload: BidSchemaIn):
+    return sc.make_bid(request, payload)
+
+
+@router.put("/stores/{store_id}/decide_on_bid")
+def decide_on_bid(request, role: RoleSchemaIn, payload: DecisionBidSchemaIn):
+    return sc.decide_on_bid(request, role, payload)
+
+
+@router.get("/stores/{store_id}/get_bids", response=List[BidSchemaOut])
+def get_bids(request, role: RoleSchemaIn, store_id: int):
+    return sc.get_bids(request, role, store_id)
+
+
+@router.put("/stores/{store_id}/make_purchase_on_bid")
+def make_purchase_on_bid(request, bid_id: int):
+    return sc.make_purchase_on_bid(request, bid_id)
 
 # @router.put("/stores/{store_id}/return_products")
 # def return_products(request, store_id: int, payload: List[PurchaseStoreProductSchema]):

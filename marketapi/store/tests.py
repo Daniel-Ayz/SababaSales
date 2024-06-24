@@ -2101,3 +2101,138 @@ class StoreAPITestCase(TransactionTestCase):
         # Assert that at least one response has a conflict (400)
         self.assertTrue(response1.status_code == 400 or response2.status_code == 400) and self.assertTrue(
             response1.status_code == 200 or response2.status_code == 200)
+
+    def test_fake_data(self):
+        response = self.client.put(f'/stores/{self.store_id}/create_fake_data')
+        assert response.status_code == 200
+    def test_make_bid(self):
+        response = self.client.post("/stores/{store_id}/make_bid", json={
+            "user_id": 100,
+            "store_id": self.store_id,
+            "product_name": "Bread Loaf",
+            "price": 2,
+            "quantity": 1
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"message": "Bid added successfully"})
+
+    def test_get_bids(self):
+        response = self.client.post("/stores/{store_id}/make_bid", json={
+            "user_id": 100,
+            "store_id": self.store_id,
+            "product_name": "Bread Loaf",
+            "price": 2,
+            "quantity": 1
+        })
+        self.assertEqual(response.status_code, 200)
+
+        role_payload = {
+            "user_id": self.user_id,
+            "store_id": self.store_id
+
+        }
+        response = self.client.get(f'/stores/{self.store_id}/get_bids', json=role_payload)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
+
+    def test_decide_on_bid(self):
+        response = self.client.post("/stores/{store_id}/make_bid", json={
+            "user_id": 100,
+            "store_id": self.store_id,
+            "product_name": "Bread Loaf",
+            "price": 2,
+            "quantity": 1
+        })
+        self.assertEqual(response.status_code, 200)
+        role_payload = {
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        }
+        bid_payload = {
+            "bid_id": 1,
+            "decision": 1
+        }
+
+        response = self.client.put(f'/stores/{self.store_id}/decide_on_bid', json={
+            "role": role_payload,
+            "payload": bid_payload
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
+
+    def test_make_purchase_on_bid_not_accepted_by_all(self):
+        response = self.client.post("/stores/{store_id}/make_bid", json={
+            "user_id": 100,
+            "store_id": self.store_id,
+            "product_name": "Bread Loaf",
+            "price": 2,
+            "quantity": 1
+        })
+        self.assertEqual(response.status_code, 200)
+        role_payload = {
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        }
+        bid_payload = {
+            "bid_id": 1,
+            "decision": 1
+        }
+
+        response = self.client.put(f'/stores/{self.store_id}/decide_on_bid', json={
+            "role": role_payload,
+            "payload": bid_payload
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
+
+
+        response = self.client.put(f'/stores/{self.store_id}/make_purchase_on_bid?bid_id=1')
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json(), {"detail": "Bid has not been accepted by all managers or owners"})
+
+    def test_make_purchase_on_bid_accepted_by_all(self):
+        response = self.client.post("/stores/{store_id}/make_bid", json={
+            "user_id": 100,
+            "store_id": self.store_id,
+            "product_name": "Bread Loaf",
+            "price": 2,
+            "quantity": 1
+        })
+        self.assertEqual(response.status_code, 200)
+        role_payload = {
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        }
+        bid_payload = {
+            "bid_id": 1,
+            "decision": 1
+        }
+
+        response = self.client.put(f'/stores/{self.store_id}/decide_on_bid', json={
+            "role": role_payload,
+            "payload": bid_payload
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
+
+        role_payload = {
+            "user_id": self.owner2_id,
+            "store_id": self.store_id
+        }
+        bid_payload = {
+            "bid_id": 1,
+            "decision": 1
+        }
+
+        response = self.client.put(f'/stores/{self.store_id}/decide_on_bid', json={
+            "role": role_payload,
+            "payload": bid_payload
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
+
+
+        response = self.client.put(f'/stores/{self.store_id}/make_purchase_on_bid?bid_id=1')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["price"], 2)
+

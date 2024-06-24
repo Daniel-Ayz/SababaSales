@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from ninja.testing import TestClient
 
 import store.api
@@ -8,7 +8,8 @@ from store.api import router as store_router
 from users.api import router as user_router
 
 # Create your tests here.
-class TestPurchase(TestCase):
+class TestPurchase(TransactionTestCase):
+    reset_sequences = True
     def setUp(self):
         self.client = TestClient(router)
         self.store_client = TestClient(store_router)

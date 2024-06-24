@@ -252,15 +252,25 @@ class FilterSearchSchema(Schema):
     min_quantity: Optional[int] = None
     max_quantity: Optional[int] = None
 
-# class DiscountPolicySchemaOut(Schema):
-#     store: StoreSchemaOut
-#     min_items: Optional[int] = None  # Optional
-#     min_price: Optional[float] = None  # Optional
-#
-#
-# class DiscountPolicySchemaIn(Schema):
-#     min_items: Optional[int] = None  # Optional
-#     min_price: Optional[float] = None  # Optional
+
+class BidSchemaIn(Schema):
+    product_name: str
+    user_id: int
+    price: float
+    store_id: int
+    quantity: int
 
 
-#OwnerSchema.update_forward_refs() not sure if needed
+class BidSchemaOut(Schema):
+    id: int
+    store: StoreSchemaOut
+    product: StoreProductSchemaOut
+    user_id: int
+    price: float
+    quantity: int
+    accepted_by: list[Union[OwnerSchemaOut, ManagerSchemaOut]]
+
+
+class DecisionBidSchemaIn(Schema):  #manager makes a decision to accept or reject a bid
+    bid_id: int
+    decision: bool

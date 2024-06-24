@@ -14,12 +14,9 @@ class Store(models.Model):
         return self.name
 
 
-class Role(models.Model):
+class Role(PolymorphicModel):
     user_id = models.IntegerField()
     store = models.ForeignKey(Store, on_delete=models.CASCADE)
-
-    class Meta:
-        abstract = True
 
 
 class Owner(Role):
@@ -44,6 +41,7 @@ class ManagerPermission(models.Model):
     can_add_purchase_policy = models.BooleanField(default=False)
     can_remove_discount_policy = models.BooleanField(default=False)
     can_remove_purchase_policy = models.BooleanField(default=False)
+    can_decide_on_bid = models.BooleanField(default=False)
 
 
 class StoreProduct(models.Model):
@@ -118,7 +116,7 @@ class SimplePurchasePolicy(PurchasePolicyBase):
 
 class ConditionalPurchasePolicy(PurchasePolicyBase):
     restriction = models.ForeignKey(PurchasePolicyBase, on_delete=models.CASCADE,
-                                            related_name='restriction_policies')
+                                    related_name='restriction_policies')
     condition = models.ForeignKey(PurchasePolicyBase, on_delete=models.CASCADE, related_name='condition_policies')
 
 
@@ -128,12 +126,27 @@ def delete_associated_condition_restriction(sender, instance, **kwargs):
         instance.restriction.delete()
         instance.condition.delete()
 
+
 class CompositePurchasePolicy(PurchasePolicyBase):
     policies = models.ManyToManyField(PurchasePolicyBase, related_name='composite_purchase_policies')
     combine_function = models.CharField(max_length=50)
+
 
 @receiver(pre_delete, sender=CompositePurchasePolicy)
 def cascade_delete_policies(sender, instance, **kwargs):
     # Delete all related policies
     for policy in instance.policies.all():
         policy.delete()
+
+
+class Bid(models.Model):
+    store = models.ForeignKey(Store, on_delete=models.CASCADE)
+    product = models.ForeignKey(StoreProduct, on_delete=models.CASCADE)
+    quantity = models.IntegerField()
+    price = models.FloatField()
+    accepted_by = models.ManyToManyField(Role, related_name='accepted_bids', blank=True)
+    user_id = models.IntegerField()  #the user who made the bid
+    can_purchase = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.product.name} bid in {self.store.name} store"
