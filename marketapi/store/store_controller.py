@@ -20,7 +20,8 @@ from .schemas import StoreSchemaIn, OwnerSchemaIn, ManagerPermissionSchemaIn, Si
     StoreProductSchemaIn, ManagerSchemaIn, RoleSchemaIn, PurchaseStoreProductSchema, RemoveOwnerSchemaIn, \
     RemoveManagerSchemaIn, SimpleDiscountSchemaIn, CompositeDiscountSchemaIn, \
     ConditionalDiscountSchemaIn, RemoveDiscountSchemaIn, ConditionalDiscountSchemaOut, CompositeDiscountSchemaOut, \
-    FilterSearchSchema, SearchSchema, RemovePurchasePolicySchemaIn, BidSchemaIn, DecisionBidSchemaIn
+    FilterSearchSchema, SearchSchema, RemovePurchasePolicySchemaIn, BidSchemaIn, DecisionBidSchemaIn, \
+    MakePurchaseOnBidSchemaIn
 
 router = Router()
 store_lock = hash("store_lock")
@@ -955,57 +956,83 @@ class StoreController:
         return {"message": "Fake data created successfully"}
 
     def make_bid(self, request, payload: BidSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-        product = get_object_or_404(StoreProduct, store=store, name=payload.product_name)
-        bid = Bid.objects.create(
-            store=store,
-            product=product,
-            price=payload.price,
-            user_id=payload.user_id,
-            quantity=payload.quantity
-        )
-        #TODO: notify all managers that a bid has been made on a product
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                products_lock = f"{store.pk}_products_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(products_lock)});")
+                product = get_object_or_404(StoreProduct, store=store, name=payload.product_name)
+                bids_lock = f"{store.pk}_bids_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(bids_lock)});")
+                bid = Bid.objects.create(
+                    store=store,
+                    product=product,
+                    price=payload.price,
+                    user_id=payload.user_id,
+                    quantity=payload.quantity
+                )
+                #TODO: notify all managers that a bid has been made on a product
         return {"message": "Bid added successfully"}
 
     def decide_on_bid(self, request, role: RoleSchemaIn, payload: DecisionBidSchemaIn):
-        bid = get_object_or_404(Bid, pk=payload.bid_id)
-        self.validate_permissions(role, bid.store, "can_decide_on_bid")
-        managers_with_permission = self.get_managers_with_permissions(role, "can_decide_on_bid")
-        manager = get_object_or_404(Role, user_id=role.user_id, store=bid.store)
-        if manager in bid.accepted_by.all():
-            raise HttpError(400, "Manager has already accepted the bid")
-        # if manager not in managers_with_permission:
-        #     raise HttpError(403, "Manager does not have permission to decide on bids")
-        if payload.decision:
-            bid.accepted_by.add(manager)
-            owners_count = self.get_owners(None, role).count()
-            count_managers_with_permission = len(managers_with_permission)
-            if bid.accepted_by.count() == owners_count + count_managers_with_permission:
-                bid.can_purchase = True
-                bid.save()  # Ensure bid is saved after setting can_purchase to True
-                #TODO: notify user that bid has been accepted
-        else:
-            bid.delete()
-            ##TODO: notify user that bid has been rejected
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=role.store_id)
+                bids_lock = f"{store.pk}_bids_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(bids_lock)});")
+                bid = get_object_or_404(Bid, pk=payload.bid_id)
+                self.validate_permissions(role, bid.store, "can_decide_on_bid", cursor)
+                managing_lock = hash(f"{store.pk}_managing_lock")
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock])
+                managers_with_permission = self.get_managers_with_permissions(role, "can_decide_on_bid")
+                manager = get_object_or_404(Role, user_id=role.user_id, store=bid.store)
+                if manager in bid.accepted_by.all():
+                    raise HttpError(400, "Manager has already accepted the bid")
+                # if manager not in managers_with_permission:
+                #     raise HttpError(403, "Manager does not have permission to decide on bids")
+                if payload.decision:
+                    bid.accepted_by.add(manager)
+                    owners_count = self.get_owners(None, role).count()
+                    count_managers_with_permission = len(managers_with_permission)
+                    if bid.accepted_by.count() == owners_count + count_managers_with_permission:
+                        bid.can_purchase = True
+                        bid.save()  # Ensure bid is saved after setting can_purchase to True
+                        #TODO: notify user that bid has been accepted
+                else:
+                    bid.delete()
+                    ##TODO: notify user that bid has been rejected
 
         return {"message": "Bid decision made successfully"}
 
     def get_bids(self, request, role: RoleSchemaIn, store_id: int):
-        store = get_object_or_404(Store, pk=store_id)
-        self.validate_permissions(role, store, "can_decide_on_bid")
-        return Bid.objects.filter(store=store)
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=store_id)
+                self.validate_permissions(role, store, "can_decide_on_bid", cursor)
+                bids_lock = f"{store.pk}_bids_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(bids_lock)});")
+                return Bid.objects.filter(store=store)
 
-    def make_purchase_on_bid(self, request, bid_id: int):
-        bid = get_object_or_404(Bid, pk=bid_id)
-        if not bid.can_purchase:
-            raise HttpError(400, "Bid has not been accepted by all managers or owners")
-        product = bid.product
-        if product.quantity < bid.quantity:
-            raise HttpError(400, "Insufficient quantity of product in store")
-        product.quantity -= bid.quantity
-        price = bid.price
-        product.save()
-        bid.delete()  # delete bid after purchase
+    def make_purchase_on_bid(self, request, payload: MakePurchaseOnBidSchemaIn):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                bids_lock = f"{payload.store_id}_bids_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(bids_lock)});")
+                bid = get_object_or_404(Bid, pk=payload.bid_id, store=store)
+                if not bid.can_purchase:
+                    raise HttpError(400, "Bid has not been accepted by all managers or owners")
+                product = bid.product
+                if product.quantity < bid.quantity:
+                    raise HttpError(400, "Insufficient quantity of product in store")
+                product.quantity -= bid.quantity
+                price = bid.price
+                product.save()
+                bid.delete()  # delete bid after purchase
         return {"message": "Purchase made successfully", "price": price}
 
     def get_managers_with_permissions(self, role: RoleSchemaIn, permission: str):

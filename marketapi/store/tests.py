@@ -2185,8 +2185,12 @@ class StoreAPITestCase(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
 
+        purchase_bid_payload = {
+            "store_id": self.store_id,
+            "bid_id": 1
+        }
 
-        response = self.client.put(f'/stores/{self.store_id}/make_purchase_on_bid?bid_id=1')
+        response = self.client.put(f'/stores/{self.store_id}/make_purchase_on_bid', json=purchase_bid_payload)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"detail": "Bid has not been accepted by all managers or owners"})
 
@@ -2231,8 +2235,12 @@ class StoreAPITestCase(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
 
+        purchase_bid_payload = {
+            "store_id": self.store_id,
+            "bid_id": 1
+        }
 
-        response = self.client.put(f'/stores/{self.store_id}/make_purchase_on_bid?bid_id=1')
+        response = self.client.put(f'/stores/{self.store_id}/make_purchase_on_bid', json=purchase_bid_payload)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["price"], 2)
 
