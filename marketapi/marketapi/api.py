@@ -8,5 +8,5 @@ from store.api import router as store_router
 
 api = NinjaAPI()
 api.add_router("/users/", users_router)
-api.add_router("/", store_router)
+api.add_router("/stores", store_router)
 api.add_router("/purchase/", purchase_router)
