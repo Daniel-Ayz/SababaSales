@@ -1,6 +1,6 @@
 .navContainer{
     height: 70px;
-    background-color: rgba(222, 221, 221, 1);
+    background-color: rgb(31 41 55);
     padding: 0 !important;
 }
 
@@ -31,6 +31,7 @@
     grid-area: categories;
     width: 50px !important;
     margin-top: -10px !important;
+    color:white;
 }
 .categoriesDrop {
     grid-area: categories;
@@ -71,7 +72,7 @@
 }
 .space{
     grid-area: space;
-    width: 30vw;
+    width: 20vw;
 }
 
 
@@ -104,4 +105,3 @@
 .deliveryContainer:hover {
     background-color: white;
 }
-

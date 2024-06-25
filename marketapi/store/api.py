@@ -6,16 +6,41 @@ from ninja import Router
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-from .schemas import StoreSchemaIn, StoreSchemaOut, OwnerSchemaIn, ManagerPermissionSchemaIn, \
-    StoreProductSchemaIn, ManagerSchemaIn, OwnerSchemaOut, RoleSchemaIn, StoreProductSchemaOut, \
-    PurchaseStoreProductSchema, RemoveDiscountSchemaIn, \
-    RemoveOwnerSchemaIn, \
-    RemoveManagerSchemaIn, ManagerSchemaOut, SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, \
-    CompositeDiscountSchemaIn, SimpleDiscountSchemaOut, ConditionalDiscountSchemaOut, CompositeDiscountSchemaOut, \
-    SearchSchema, FilterSearchSchema, SimplePurchasePolicySchemaIn, ConditionalPurchasePolicySchemaIn, \
-    CompositePurchasePolicySchemaIn, RemovePurchasePolicySchemaIn, SimplePurchasePolicySchemaOut, \
-    ConditionalPurchasePolicySchemaOut, CompositePurchasePolicySchemaOut, \
-    BidSchemaIn, BidSchemaOut, DecisionBidSchemaIn, MakePurchaseOnBidSchemaIn
+from .schemas import (
+    StoreSchemaIn,
+    StoreSchemaOut,
+    OwnerSchemaIn,
+    ManagerPermissionSchemaIn,
+    StoreProductSchemaIn,
+    ManagerSchemaIn,
+    OwnerSchemaOut,
+    RoleSchemaIn,
+    StoreProductSchemaOut,
+    PurchaseStoreProductSchema,
+    RemoveDiscountSchemaIn,
+    RemoveOwnerSchemaIn,
+    RemoveManagerSchemaIn,
+    ManagerSchemaOut,
+    SimpleDiscountSchemaIn,
+    ConditionalDiscountSchemaIn,
+    CompositeDiscountSchemaIn,
+    SimpleDiscountSchemaOut,
+    ConditionalDiscountSchemaOut,
+    CompositeDiscountSchemaOut,
+    SearchSchema,
+    FilterSearchSchema,
+    SimplePurchasePolicySchemaIn,
+    ConditionalPurchasePolicySchemaIn,
+    CompositePurchasePolicySchemaIn,
+    RemovePurchasePolicySchemaIn,
+    SimplePurchasePolicySchemaOut,
+    ConditionalPurchasePolicySchemaOut,
+    CompositePurchasePolicySchemaOut,
+    BidSchemaIn,
+    BidSchemaOut,
+    DecisionBidSchemaIn,
+    MakePurchaseOnBidSchemaIn,
+)
 from django.shortcuts import get_object_or_404, aget_object_or_404
 
 
@@ -134,6 +159,7 @@ def remove_purchase_policy(
 def get_purchase_policies(request, role: RoleSchemaIn):
     return sc.get_purchase_policies(request, role)
 
+
 @router.post("/stores/{store_id}/add_discount_policy")
 def add_discount_policy(
     request,
@@ -205,6 +231,7 @@ def search_products(
 ):
     return sc.search_products(request, search_query, filter_query)
 
+
 @router.post("/stores/{store_id}/make_bid")
 def make_bid(request, payload: BidSchemaIn):
     return sc.make_bid(request, payload)
@@ -223,6 +250,7 @@ def get_bids(request, role: RoleSchemaIn, store_id: int):
 @router.put("/stores/{store_id}/make_purchase_on_bid")
 def make_purchase_on_bid(request, payload: MakePurchaseOnBidSchemaIn):
     return sc.make_purchase_on_bid(request, payload)
+
 
 # @router.put("/stores/{store_id}/return_products")
 # def return_products(request, store_id: int, payload: List[PurchaseStoreProductSchema]):

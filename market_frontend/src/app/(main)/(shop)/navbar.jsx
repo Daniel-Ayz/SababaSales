@@ -1,9 +1,10 @@
 import React, { useContext, useState } from 'react'; // Import React and hooks
 import Link from 'next/link';
 import './navDesign.css';
-import { CATEGORIES } from './categoriesMock'; 
+import { CATEGORIES } from './categoriesMock';
 import Categories from './categories';
 import { UserContext } from '../layout'; // Import the UserContext
+import Notifications from './notifications';
 import {
   Disclosure,
   DisclosureButton,
@@ -88,14 +89,20 @@ export default function NavBar({setCart}) {
                 </div>*/}
               <div className="logo flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                 <div className="flex flex-shrink-0 items-center">
-                  <img
-                    className="h-12 w-auto"
-                    src="SababaSales-logoB.png"
-                    alt="Your Company"
-                  />
+<Link href="/">
+  <div className="relative inline-block overflow-hidden rounded-md transform transition-transform duration-300 hover:scale-105">
+    <img
+      className="h-12 w-auto"
+      src="SababaSales-logoB.png"
+      alt="Your Company"
+    />
+    <div className="absolute inset-0 bg-gray-100 opacity-0 rounded-md hover:opacity-50"></div>
+  </div>
+</Link>
+
                 </div>
               </div>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
+              <div className="flex inset-y-0 right-0 flex items-center pr-2 sm:static sm:inset-auto sm:ml-6 sm:pr-0">
                 <div className="relative flex items-center w-full mx-auto flex-grow">
                   <input
                     type="text"
@@ -123,9 +130,23 @@ export default function NavBar({setCart}) {
                       />
                     </svg>
                   </button>
-                  
-                  <Categories className="categories" categoriesDict={CATEGORIES}/>
+
+
+
+<div className="flex items-center justify-between">
+      <div className="flex items-center">
+        <Link href="/productSearch" className="inline-block h-full px-4 py-2 text-white rounded hover:bg-gray-600">
+          Browse
+        </Link>
+        <Categories className="ml-4" categoriesDict={CATEGORIES} />
+      </div>
+      <div>
+        {/* Your login button or other content */}
+
                   <div className='space'></div>
+      </div>
+    </div>
+
                 </div>
                 {user.loggedIn && <button
                   type="button"
@@ -133,7 +154,7 @@ export default function NavBar({setCart}) {
                 >
                   <span className="absolute -inset-1.5" />
                   <span className="sr-only">View notifications</span>
-                  <BellIcon className="h-6 w-6" aria-hidden="true" />
+                  <Notifications/>
                 </button>}
 
                 {/* Cart icon */}
@@ -211,7 +232,8 @@ export default function NavBar({setCart}) {
                 ) : (
                   <Link
                     href="/login"
-                    className="ml-4  hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md whitespace-nowrap"
+                    className="ml-4 text-white  hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md whitespace-nowrap"
+
                   >
                     Sign in
                   </Link>

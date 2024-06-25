@@ -47,7 +47,7 @@ def logout(request):
     return uc.logout(request)
 
 
-@router.get("/", response={200: UserSchema, 401: Error}, auth=django_auth)
+@router.get("/", response={200: UserSetupSchema, 401: Error}, auth=django_auth)
 def get_user(request):
     user = uc.get_user(request)
     return user

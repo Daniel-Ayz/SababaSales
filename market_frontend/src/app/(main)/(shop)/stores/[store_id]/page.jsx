@@ -1,26 +1,35 @@
 "use client"
-import axios from "axios"
-import Alert from '@mui/material/Alert';
-import React from 'react';
-import '../product/productViewDesign.css'
-import '../homepage/homepage.css'
-import './productSearch.css'
-axios.defaults.withCredentials = true;
-import { useState } from "react";
-import Prod from '../product/productView';
-import { StoreProductsContext } from "../../layout";
-import { useContext } from "react";
-//replace RESULTS with prod
-export default function ProductSearch( ){
-  const [currentPage, setCurrentPage] = useState(1);
-  const {storesProducts, setStoresProducts} = useContext(StoreProductsContext);
-  const recordsPerPage = 9;
-  var products = [];
-  for (var key in storesProducts) {
-    products = products.concat(storesProducts[key]);
-  }
-  console.log(products)
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import ProductView from './product';
+import  '../../product/productViewDesign.css';
+import '../../homepage/homepage.css';
+import './productSearch.css';
 
+const StorePage = ({ params }) => {
+  const storeid = params.store_id;
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const recordsPerPage = 9;
+
+  useEffect(() => {
+    const fetchStoreData = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`http://localhost:8000/api/stores/${storeid}/products`);
+        setProducts(response.data);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching store data:', error);
+        setLoading(false);
+      }
+    };
+
+    if (storeid) {
+      fetchStoreData();
+    }
+  }, [storeid]);
 
   const lastIndex = currentPage * recordsPerPage;
   const firstIndex = lastIndex - recordsPerPage;
@@ -44,6 +53,9 @@ export default function ProductSearch( ){
     }
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="flex flex-col h-screen">
@@ -52,7 +64,7 @@ export default function ProductSearch( ){
         <div className="productCont">
           {currentRecords.map(product => (
             <div key={product.name} className="card">
-              <Prod prod={product} store_id={product.store['id']} storename ={product.store['name']} />
+              <ProductView prod={product} store_id={storeid} />
             </div>
           ))}
         </div>
@@ -77,3 +89,5 @@ export default function ProductSearch( ){
     </div>
   );
 };
+
+export default StorePage;
