@@ -755,6 +755,25 @@ class StoreController:
 
         return products
 
+    def get_product_clean(self, request, store_id: int):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=store_id)
+                if not store.is_active:
+                    managing_lock = hash(f"{store.pk}_managing_lock")
+                    cursor.execute(
+                        "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock]
+                    )
+
+                products_lock = f"{store.pk}_products_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock_shared({hash(products_lock)});"
+                )
+                products = StoreProduct.objects.filter(store=store)
+
+        return products
+
     def purchase_product(
         self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
     ):
@@ -1067,6 +1086,7 @@ class StoreController:
                 product = StoreProduct.objects.create(
                     store=stores[i],
                     name=store_data[store_names[i]]["products"][j],
+                    category=store_data[store_names[i]]["category"],
                     quantity=10,
                     initial_price=100,
                 )

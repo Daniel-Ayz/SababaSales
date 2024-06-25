@@ -44,10 +44,12 @@ export default function ProductBuyingPage({ params }) {
 
     useEffect(() => {
         const storeProducts = storesProducts[store_id];
-        const foundProduct = storeProducts ? storeProducts.find(p => p.name === product_id) : null;
+        const decodedProductId = decodeURIComponent(product_id);
+        const foundProduct = storeProducts ? storeProducts.find(p => p.name === decodedProductId) : null;
         if (foundProduct) {
             setProduct(foundProduct);
         } else {
+
             // Handle case where product is not found, e.g., redirect or show an error message
         }
     }, [store_id, product_id, storesProducts]);
