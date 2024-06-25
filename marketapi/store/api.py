@@ -67,7 +67,7 @@ def create_fake_data(request):
 
 @router.get("/search", response=List[StoreProductSchemaOut])
 def search_products(
-        request, search_query: SearchSchema, filter_query: FilterSearchSchema
+    request, search_query: SearchSchema, filter_query: FilterSearchSchema
 ):
     return sc.search_products(request, search_query, filter_query)
 
@@ -104,10 +104,10 @@ def remove_manager(request, payload: RemoveManagerSchemaIn):
 
 @router.post("/{store_id}/change_manager_permissions")
 def assign_manager_permissions(
-        request,
-        payload: ManagerPermissionSchemaIn,
-        manager: RoleSchemaIn,
-        assigning_owner_id: int,
+    request,
+    payload: ManagerPermissionSchemaIn,
+    manager: RoleSchemaIn,
+    assigning_owner_id: int,
 ):
     return sc.assign_manager_permissions(request, payload, manager, assigning_owner_id)
 
@@ -139,20 +139,20 @@ def get_managers(request, payload: RoleSchemaIn):
 
 @router.post("/{store_id}/add_purchase_policy")
 def add_purchase_policy(
-        request,
-        role: RoleSchemaIn,
-        payload: Union[
-            SimplePurchasePolicySchemaIn,
-            ConditionalPurchasePolicySchemaIn,
-            CompositePurchasePolicySchemaIn,
-        ],
+    request,
+    role: RoleSchemaIn,
+    payload: Union[
+        SimplePurchasePolicySchemaIn,
+        ConditionalPurchasePolicySchemaIn,
+        CompositePurchasePolicySchemaIn,
+    ],
 ):
     return sc.add_purchase_policy(request, role, payload).get("message")
 
 
 @router.delete("/{store_id}/remove_purchase_policy")
 def remove_purchase_policy(
-        request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
+    request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
 ):
     return sc.remove_purchase_policy(request, role, payload)
 
@@ -173,18 +173,18 @@ def get_purchase_policies(request, role: RoleSchemaIn):
 
 @router.post("/{store_id}/add_discount_policy")
 def add_discount_policy(
-        request,
-        role: RoleSchemaIn,
-        payload: Union[
-            SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, CompositeDiscountSchemaIn
-        ],
+    request,
+    role: RoleSchemaIn,
+    payload: Union[
+        SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, CompositeDiscountSchemaIn
+    ],
 ):  # SimpleDiscountSchemaIn | ConditionalDiscountSchemaIn | CompositeDiscountSchemaIn
     return sc.add_discount_policy(request, role, payload).get("message")
 
 
 @router.delete("/{store_id}/remove_discount_policy")
 def remove_discount_policy(
-        request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
+    request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
 ):
     return sc.remove_discount_policy(request, role, payload)
 
@@ -223,6 +223,11 @@ def get_products(request, store_id: int, role: RoleSchemaIn):
     return sc.get_products(request, store_id, role)
 
 
+@router.get("/{store_id}/products", response=List[StoreProductSchemaOut])
+def get_products(request, store_id: int):
+    return sc.get_product_clean(request, store_id)
+
+
 @router.put("/{store_id}/purchase_product")
 def purchase_product(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
     real_payload = []
@@ -249,6 +254,7 @@ def get_bids(request, role: RoleSchemaIn, store_id: int):
 @router.put("/{store_id}/make_purchase_on_bid")
 def make_purchase_on_bid(request, payload: MakePurchaseOnBidSchemaIn):
     return sc.make_purchase_on_bid(request, payload)
+
 
 # @router.put("/{store_id}/return_products")
 # def return_products(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
