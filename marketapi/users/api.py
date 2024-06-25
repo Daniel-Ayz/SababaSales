@@ -31,7 +31,6 @@ uc = UserController()
 
 @router.post("/register", response={200: UserSchema, 401: Error})
 def register(request, payload: UserRegisterSchema):
-    print(payload)
     user = uc.register(request, payload)
     return user
 
