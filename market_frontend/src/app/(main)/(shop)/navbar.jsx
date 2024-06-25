@@ -141,8 +141,14 @@ export default function NavBar({setCart}) {
         <Categories className="ml-4" categoriesDict={CATEGORIES} />
       </div>
       <div>
-        {/* Your login button or other content */}
-
+      {user.loggedIn && (
+                <Link
+                  href="/manage_stores"
+                  className="ml-4 text-white hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md whitespace-nowrap"
+                >
+                  Manage Stores
+                </Link>
+              )}
                   <div className='space'></div>
       </div>
     </div>
