@@ -8,6 +8,7 @@ from .models import *
 from .schemas import *
 from django.contrib.auth.hashers import make_password
 from ninja.errors import *
+from datetime import datetime
 
 
 class UserController:
@@ -214,7 +215,7 @@ class UserController:
         payment_info = PaymentInformationUser.objects.get(user=user)
         return payment_info
 
-    def create_fake_data(self, request):
+    def create_fake_data(self):
         usernames = [
             "Yishay Butzim",
             "Hana Tzirlin",
@@ -265,12 +266,19 @@ class UserController:
                 password=make_password(passwords[i]),
             )
             user.save()
+
+            exp_date = "12/25"
+            exp_month, exp_year = map(int, exp_date.split("/"))
+            exp_year += 2000  # Assuming the year is in the format YY
+            expiration_date = datetime(exp_year, exp_month, 1).date()
             payment_info = PaymentInformationUser.objects.create(
                 user=user,
                 currency="USD",
                 billing_address="1234 Main St",
                 credit_card_number="1234567890",
-                expiration_date="12/25",
+                expiration_date=expiration_date,
                 security_code="123",
             )
             payment_info.save()
+
+        return {"msg": "Fake data created successfully"}

@@ -3,10 +3,12 @@ import operator
 from functools import reduce
 from typing import List, Union
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction, connection
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.errors import HttpError
+
 
 from .discount import (
     SimpleDiscountClass,
@@ -28,6 +30,8 @@ from .models import (
     SimplePurchasePolicy,
     ConditionalPurchasePolicy,
     CompositePurchasePolicy,
+    Bid,
+    Role,
 )
 from .purchasePolicy import (
     SimplePurchasePolicyClass,
@@ -56,9 +60,13 @@ from .schemas import (
     FilterSearchSchema,
     SearchSchema,
     RemovePurchasePolicySchemaIn,
+    BidSchemaIn,
+    DecisionBidSchemaIn,
+    MakePurchaseOnBidSchemaIn,
 )
 
 router = Router()
+store_lock = hash("store_lock")
 
 
 def get_list_from_string(conditions):
@@ -68,53 +76,45 @@ def get_list_from_string(conditions):
 
 class StoreController:
     def get_store(self, request, store_id: int):
-        return get_object_or_404(Store, pk=store_id)
-        # return {"id": store.id,"created_at" : store.created_at, "name": store.name, "description": store.description, "is_active": store.is_active}
-
-    # @router.get("/stores/{store_id}", response=StoreSchemaOut)
-    # async def get_store(request, store_id: int):
-    #     return await aget_object_or_404(Store, pk=store_id)
-
-    def create_store(self, request, payload: StoreSchemaIn, user_id: int):
-        if Store.objects.filter(name=payload.name).exists():
-            raise HttpError(403, "Store with this name already exists")
-        store = Store.objects.create(**payload.dict(), is_active=True)
-        Owner.objects.create(user_id=user_id, store=store, is_founder=True)
-        return {"store_id": store.id}
-
-    # @router.post("/stores")
-    # async def create_store(request, payload: StoreSchemaIn, user_id: int):
-    #     if Store.objects.filter(name=payload.name).exists():
-    #         raise HttpError(403, "Store with this name already exists")
-    #     store = await Store.objects.acreate(**payload.dict(), is_active=True)
-    #     await Owner.objects.acreate(
-    #         user_id=user_id,
-    #         store=store,
-    #         is_founder=True
-    #     )
-    #     return {"store_id": store.id}
-
-    def get_stores(self, request):
-        return Store.objects.all()
-
-    # @router.get("/stores", response=List[StoreSchemaOut])
-    # async def get_stores(request):
-    #     return await Store.objects.all()
-
-    def assign_owner(self, request, payload: OwnerSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-        store_lock_id = f"{store.pk}_assign_owner_lock"
-
         with transaction.atomic():
             with connection.cursor() as cursor:
-                # Acquire an advisory lock on the store
-                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(store_lock_id)});")
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                return get_object_or_404(Store, pk=store_id)
 
+    def create_store(self, request, payload: StoreSchemaIn, user_id: int):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [store_lock])
+                if Store.objects.filter(name=payload.name).exists():
+                    raise HttpError(403, "Store with this name already exists")
+                store = Store.objects.create(**payload.dict(), is_active=True)
+                Owner.objects.create(user_id=user_id, store=store, is_founder=True)
+        return {"store_id": store.id}
+
+    def get_stores(self, request):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                return Store.objects.all()
+
+    def assign_owner(self, request, payload: OwnerSchemaIn):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                managing_lock_id = f"{store.pk}_managing_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
+                )
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
                 )
                 if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
                     raise HttpError(400, "User is already an owner")
+                if Manager.objects.filter(
+                    user_id=payload.user_id, store=store
+                ).exists():
+                    raise HttpError(400, "User is already a manager")
 
                 owner = Owner.objects.create(
                     user_id=payload.user_id,
@@ -124,66 +124,56 @@ class StoreController:
                 )
         return {"message": "Owner assigned successfully"}
 
-    # @router.post("/stores/{store_id}/assign_owner")
-    # async def assign_owner(request, payload: OwnerSchemaIn):
-    #     store = await aget_object_or_404(Store, pk=payload.store_id)
-    #     assigning_owner = await aget_object_or_404(Owner, user_id=payload.assigned_by, store=store)
-    #     if await Owner.objects.filter(user_id=payload.user_id, store=store).exists():
-    #         raise HttpError(400, "User is already an owner")
-    #
-    #
-    #     owner = await Owner.objects.acreate(
-    #         user_id=payload.user_id,
-    #         assigned_by=assigning_owner,
-    #         store=store,
-    #         is_founder=payload.is_founder
-    #     )
-    #     return {"message": "Owner assigned successfully"}
-
-    # @router.delete("/stores/{store_id}/remove_owner")
-    # async def remove_owner(request, payload: OwnerSchemaIn):
-    #     store = await aget_object_or_404(Store, pk=payload.store_id)
-    #     removing_owner = await aget_object_or_404(Owner, user_id=payload.removed_by, store=store)
-    #     removed_owner = await aget_object_or_404(Owner, user_id=payload.user_id, store=store)
-    #
-    #     if removed_owner.assigned_by != removing_owner:
-    #         raise HttpError(403, "Owner can only be removed by the owner who assigned them")
-    #
-    #     await removed_owner.adelete()
-    #     return {"message": "Owner removed success"}
-
     def remove_owner(self, request, payload: RemoveOwnerSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-        removing_owner = get_object_or_404(
-            Owner, user_id=payload.removed_by, store=store
-        )
-        removed_owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
-
-        if removed_owner.assigned_by != removing_owner:
-            raise HttpError(
-                403, "Owner can only be removed by the owner who assigned them"
-            )
-
-        removed_owner.delete()
-        return {"message": "Owner removed successfully"}
-
-    def leave_ownership(self, request, payload: RoleSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-        owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
-        if owner.is_founder:
-            raise HttpError(400, "Founder cannot leave ownership")
-
-        owner.delete()
-        return {"message": "Ownership left successfully"}
-
-    def assign_manager(self, request, payload: ManagerSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-        store_lock_id = hash(f"{store.pk}_assign_manager_lock")
 
         with transaction.atomic():
             with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                managing_lock_id = f"{store.pk}_managing_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
+                )
+                removing_owner = get_object_or_404(
+                    Owner, user_id=payload.removed_by, store=store
+                )
+                removed_owner = get_object_or_404(
+                    Owner, user_id=payload.user_id, store=store
+                )
+
+                if removed_owner.assigned_by != removing_owner:
+                    raise HttpError(
+                        403, "Owner can only be removed by the owner who assigned them"
+                    )
+
+                removed_owner.delete()
+        return {"message": "Owner removed successfully"}
+
+    def leave_ownership(self, request, payload: RoleSchemaIn):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                managing_lock_id = f"{store.pk}_managing_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
+                )
+                owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
+                if owner.is_founder:
+                    raise HttpError(400, "Founder cannot leave ownership")
+
+                owner.delete()
+        return {"message": "Ownership left successfully"}
+
+    def assign_manager(self, request, payload: ManagerSchemaIn):
+
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                managing_lock_id = hash(f"{store.pk}_managing_lock")
                 # Acquire an advisory lock on the store
-                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [store_lock_id])
+                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [managing_lock_id])
 
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
@@ -210,21 +200,29 @@ class StoreController:
         return {"message": "Manager assigned successfully"}
 
     def remove_manager(self, request, payload: RemoveManagerSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-        removing_owner = get_object_or_404(
-            Owner, user_id=payload.removed_by, store=store
-        )
-        removed_manager = get_object_or_404(
-            Manager, user_id=payload.user_id, store=store
-        )
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                managing_lock_id = f"{store.pk}_managing_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
+                )
+                removing_owner = get_object_or_404(
+                    Owner, user_id=payload.removed_by, store=store
+                )
+                removed_manager = get_object_or_404(
+                    Manager, user_id=payload.user_id, store=store
+                )
 
-        if removed_manager.assigned_by != removing_owner:
-            raise HttpError(
-                403, "Manager can only be removed by the owner who assigned them"
-            )
+                if removed_manager.assigned_by != removing_owner:
+                    raise HttpError(
+                        403,
+                        "Manager can only be removed by the owner who assigned them",
+                    )
 
-        removed_manager.delete()
-        return {"message": "Manager removed successfully"}
+                removed_manager.delete()
+                return {"message": "Manager removed successfully"}
 
     def assign_manager_permissions(
         self,
@@ -233,62 +231,107 @@ class StoreController:
         manager: RoleSchemaIn,
         assigning_owner_id: int,
     ):
-        store = get_object_or_404(Store, pk=manager.store_id)
-        manager = get_object_or_404(Manager, user_id=manager.user_id, store=store)
-        if assigning_owner_id != manager.assigned_by.user_id:
-            raise HttpError(403, "Only assigning owner can assign permissions")
-        try:
-            existing_permission, _ = ManagerPermission.objects.update_or_create(
-                manager=manager, defaults=payload.dict()
-            )
-        except Exception as e:
-            raise HttpError(500, f"Error assigning permissions: {str(e)}")
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=manager.store_id)
+                managing_lock_id = f"{store.pk}_managing_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
+                )
+                manager = get_object_or_404(
+                    Manager, user_id=manager.user_id, store=store
+                )
+                if assigning_owner_id != manager.assigned_by.user_id:
+                    raise HttpError(403, "Only assigning owner can assign permissions")
+                try:
+                    existing_permission, _ = ManagerPermission.objects.update_or_create(
+                        manager=manager, defaults=payload.dict()
+                    )
+                except Exception as e:
+                    raise HttpError(500, f"Error assigning permissions: {str(e)}")
 
         return {"message": "Manager permissions assigned successfully"}
 
     def get_manager_permissions(self, request, role: RoleSchemaIn, manager_id: int):
-        store = get_object_or_404(Store, pk=role.store_id)
-        manager = get_object_or_404(Manager, pk=manager_id, store=store)
-        permissions = get_object_or_404(ManagerPermission, manager=manager)
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=role.store_id)
+                managing_lock_id = f"{store.pk}_managing_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
+                )
+                manager = get_object_or_404(Manager, pk=manager_id, store=store)
+                permissions = get_object_or_404(ManagerPermission, manager=manager)
         return permissions
 
     def close_store(self, request, payload: RoleSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-        owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
-        if not owner.is_founder:
-            raise HttpError(403, "Only the founder can close the store")
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                managing_lock_id = f"{store.pk}_managing_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
+                )
+                owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
+                if not owner.is_founder:
+                    raise HttpError(403, "Only the founder can close the store")
 
-        store.is_active = False
-        store.save()
-
+                store.is_active = False
+                store.save()
         return {"message": "Store closed successfully"}
 
     def reopen_store(self, request, payload: RoleSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-        owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
-        if not owner.is_founder:
-            raise HttpError(403, "Only the founder can reopen the store")
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                managing_lock_id = f"{store.pk}_managing_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
+                )
+                owner = get_object_or_404(Owner, user_id=payload.user_id, store=store)
+                if not owner.is_founder:
+                    raise HttpError(403, "Only the founder can reopen the store")
 
-        store.is_active = True
-        store.save()
+                store.is_active = True
+                store.save()
 
         return {"message": "Store reopened successfully"}
 
     def get_owners(self, request, payload: RoleSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-        if not Owner.objects.filter(user_id=payload.user_id, store=store).exists():
-            raise HttpError(403, "User is not an owner of the store")
-
-        owners = Owner.objects.filter(store=store)
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                managing_lock_id = f"{store.pk}_managing_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
+                )
+                if not Owner.objects.filter(
+                    user_id=payload.user_id, store=store
+                ).exists():
+                    raise HttpError(403, "User is not an owner of the store")
+                owners = Owner.objects.filter(store=store)
 
         return owners
 
     def get_managers(self, request, payload: RoleSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-        if not Owner.objects.filter(user_id=payload.user_id, store=store).exists():
-            raise HttpError(403, "User is not an owner of the store")
-
-        managers = Manager.objects.filter(store=store)
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                managing_lock_id = f"{store.pk}_managing_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
+                )
+                if not Owner.objects.filter(
+                    user_id=payload.user_id, store=store
+                ).exists():
+                    raise HttpError(403, "User is not an owner of the store")
+                managers = Manager.objects.filter(store=store)
 
         return managers
 
@@ -303,8 +346,15 @@ class StoreController:
         ],
     ):
         if request is not None and role is not None:
-            store = get_object_or_404(Store, pk=payload.store_id)
-            self.validate_permissions(role, store, "can_add_purchase_policy")
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT pg_advisory_xact_lock_shared(%s);", [store_lock]
+                    )
+                    store = get_object_or_404(Store, pk=payload.store_id)
+                    self.validate_permissions(
+                        role, store, "can_add_purchase_policy", cursor
+                    )
         if isinstance(payload, SimplePurchasePolicySchemaIn):
             return self.add_simple_purchase_policy(payload)
         elif isinstance(payload, ConditionalPurchasePolicySchemaIn):
@@ -313,18 +363,23 @@ class StoreController:
             return self.add_composite_purchase_policy(payload)
 
     def add_simple_purchase_policy(self, payload: SimplePurchasePolicySchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-        policy = SimplePurchasePolicy.objects.create(
-            store=store,
-            is_root=payload.is_root,
-        )
-        condition = Condition.objects.create(
-            applies_to=payload.condition.applies_to,
-            name_of_apply=payload.condition.name_of_apply,
-            condition=payload.condition.condition,
-            value=payload.condition.value,
-            purchase_policy=policy,
-        )
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                policy_lock = f"{store.pk}_policy_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(policy_lock)});")
+                policy = SimplePurchasePolicy.objects.create(
+                    store=store,
+                    is_root=payload.is_root,
+                )
+                condition = Condition.objects.create(
+                    applies_to=payload.condition.applies_to,
+                    name_of_apply=payload.condition.name_of_apply,
+                    condition=payload.condition.condition,
+                    value=payload.condition.value,
+                    purchase_policy=policy,
+                )
         return {
             "message": "Simple purchase policy added successfully",
             "policy": policy,
@@ -340,30 +395,44 @@ class StoreController:
         condition = self.add_purchase_policy(None, None, payload.condition).get(
             "policy"
         )
-        policy = ConditionalPurchasePolicy.objects.create(
-            store=store,
-            is_root=payload.is_root,
-            restriction=restriction,
-            condition=condition,
-        )
+
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                policy_lock = f"{store.pk}_policy_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(policy_lock)});")
+                policy = ConditionalPurchasePolicy.objects.create(
+                    store=store,
+                    is_root=payload.is_root,
+                    restriction=restriction,
+                    condition=condition,
+                )
         return {
             "message": "Conditional purchase policy added successfully",
             "policy": policy,
         }
 
     def add_composite_purchase_policy(self, payload: CompositePurchasePolicySchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
+
         policies = []
         for policy_payload in payload.policies:
             policies.append(
                 self.add_purchase_policy(None, None, policy_payload).get("policy")
             )
-        policy = CompositePurchasePolicy.objects.create(
-            store=store,
-            is_root=payload.is_root,
-            combine_function=payload.combine_function,
-        )
-        policy.policies.set(policies)
+
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                policy_lock = f"{store.pk}_policy_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(policy_lock)});")
+                policy = CompositePurchasePolicy.objects.create(
+                    store=store,
+                    is_root=payload.is_root,
+                    combine_function=payload.combine_function,
+                )
+                policy.policies.set(policies)
         return {
             "message": "Composite purchase policy added successfully",
             "policy": policy,
@@ -372,130 +441,44 @@ class StoreController:
     def remove_purchase_policy(
         self, request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
     ):
-        store = get_object_or_404(Store, pk=payload.store_id)
-        self.validate_permissions(role, store, "can_remove_purchase_policy")
-        policy = get_object_or_404(
-            PurchasePolicyBase, pk=payload.policy_id, store=store
-        )
-        policy.delete()
-
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                self.validate_permissions(
+                    role, store, "can_remove_purchase_policy", cursor
+                )
+                policy_lock = f"{store.pk}_policy_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(policy_lock)});")
+                policy = get_object_or_404(
+                    PurchasePolicyBase, pk=payload.policy_id, store=store
+                )
+                policy.delete()
         return {"message": "Purchase policy removed successfully"}
 
     def get_purchase_policies(self, request, role: RoleSchemaIn):
-        store = get_object_or_404(Store, pk=role.store_id)
-        if not store.is_active:
-            if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-                raise HttpError(
-                    403, "User is not an owner of the store and the store is closed"
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=role.store_id)
+                if not store.is_active:
+                    managing_lock_id = hash(f"{store.pk}_managing_lock")
+                    cursor.execute(
+                        "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock_id]
+                    )
+                    if not Owner.objects.filter(
+                        user_id=role.user_id, store=store
+                    ).exists():
+                        raise HttpError(
+                            403,
+                            "User is not an owner of the store and the store is closed",
+                        )
+                policy_lock = f"{store.pk}_policy_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});"
                 )
-        policies = PurchasePolicyBase.objects.filter(store=store, is_root=True)
+                policies = PurchasePolicyBase.objects.filter(store=store, is_root=True)
         return policies
-
-    # def add_purchase_policy(
-    #     self, request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn
-    # ):
-    #     store = get_object_or_404(Store, pk=role.store_id)
-    #
-    #     # Check if the user is an owner or manager of the store
-    #     if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #         if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise HttpError(403, "User is not an owner or manager of the store")
-    #
-    #         manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-    #         manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-    #         if not manager_permissions.can_add_purchase_policy:
-    #             raise HttpError(
-    #                 403, "Manager does not have permission to add purchase policy"
-    #             )
-    #
-    #     # Check if a purchase policy already exists for the store
-    #     if PurchasePolicy.objects.filter(store=store).exists():
-    #         raise HttpError(400, "Purchase policy already exists for the store")
-    #
-    #     policy = PurchasePolicy.objects.create(store=store, **payload.dict())
-    #
-    #     return {"message": "Purchase policy added successfully"}
-    #
-    # def remove_purchase_policy(self, request, store_id: int, role: RoleSchemaIn):
-    #     store = get_object_or_404(Store, pk=store_id)
-    #
-    #     # Check if the user is an owner or manager of the store
-    #     if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #         if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise HttpError(403, "User is not an owner or manager of the store")
-    #
-    #         manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-    #         manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-    #         if not manager_permissions.can_remove_purchase_policy:
-    #             raise HttpError(
-    #                 403, "Manager does not have permission to remove purchase policy"
-    #             )
-    #
-    #     # Check if a purchase policy exists for the store
-    #     try:
-    #         policy = PurchasePolicy.objects.get(store=store)
-    #     except PurchasePolicy.DoesNotExist:
-    #         raise HttpError(404, "Purchase policy not found for the store")
-    #
-    #     # Delete the purchase policy
-    #     policy.delete()
-    #
-    #     return {"message": "Purchase policy removed successfully"}
-    #
-    # def get_purchase_policy(self, request, store_id: int, role: RoleSchemaIn):
-    #     store = get_object_or_404(Store, pk=store_id)
-    #     if not store.is_active:
-    #         if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise HttpError(
-    #                 403, "User is not an owner of the store and the store is closed"
-    #             )
-    #
-    #     policies = PurchasePolicy.objects.filter(store=store)
-    #
-    #     return policies
-
-    # @router.post("/stores/{store_id}/change_purchase_policy")
-    # def change_purchase_policy(request, role: RoleSchemaIn, payload: PurchasePolicySchemaIn):
-    #     store = get_object_or_404(Store, pk=role.store_id)
-    #     if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #         if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise ValueError("User is not an owner or manager of the store")
-    #         manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-    #         manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-    #         if not manager_permissions.can_change_purchase_policy:
-    #             raise ValueError("Manager does not have permission to change purchase policy")
-    #
-    #     policy, _ = PurchasePolicy.objects.update_or_create(
-    #         store=store,
-    #         defaults=payload.dict()
-    #     )
-    #
-    #     return {"message": "Purchase policy updated successfully"}
-
-    # def add_discount_policy(self, request, role: RoleSchemaIn, payload: DiscountBaseSchema):
-    #     store = get_object_or_404(Store, pk=role.store_id)
-    #
-    #     # Check if the user is an owner or manager of the store
-    #     if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #         if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise HttpError(403, "User is not an owner or manager of the store")
-    #
-    #         manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-    #         manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-    #         if not manager_permissions.can_add_discount_policy:
-    #             raise HttpError(403, "Manager does not have permission to change discount policy")
-    #
-    #     # Check if a discount policy with the same parameters already exists for the store
-    #     if DiscountPolicy.objects.filter(store=store, min_items=payload.min_items,
-    #                                      min_price=payload.min_price).exists():
-    #         raise HttpError(400, "Discount policy with these parameters already exists")
-    #
-    #     policy = DiscountPolicy.objects.create(
-    #         store=store,
-    #         **payload.dict()
-    #     )
-    #
-    #     return {"message": "Discount policy added successfully"}
 
     def add_discount_policy(
         self,
@@ -510,8 +493,15 @@ class StoreController:
 
         # Check if the user is authorized to add a discount policy
         if request is not None and role is not None:  # none only in recursive calls
-            store = get_object_or_404(Store, pk=payload.store_id)
-            self.validate_permissions(role, store, "can_add_discount_policy")
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT pg_advisory_xact_lock_shared(%s);", [store_lock]
+                    )
+                    store = get_object_or_404(Store, pk=payload.store_id)
+                    self.validate_permissions(
+                        role, store, "can_add_discount_policy", cursor
+                    )
 
         if isinstance(payload, SimpleDiscountSchemaIn):
             return self.add_simple_discount_policy(payload)
@@ -521,25 +511,29 @@ class StoreController:
             return self.add_conditional_discount_policy(payload)
 
     def add_simple_discount_policy(self, payload: SimpleDiscountSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-
-        # if SimpleDiscount.objects.filter(store=store, percentage=payload.percentage).exists():
-        #     raise HttpError(400, "Simple discount policy with these parameters already exists")
-
-        # if SimpleDiscount.objects.filter(store=store, percentage=payload.percentage,
-        #                                  applicable_products__in=applicable_products).exists():
-        #     raise HttpError(400, "Simple discount policy with these parameters already exists")
-        discount = SimpleDiscount.objects.create(
-            store=store,
-            is_root=payload.is_root,
-            percentage=payload.percentage,
-            applicable_categories=json.dumps(payload.applicable_categories),
-        )
-        if payload.applicable_products:
-            applicable_products = StoreProduct.objects.filter(
-                store=store, name__in=payload.applicable_products
-            )
-            discount.applicable_products.set(applicable_products)
+        if payload.percentage <= 0 or payload.percentage > 100:
+            raise HttpError(400, "Discount percentage must be between 1 and 100")
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                discount_lock = f"{store.pk}_discount_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(discount_lock)});")
+                discount = SimpleDiscount.objects.create(
+                    store=store,
+                    is_root=payload.is_root,
+                    percentage=payload.percentage,
+                    applicable_categories=json.dumps(payload.applicable_categories),
+                )
+                if payload.applicable_products:
+                    products_lock = f"{store.pk}_products_lock"
+                    cursor.execute(
+                        f"SELECT pg_advisory_xact_lock_shared({hash(products_lock)});"
+                    )
+                    applicable_products = StoreProduct.objects.filter(
+                        store=store, name__in=payload.applicable_products
+                    )
+                    discount.applicable_products.set(applicable_products)
 
         return {
             "message": "Simple discount policy added successfully",
@@ -547,24 +541,27 @@ class StoreController:
         }
 
     def add_conditional_discount_policy(self, payload: ConditionalDiscountSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
 
-        # if ConditionalDiscount.objects.filter(store=store, discount_type=payload.discount_type).exists():
-        #     raise HttpError(400, "Conditional discount policy with these parameters already exists")
         base_discount = (self.add_discount_policy(None, None, payload.discount)).get(
             "discount"
         )
-        discount = ConditionalDiscount.objects.create(
-            is_root=payload.is_root, store=store, discount=base_discount
-        )
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                discount_lock = f"{store.pk}_discount_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(discount_lock)});")
+                discount = ConditionalDiscount.objects.create(
+                    is_root=payload.is_root, store=store, discount=base_discount
+                )
 
-        condition = Condition.objects.create(
-            applies_to=payload.condition.applies_to,
-            name_of_apply=payload.condition.name_of_apply,
-            condition=payload.condition.condition,
-            value=payload.condition.value,
-            discount=discount,
-        )
+                condition = Condition.objects.create(
+                    applies_to=payload.condition.applies_to,
+                    name_of_apply=payload.condition.name_of_apply,
+                    condition=payload.condition.condition,
+                    value=payload.condition.value,
+                    discount=discount,
+                )
 
         return {
             "message": "Conditional discount policy added successfully",
@@ -572,31 +569,33 @@ class StoreController:
         }
 
     def add_composite_discount_policy(self, payload: CompositeDiscountSchemaIn):
-        store = get_object_or_404(Store, pk=payload.store_id)
-
-        # if CompositeDiscount.objects.filter(store=store, discount_type=payload.discount_type).exists():
-        #     raise HttpError(400, "Composite discount policy with these parameters already exists")
         discounts = []
         for discount_payload in payload.discounts:
             discounts.append(
                 (self.add_discount_policy(None, None, discount_payload)).get("discount")
             )
-        discount = CompositeDiscount.objects.create(
-            is_root=payload.is_root,
-            store=store,
-            combine_function=payload.combine_function,
-        )
-        discount.discounts.set(discounts)
 
-        for conditions in payload.conditions:
-            condition = Condition.objects.create(
-                applies_to=conditions.applies_to,
-                name_of_apply=conditions.name_of_apply,
-                condition=conditions.condition,
-                value=conditions.value,
-                discount=discount,
-            )
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                discount_lock = f"{store.pk}_discount_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(discount_lock)});")
+                discount = CompositeDiscount.objects.create(
+                    is_root=payload.is_root,
+                    store=store,
+                    combine_function=payload.combine_function,
+                )
+                discount.discounts.set(discounts)
 
+                for conditions in payload.conditions:
+                    condition = Condition.objects.create(
+                        applies_to=conditions.applies_to,
+                        name_of_apply=conditions.name_of_apply,
+                        condition=conditions.condition,
+                        value=conditions.value,
+                        discount=discount,
+                    )
         return {
             "message": "Composite discount policy added successfully",
             "discount": discount,
@@ -605,83 +604,54 @@ class StoreController:
     def remove_discount_policy(
         self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
     ):
-        store = get_object_or_404(Store, pk=payload.store_id)
 
-        self.validate_permissions(role, store, "can_remove_discount_policy")
-        # try:
-        #     # Try to get the discount instance by its ID in each subclass
-        #     discount_instance = SimpleDiscount.objects.get(pk=payload.discount_id, is_root=True)
-        # except ObjectDoesNotExist:
-        #     try:
-        #         discount_instance = ConditionalDiscount.objects.get(pk=payload.discount_id, is_root=True)
-        #     except ObjectDoesNotExist:
-        #         try:
-        #             discount_instance = CompositeDiscount.objects.get(pk=payload.discount_id, is_root=True)
-        #         except ObjectDoesNotExist:
-        #             raise HttpError(404, "Discount policy does not exist")
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                self.validate_permissions(
+                    role, store, "can_remove_discount_policy", cursor
+                )
+                discount_lock = f"{store.pk}_discount_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(discount_lock)});")
+                discount_instance = get_object_or_404(
+                    DiscountBase, pk=payload.discount_id, is_root=True
+                )
 
-        discount_instance = get_object_or_404(
-            DiscountBase, pk=payload.discount_id, is_root=True
-        )
-
-        discount_instance.delete()
+                discount_instance.delete()
 
         return {"message": "Discount policy removed successfully"}
 
-    # def remove_discount_policy(self, request, role: RoleSchemaIn, payload: DiscountPolicySchemaIn):
-    #     store = get_object_or_404(Store, pk=role.store_id)
-    #
-    #     # Check if the user is an owner or manager of the store
-    #     if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #         if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise HttpError(403, "User is not an owner or manager of the store")
-    #
-    #         manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-    #         manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-    #         if not manager_permissions.can_remove_discount_policy:
-    #             raise HttpError(403, "Manager does not have permission to change discount policy")
-    #
-    #     # Check if a discount policy exists for the store
-    #     try:
-    #         policy = DiscountPolicy.objects.get(store=store, min_items=payload.min_items, min_price=payload.min_price)
-    #     except DiscountPolicy.DoesNotExist:
-    #         raise HttpError(404, "Discount policy not found for the store")
-    #
-    #     # Delete the discount policy
-    #     policy.delete()
-    #
-    #     return {"message": "Discount policy removed successfully"}
-
     def get_discount_policies(self, request, role: RoleSchemaIn):
-        store = get_object_or_404(Store, pk=role.store_id)
-        if not store.is_active:
-            if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-                raise HttpError(
-                    403, "User is not an owner of the store and the store is closed"
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=role.store_id)
+                if not store.is_active:
+                    managing_lock_id = hash(f"{store.pk}_managing_lock")
+                    cursor.execute(
+                        "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock_id]
+                    )
+                    if not Owner.objects.filter(
+                        user_id=role.user_id, store=store
+                    ).exists():
+                        raise HttpError(
+                            403,
+                            "User is not an owner of the store and the store is closed",
+                        )
+                discount_lock = f"{store.pk}_discount_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});"
                 )
+                discounts = DiscountBase.objects.filter(store=store, is_root=True)
 
-        return DiscountBase.objects.filter(store=store, is_root=True)
+        return discounts
 
-    # not sure if editing discount policies is needed, can just delete and add new ones
-    #
-    # @router.put("/stores/{store_id}/edit_discount_policy")
-    # def edit_discount_policy(request, role: RoleSchemaIn, payload: DiscountPolicySchemaIn):
-    #     store = get_object_or_404(Store, pk=role.store_id)
-    #     if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-    #         if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-    #             raise ValueError("User is not an owner or manager of the store")
-    #         manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-    #         manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-    #         if not manager_permissions.can_change_discount_policy:
-    #             raise ValueError("Manager does not have permission to change discount policy")
-    #
-    #     policy = get_object_or_404(DiscountPolicy, store=store)
-    #     policy.update(**payload.dict())
-    #
-    #     return {"message": "Discount policy edited successfully"}
-    #
-
-    def validate_permissions(self, role: RoleSchemaIn, store: Store, permission: str):
+    def validate_permissions(
+        self, role: RoleSchemaIn, store: Store, permission: str, cursor
+    ):
+        managing_lock = hash(f"{store.pk}_managing_lock")
+        cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock])
         if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
             if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
                 raise HttpError(403, "User is not an owner or manager of the store")
@@ -690,98 +660,99 @@ class StoreController:
             manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
             if not getattr(manager_permissions, permission):
                 raise HttpError(
-                    403, "Manager does not have permission to perform this action"
+                    403,
+                    f"Manager does not have permission to {permission.replace('_', ' ')}",
                 )
 
     def add_product(self, request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
-        store = get_object_or_404(Store, pk=role.store_id)
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=role.store_id)
+                self.validate_permissions(role, store, "can_add_product", cursor)
+                products_lock = f"{store.pk}_products_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(products_lock)});")
+                all_products = StoreProduct.objects.filter(store=store)
+                if payload.name in all_products.values_list("name", flat=True):
+                    return HttpError(
+                        400, "Product with this name already exists in the store"
+                    )
+                if payload.quantity <= 0:
+                    raise HttpError(400, "Product quantity cannot be 0 or negative")
+                if payload.initial_price <= 0:
+                    raise HttpError(400, "Product price cannot be 0 or negative")
 
-        self.validate_permissions(role, store, "can_add_product")
-        # if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-        #     if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-        #         raise HttpError(403, "User is not an owner or manager of the store")
-        #
-        #     manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-        #     manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-        #     if not manager_permissions.can_add_product:
-        #         raise HttpError(403, "Manager does not have permission to add product")
-
-        all_products = StoreProduct.objects.filter(store=store)
-        if payload.name in all_products.values_list("name", flat=True):
-            return HttpError(400, "Product with this name already exists in the store")
-        if payload.quantity <= 0:
-            raise HttpError(400, "Product quantity cannot be 0 or negative")
-        if payload.initial_price <= 0:
-            raise HttpError(400, "Product price cannot be 0 or negative")
-
-        product = StoreProduct.objects.create(store=store, **payload.dict())
+                product = StoreProduct.objects.create(store=store, **payload.dict())
 
         return {"message": "Product added successfully"}
 
     def remove_product(self, request, role: RoleSchemaIn, product_name: str):
-        store = get_object_or_404(Store, pk=role.store_id)
-        self.validate_permissions(role, store, "can_delete_product")
 
-        # Check if the user is an owner or manager of the store
-        # if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-        #     if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-        #         raise HttpError(403, "User is not an owner or manager of the store")
-        #
-        #     manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-        #     manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-        #     if not manager_permissions.can_delete_product:
-        #         raise HttpError(403, "Manager does not have permission to delete product")
-
-        # Check if the product exists
-        product = get_object_or_404(StoreProduct, store=store, name=product_name)
-
-        # Delete the product
-        product.delete()
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=role.store_id)
+                self.validate_permissions(role, store, "can_delete_product", cursor)
+                products_lock = f"{store.pk}_products_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(products_lock)});")
+                product = get_object_or_404(
+                    StoreProduct, store=store, name=product_name
+                )
+                product.delete()
 
         return {"message": "Product removed successfully"}
 
     def edit_product(self, request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
-        store = get_object_or_404(Store, pk=role.store_id)
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=role.store_id)
+                self.validate_permissions(role, store, "can_edit_product", cursor)
+                products_lock = f"{store.pk}_products_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(products_lock)});")
+                product = get_object_or_404(
+                    StoreProduct, store=store, name=payload.name
+                )
 
-        self.validate_permissions(role, store, "can_edit_product")
+                if payload.quantity <= 0:
+                    raise HttpError(
+                        400,
+                        "Product quantity cannot be negative. To remove the product, delete it instead.",
+                    )
+                if payload.initial_price <= 0:
+                    raise HttpError(400, "Product price cannot be negative.")
 
-        # Check if the user is an owner or manager of the store
-        # if not Owner.objects.filter(user_id=role.user_id, store=store).exists():
-        #     if not Manager.objects.filter(user_id=role.user_id, store=store).exists():
-        #         raise HttpError(403, "User is not an owner or manager of the store")
-        #
-        #     manager = get_object_or_404(Manager, user_id=role.user_id, store=store)
-        #     manager_permissions = get_object_or_404(ManagerPermission, manager=manager)
-        #     if not manager_permissions.can_edit_product:
-        #         raise HttpError(403, "Manager does not have permission to edit product")
-
-        # Get the product to edit
-        product = get_object_or_404(StoreProduct, store=store, name=payload.name)
-
-        # Validate payload
-        if payload.quantity <= 0:
-            raise HttpError(
-                400,
-                "Product quantity cannot be negative. To remove the product, delete it instead.",
-            )
-        if payload.initial_price <= 0:
-            raise HttpError(400, "Product price cannot be negative.")
-
-        # Update the product attributes
-        product.quantity = payload.quantity
-        product.initial_price = payload.initial_price
-        product.category = payload.category
-        product.save()
+                # Update the product attributes
+                product.quantity = payload.quantity
+                product.initial_price = payload.initial_price
+                product.category = payload.category
+                product.save()
 
         return {"message": "Product edited successfully"}
 
-    def get_products(self, request, store_id: int):
-        store = get_object_or_404(Store, pk=store_id)
+    def get_products(self, request, store_id: int, role: RoleSchemaIn):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=store_id)
+                if not store.is_active:
+                    managing_lock = hash(f"{store.pk}_managing_lock")
+                    cursor.execute(
+                        "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock]
+                    )
+                    if not Owner.objects.filter(
+                        user_id=role.user_id, store=store
+                    ).exists():
+                        raise HttpError(
+                            403,
+                            "User is not an owner of the store and the store is closed",
+                        )
+                products_lock = f"{store.pk}_products_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock_shared({hash(products_lock)});"
+                )
+                products = StoreProduct.objects.filter(store=store)
 
-        try:
-            products = StoreProduct.objects.filter(store=store)
-        except StoreProduct.DoesNotExist:
-            return HttpError(404, "No products found in the store")
         return products
 
     def purchase_product(
@@ -790,15 +761,14 @@ class StoreController:
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to purchase")
 
-        store = get_object_or_404(Store, pk=store_id)
-        store_lock_id = hash(f"{store.pk}_purchase_product_lock")
-
         with transaction.atomic():
             with connection.cursor() as cursor:
                 # Acquire an advisory lock on the store
-                cursor.execute("SELECT pg_advisory_xact_lock(%s);", [store_lock_id])
-
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=store_id)
                 total_items = sum(item.quantity for item in payload)
+                products_lock = f"{store.pk}_products_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(products_lock)});")
                 products = [
                     get_object_or_404(StoreProduct, store=store, name=item.product_name)
                     for item in payload
@@ -821,12 +791,11 @@ class StoreController:
                     for product, item in zip(products, payload)
                 ]
 
-                if not self.validate_purchase_policy(store, payload):
+                if not self.validate_purchase_policy(store, payload, cursor):
                     raise HttpError(400, "Purchase policy validation failed")
 
                 # Apply discount policy
-                total_price -= self.calculate_cart_discount(payload, store)
-
+                total_price -= self.calculate_cart_discount(payload, store, cursor)
                 for item in payload:
                     product = get_object_or_404(
                         StoreProduct, store=store, name=item.product_name
@@ -853,14 +822,19 @@ class StoreController:
     ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to return")
-        store = get_object_or_404(Store, pk=store_id)
 
-        for item in payload:
-            product = get_object_or_404(
-                StoreProduct, store=store, name=item.product_name
-            )
-            product.quantity += item.quantity
-            product.save()
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=store_id)
+                products_lock = f"{store.pk}_products_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(products_lock)});")
+                for item in payload:
+                    product = get_object_or_404(
+                        StoreProduct, store=store, name=item.product_name
+                    )
+                    product.quantity += item.quantity
+                    product.save()
 
         return {"message": "Products returned successfully"}
 
@@ -892,10 +866,12 @@ class StoreController:
         return None
 
     def calculate_cart_discount(
-        self, purchase_products: List[PurchaseStoreProductSchema], store: Store
+        self, purchase_products: List[PurchaseStoreProductSchema], store: Store, cursor
     ):
         total_discount = 0
         # Retrieve only root discount models to avoid duplicates
+        discount_lock = f"{store.pk}_discount_lock"
+        cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});")
         all_discount_models = DiscountBase.objects.filter(is_root=True)
         for discount_model in all_discount_models:
             discount_instance = self.get_discount_instance(discount_model, store)
@@ -935,8 +911,10 @@ class StoreController:
         return None
 
     def validate_purchase_policy(
-        self, store, payload
+        self, store, payload, cursor
     ):  # Retrieve only root purchase models to avoid duplicates
+        policy_lock = f"{store.pk}_policy_lock"
+        cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});")
         all_purchase_models = PurchasePolicyBase.objects.filter(is_root=True)
         if len(all_purchase_models) == 0:
             return True
@@ -951,56 +929,71 @@ class StoreController:
     def search_products(
         self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
     ):
-        if search_query.store_id:
-            store = get_object_or_404(Store, pk=search_query.store_id)
-            if not store.is_active:
-                raise HttpError(403, "Store is closed")
-            if search_query.product_name and not search_query.category:
-                products = StoreProduct.objects.filter(
-                    store=store, name__icontains=search_query.product_name
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                products_lock = f"{search_query.store_id}_products_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock_shared({hash(products_lock)});"
                 )
-            elif search_query.category and not search_query.product_name:
-                products = StoreProduct.objects.filter(
-                    store=store, category__icontains=search_query.category
-                )
-            elif search_query.product_name and search_query.category:
-                products = StoreProduct.objects.filter(
-                    store=store,
-                    name__icontains=search_query.product_name,
-                    category__icontains=search_query.category,
-                )
-            else:
-                products = StoreProduct.objects.filter(store=store)
-        else:
-            if search_query.product_name and not search_query.category:
-                products = StoreProduct.objects.filter(
-                    name__icontains=search_query.product_name, store__is_active=True
-                )
-            elif search_query.category and not search_query.product_name:
-                products = StoreProduct.objects.filter(
-                    category__icontains=search_query.category, store__is_ative=True
-                )
-            elif search_query.product_name and search_query.category:
-                products = StoreProduct.objects.filter(
-                    name__icontains=search_query.product_name,
-                    category__icontains=search_query.category,
-                    store__is_active=True,
-                )
-            else:
-                products = StoreProduct.objects.filter(store__is_active=True)
+                if search_query.store_id:
+                    cursor.execute(
+                        "SELECT pg_advisory_xact_lock_shared(%s);", [store_lock]
+                    )
+                    store = get_object_or_404(Store, pk=search_query.store_id)
+                    if not store.is_active:
+                        raise HttpError(403, "Store is closed")
+                    if search_query.product_name and not search_query.category:
+                        products = StoreProduct.objects.filter(
+                            store=store, name__icontains=search_query.product_name
+                        )
+                    elif search_query.category and not search_query.product_name:
+                        products = StoreProduct.objects.filter(
+                            store=store, category__icontains=search_query.category
+                        )
+                    elif search_query.product_name and search_query.category:
+                        products = StoreProduct.objects.filter(
+                            store=store,
+                            name__icontains=search_query.product_name,
+                            category__icontains=search_query.category,
+                        )
+                    else:
+                        products = StoreProduct.objects.filter(store=store)
+                else:
+                    if search_query.product_name and not search_query.category:
+                        products = StoreProduct.objects.filter(
+                            name__icontains=search_query.product_name,
+                            store__is_active=True,
+                        )
+                    elif search_query.category and not search_query.product_name:
+                        products = StoreProduct.objects.filter(
+                            category__icontains=search_query.category,
+                            store__is_ative=True,
+                        )
+                    elif search_query.product_name and search_query.category:
+                        products = StoreProduct.objects.filter(
+                            name__icontains=search_query.product_name,
+                            category__icontains=search_query.category,
+                            store__is_active=True,
+                        )
+                    else:
+                        products = StoreProduct.objects.filter(store__is_active=True)
 
-        if filter_query.min_price:
-            products = products.filter(initial_price__gte=filter_query.min_price)
-        if filter_query.max_price:
-            products = products.filter(initial_price__lte=filter_query.max_price)
-        if filter_query.min_quantity:
-            products = products.filter(quantity__gte=filter_query.min_quantity)
-        if filter_query.max_quantity:
-            products = products.filter(quantity__lte=filter_query.max_quantity)
+                if filter_query.min_price:
+                    products = products.filter(
+                        initial_price__gte=filter_query.min_price
+                    )
+                if filter_query.max_price:
+                    products = products.filter(
+                        initial_price__lte=filter_query.max_price
+                    )
+                if filter_query.min_quantity:
+                    products = products.filter(quantity__gte=filter_query.min_quantity)
+                if filter_query.max_quantity:
+                    products = products.filter(quantity__lte=filter_query.max_quantity)
 
         return products
 
-    def create_fake_data(self, request):
+    def create_fake_data(self):
         store_data = {
             "Hummus Heaven": {
                 "category": "Food",
@@ -1045,7 +1038,7 @@ class StoreController:
         }
 
         stores = []
-        store_names = store_data.keys()
+        store_names = list(store_data.keys())
         for i in range(1, 7):
             stores.append(
                 Store.objects.create(
@@ -1058,7 +1051,7 @@ class StoreController:
         for i in range(0, 6):
             owner = Owner.objects.create(user_id=i, store=stores[i], is_founder=True)
             manager = Manager.objects.create(
-                user_id=2 * len(store_names) - i - 1, store=stores[i]
+                user_id=2 * len(store_names) - i - 1, store=stores[i], assigned_by=owner
             )
             manager_permissions = ManagerPermission.objects.create(
                 manager=manager,
@@ -1073,7 +1066,7 @@ class StoreController:
             for j in range(3):
                 product = StoreProduct.objects.create(
                     store=stores[i],
-                    name=store_data[stores[i]]["products"][j],
+                    name=store_data[store_names[i]]["products"][j],
                     quantity=10,
                     initial_price=100,
                 )
@@ -1085,60 +1078,116 @@ class StoreController:
                     is_root=True,
                     percentage=10,
                     applicable_categories=json.dumps(
-                        [store_data[stores[i]]["category"]]
+                        [store_data[store_names[i]]["category"]]
                     ),
                 )
 
         return {"message": "Fake data created successfully"}
 
-    def search_products(
-        self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
-    ):
-        if search_query.store_id:
-            store = get_object_or_404(Store, pk=search_query.store_id)
-            if not store.is_active:
-                raise HttpError(403, "Store is closed")
-            if search_query.product_name and not search_query.category:
-                products = StoreProduct.objects.filter(
-                    store=store, name__icontains=search_query.product_name
+    def make_bid(self, request, payload: BidSchemaIn):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                products_lock = f"{store.pk}_products_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock_shared({hash(products_lock)});"
                 )
-            elif search_query.category and not search_query.product_name:
-                products = StoreProduct.objects.filter(
-                    store=store, category__icontains=search_query.category
+                product = get_object_or_404(
+                    StoreProduct, store=store, name=payload.product_name
                 )
-            elif search_query.product_name and search_query.category:
-                products = StoreProduct.objects.filter(
+                bids_lock = f"{store.pk}_bids_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(bids_lock)});")
+                bid = Bid.objects.create(
                     store=store,
-                    name__icontains=search_query.product_name,
-                    category__icontains=search_query.category,
+                    product=product,
+                    price=payload.price,
+                    user_id=payload.user_id,
+                    quantity=payload.quantity,
                 )
-            else:
-                products = StoreProduct.objects.filter(store=store)
-        else:
-            if search_query.product_name and not search_query.category:
-                products = StoreProduct.objects.filter(
-                    name__icontains=search_query.product_name, store__is_active=True
-                )
-            elif search_query.category and not search_query.product_name:
-                products = StoreProduct.objects.filter(
-                    category__icontains=search_query.category, store__is_ative=True
-                )
-            elif search_query.product_name and search_query.category:
-                products = StoreProduct.objects.filter(
-                    name__icontains=search_query.product_name,
-                    category__icontains=search_query.category,
-                    store__is_active=True,
-                )
-            else:
-                products = StoreProduct.objects.filter(store__is_active=True)
+                # TODO: notify all managers that a bid has been made on a product
+        return {"message": "Bid added successfully"}
 
-        if filter_query.min_price:
-            products = products.filter(initial_price__gte=filter_query.min_price)
-        if filter_query.max_price:
-            products = products.filter(initial_price__lte=filter_query.max_price)
-        if filter_query.min_quantity:
-            products = products.filter(quantity__gte=filter_query.min_quantity)
-        if filter_query.max_quantity:
-            products = products.filter(quantity__lte=filter_query.max_quantity)
+    def decide_on_bid(self, request, role: RoleSchemaIn, payload: DecisionBidSchemaIn):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=role.store_id)
+                bids_lock = f"{store.pk}_bids_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(bids_lock)});")
+                bid = get_object_or_404(Bid, pk=payload.bid_id)
+                self.validate_permissions(role, bid.store, "can_decide_on_bid", cursor)
+                managing_lock = hash(f"{store.pk}_managing_lock")
+                cursor.execute(
+                    "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock]
+                )
+                managers_with_permission = self.get_managers_with_permissions(
+                    role, "can_decide_on_bid"
+                )
+                manager = get_object_or_404(Role, user_id=role.user_id, store=bid.store)
+                if manager in bid.accepted_by.all():
+                    raise HttpError(400, "Manager has already accepted the bid")
+                # if manager not in managers_with_permission:
+                #     raise HttpError(403, "Manager does not have permission to decide on bids")
+                if payload.decision:
+                    bid.accepted_by.add(manager)
+                    owners_count = self.get_owners(None, role).count()
+                    count_managers_with_permission = len(managers_with_permission)
+                    if (
+                        bid.accepted_by.count()
+                        == owners_count + count_managers_with_permission
+                    ):
+                        bid.can_purchase = True
+                        bid.save()  # Ensure bid is saved after setting can_purchase to True
+                        # TODO: notify user that bid has been accepted
+                else:
+                    bid.delete()
+                    ##TODO: notify user that bid has been rejected
 
-        return products
+        return {"message": "Bid decision made successfully"}
+
+    def get_bids(self, request, role: RoleSchemaIn, store_id: int):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=store_id)
+                self.validate_permissions(role, store, "can_decide_on_bid", cursor)
+                bids_lock = f"{store.pk}_bids_lock"
+                cursor.execute(
+                    f"SELECT pg_advisory_xact_lock_shared({hash(bids_lock)});"
+                )
+                return Bid.objects.filter(store=store)
+
+    def make_purchase_on_bid(self, request, payload: MakePurchaseOnBidSchemaIn):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                bids_lock = f"{payload.store_id}_bids_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock({hash(bids_lock)});")
+                bid = get_object_or_404(Bid, pk=payload.bid_id, store=store)
+                if not bid.can_purchase:
+                    raise HttpError(
+                        400, "Bid has not been accepted by all managers or owners"
+                    )
+                product = bid.product
+                if product.quantity < bid.quantity:
+                    raise HttpError(400, "Insufficient quantity of product in store")
+                product.quantity -= bid.quantity
+                price = bid.price
+                product.save()
+                bid.delete()  # delete bid after purchase
+        return {"message": "Purchase made successfully", "price": price}
+
+    def get_managers_with_permissions(self, role: RoleSchemaIn, permission: str):
+        store = get_object_or_404(Store, pk=role.store_id)
+        managers = Manager.objects.filter(store=store)
+        managers_with_permission = []
+        for manager in managers:
+            try:
+                manager_permissions = ManagerPermission.objects.get(manager=manager)
+                if getattr(manager_permissions, permission):
+                    managers_with_permission.append(manager)
+            except ObjectDoesNotExist:
+                pass
+        return managers_with_permission
