@@ -142,13 +142,13 @@ export default function ManageStores() {
                   onClick={() => toggleStoreActiveStatus(store.id, store.is_active)}
                   className={`ml-4 flex-shrink-0 ${
                     store.is_active
-                      ? 'bg-red-600 hover:bg-red-500'
-                      : 'bg-green-600 hover:bg-green-500'
+                      ? 'bg-green-600 hover:bg-green-500'
+                      : 'bg-red-600 hover:bg-red-500'
                   } text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
-                    store.is_active ? 'focus-visible:outline-red-600' : 'focus-visible:outline-green-600'
+                    store.is_active ? 'focus-visible:outline-green-600' : 'focus-visible:outline-red-600'
                   }`}
                 >
-                  {store.is_active ? 'Close' : 'Open'}
+                  {store.is_active ? 'Open' : 'Close'}
                 </button>
               </div>
             ))}
