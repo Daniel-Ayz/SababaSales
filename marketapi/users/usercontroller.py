@@ -215,7 +215,7 @@ class UserController:
         payment_info = PaymentInformationUser.objects.get(user=user)
         return payment_info
 
-    def get_user_id_by_email(self, request, email: str) -> int:
+    def get_user_id_by_email(self, email: str) -> int:
         user = CustomUser.objects.get(email=email)
         return user.id
 

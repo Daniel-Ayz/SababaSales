@@ -66,21 +66,44 @@ export default function ManageStore({ params }) {
     // Implement the logic for managing item, possibly showing a popup or navigating to another page
   };
 
-  const assignStaff = async () => {
+  const assignOwner = async () => {
     try {
-      // Implement the logic for assigning staff
-      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_staff`, { email });
+      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_owner`, {
+        email,
+        store_id,
+        assigned_by: user.id,
+      });
       if (response.status === 200) {
-        toast.success("Staff appointed successfully!");
+        toast.success("Owner appointed successfully!");
         setEmail('');
       } else {
-        toast.error("Failed to appoint staff.");
+        toast.error("Failed to appoint owner.");
       }
     } catch (error) {
-      console.error("Error assigning staff:", error);
-      toast.error("Failed to appoint staff.");
+      console.error("Error assigning owner:", error);
+      toast.error("Failed to appoint owner.");
     }
   };
+
+  const assignManager = async () => {
+    try {
+      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_manager`, {
+        email,
+        store_id,
+        assigned_by: user.id,
+      });
+      if (response.status === 200) {
+        toast.success("Manager appointed successfully!");
+        setEmail('');
+      } else {
+        toast.error("Failed to appoint manager.");
+      }
+    } catch (error) {
+      console.error("Error assigning manager:", error);
+      toast.error("Failed to appoint manager.");
+    }
+  };
+
 
   const addDiscountRule = () => {
     // Implement the logic for adding discount rule
@@ -117,20 +140,20 @@ export default function ManageStore({ params }) {
               </button>
             </Link>
 
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Appoint Staff</h3>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Appoint Onwer</h3>
             <Dialog>
               <DialogTrigger asChild>
                 <button
                   className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
-                  Appoint Staff
+                  Appoint Owner
                 </button>
               </DialogTrigger>
               <DialogContent className="bg-white"> {/* Change the background color to white */}
                 <DialogHeader>
-                  <DialogTitle>Appoint Staff</DialogTitle>
+                  <DialogTitle>Appoint Owner</DialogTitle>
                   <DialogDescription>
-                    Enter the email of the user you want to appoint as staff for your store.
+                    Enter the email of the user new oneryou want to appoint.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col space-y-4">
@@ -142,7 +165,45 @@ export default function ManageStore({ params }) {
                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                   />
                   <button
-                    onClick={assignStaff}
+                    onClick={assignOwner}
+                    className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  >
+                    Submit
+                  </button>
+                </div>
+                <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </DialogClose>
+              </DialogContent>
+            </Dialog>
+
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Appoint Manager</h3>
+            <Dialog>
+              <DialogTrigger asChild>
+                <button
+                  className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  Appoint Manager
+                </button>
+              </DialogTrigger>
+              <DialogContent className="bg-white"> {/* Change the background color to white */}
+                <DialogHeader>
+                  <DialogTitle>Appoint Manager</DialogTitle>
+                  <DialogDescription>
+                    Enter the email of the user you want to appoint as Manager.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col space-y-4">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter email"
+                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  />
+                  <button
+                    onClick={assignManager}
                     className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                   >
                     Submit
