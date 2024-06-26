@@ -16,7 +16,6 @@ export default function ManageStores() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    console.log('User context in ManageStores:', user); // Debugging statement
     if (user.loggedIn === false) {
       window.location.href = '/unauthorized';
     }
@@ -88,8 +87,9 @@ export default function ManageStores() {
   };
 
   const manageStore = (id) => {
-    alert(`Managing store with id: ${id}`);
+    window.location.href = `/manage_stores/${id}`;
   };
+
 
   // Ensure the user context is fully initialized before rendering
   if (user.loggedIn === undefined) return null;
