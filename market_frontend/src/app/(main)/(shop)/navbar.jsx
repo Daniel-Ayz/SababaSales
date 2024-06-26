@@ -202,6 +202,19 @@ export default function NavBar({setCart}) {
                         <MenuItem>
                           {({ focus }) => (
                             <a
+                              href="/history"
+                              className={classNames(
+                                focus ? 'bg-gray-100' : '',
+                                'block px-4 py-2 text-sm text-gray-700'
+                              )}
+                            >
+                              Purchase History
+                            </a>
+                          )}
+                        </MenuItem>
+                        <MenuItem>
+                          {({ focus }) => (
+                            <a
                               href="#"
                               className={classNames(
                                 focus ? 'bg-gray-100' : '',
