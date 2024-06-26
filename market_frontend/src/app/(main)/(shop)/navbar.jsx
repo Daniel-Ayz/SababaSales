@@ -3,7 +3,7 @@ import Link from 'next/link';
 import './navDesign.css';
 import { CATEGORIES } from './categoriesMock';
 import Categories from './categories';
-import { UserContext } from '../layout'; // Import the UserContext
+import { UserContext , searchContext} from '../layout'; // Import the UserContext
 import Notifications from './notifications';
 import {
   Disclosure,
@@ -47,9 +47,11 @@ async function handleLogout(setUser){
 // Mock context for user authentication
 
 export default function NavBar({setCart}) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  // const [searchQuery, setSearchQuery] = useState('');
+  // const [searchResults, setSearchResults] = useState([]);
   const {user,setUser} = useContext(UserContext);
+  const {search, setSearch} = useContext(searchContext);
+  console.log(search)
 
   const handleSearch = async () => {
     try {
@@ -108,8 +110,8 @@ export default function NavBar({setCart}) {
                     type="text"
                     className="search bg-white text-gray-800 placeholder-gray-500 border-none focus:ring-0 focus:border-transparent w-full rounded-lg py-3 pl-10 pr-4 sm:text-base"
                     placeholder="Search..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
                   />
                   <button
                     type="button"
