@@ -215,6 +215,10 @@ class UserController:
         payment_info = PaymentInformationUser.objects.get(user=user)
         return payment_info
 
+    def get_user_id_by_email(self, request, email: str) -> int:
+        user = CustomUser.objects.get(email=email)
+        return user.id
+
     def create_fake_data(self):
         usernames = [
             "Yishay_Butzim",
