@@ -9,6 +9,18 @@ import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/solid';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { X } from 'lucide-react'; // Import the X icon
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+
+} from "@/components/dialog";
 
 axios.defaults.withCredentials = true;
 
@@ -22,6 +34,7 @@ export default function ManageStore({ params }) {
   const [discountRules, setDiscountRules] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState('');
 
   useEffect(() => {
     if (user.loggedIn === undefined) return; // Ensure the user context is fully initialized before fetching data
@@ -53,9 +66,20 @@ export default function ManageStore({ params }) {
     // Implement the logic for managing item, possibly showing a popup or navigating to another page
   };
 
-  const assignStaff = () => {
-    // Implement the logic for assigning staff
-    alert('Assign staff logic to be implemented');
+  const assignStaff = async () => {
+    try {
+      // Implement the logic for assigning staff
+      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_staff`, { email });
+      if (response.status === 200) {
+        toast.success("Staff appointed successfully!");
+        setEmail('');
+      } else {
+        toast.error("Failed to appoint staff.");
+      }
+    } catch (error) {
+      console.error("Error assigning staff:", error);
+      toast.error("Failed to appoint staff.");
+    }
   };
 
   const addDiscountRule = () => {
@@ -85,44 +109,59 @@ export default function ManageStore({ params }) {
               </button>
             </Link>
             {error && <Alert severity="error">{error}</Alert>}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium leading-6 text-gray-900">Store Items</h3>
-              <ul>
-                {items.map(item => (
-                  <li key={item.id} className="flex items-center justify-between p-4 bg-white rounded-md shadow-sm ring-1 ring-gray-300">
-                    <span
-                      onClick={() => manageItem(item.id)}
-                      className="cursor-pointer text-lg font-medium text-gray-900"
-                    >
-                      {item.name}
-                    </span>
-                  </li>
-                ))}
-              </ul>
 
-              <h3 className="text-lg font-medium leading-6 text-gray-900">Add New Item</h3>
-              <Link href={`/manage_stores/${store_id}/addItem`}>
-                <button className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                  Add Item
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Add New Item</h3>
+            <Link href={`/manage_stores/${store_id}/addItem`}>
+              <button className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                Add Item
+              </button>
+            </Link>
+
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Appoint Staff</h3>
+            <Dialog>
+              <DialogTrigger asChild>
+                <button
+                  className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                  Appoint Staff
                 </button>
-              </Link>
+              </DialogTrigger>
+              <DialogContent className="bg-white"> {/* Change the background color to white */}
+                <DialogHeader>
+                  <DialogTitle>Appoint Staff</DialogTitle>
+                  <DialogDescription>
+                    Enter the email of the user you want to appoint as staff for your store.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex flex-col space-y-4">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter email"
+                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  />
+                  <button
+                    onClick={assignStaff}
+                    className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  >
+                    Submit
+                  </button>
+                </div>
+                <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+                  <X className="h-4 w-4" />
+                  <span className="sr-only">Close</span>
+                </DialogClose>
+              </DialogContent>
+            </Dialog>
 
-              <h3 className="text-lg font-medium leading-6 text-gray-900">Appoint Staff</h3>
-              <button
-                onClick={assignStaff}
-                className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                Appoint Staff
-              </button>
-
-              <h3 className="text-lg font-medium leading-6 text-gray-900">Add Discount Rule</h3>
-              <button
-                onClick={addDiscountRule}
-                className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-              >
-                Add Discount Rule
-              </button>
-            </div>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Add Discount Rule</h3>
+            <button
+              onClick={addDiscountRule}
+              className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              Add Discount Rule
+            </button>
 
             <p className="mt-10 text-center text-sm text-gray-500">
               <Link href="/manage_stores" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
@@ -134,7 +173,7 @@ export default function ManageStore({ params }) {
             <h3 className="text-lg font-medium leading-6 text-gray-900">Preview Items</h3>
             <ul>
               {previewItems.map(item => (
-                <li key={item.id} className="flex items-center justify-between p-4 bg-white rounded-md shadow-sm ring-1 ring-gray-300">
+                <li key={item.id} className="flex items-center justify-between p-4 bg-white rounded-md shadow-sm ring-1 ring-gray-300 cursor-pointer" onClick={() => manageItem(item.id)}>
                   <span className="text-lg font-medium text-gray-900">{item.name}</span>
                   <span className="text-lg font-medium text-gray-500">${item.price}</span>
                 </li>
