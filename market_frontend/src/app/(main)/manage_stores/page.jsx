@@ -21,7 +21,7 @@ export default function ManageStores() {
     }
 
     // Fetch existing stores for the user
-    axios.get(`http://localhost:8000/api/stores?user_id=${user.id}`, {
+    axios.get(`http://localhost:8000/api/stores/manager_or_owner?user_id=${user.id}`, {
       headers: { 'Content-Type': 'application/json' }
     })
     .then(response => {

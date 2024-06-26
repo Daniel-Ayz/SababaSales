@@ -1220,3 +1220,14 @@ class StoreController:
             except ObjectDoesNotExist:
                 pass
         return managers_with_permission
+
+    def get_stores_that_manager_or_owner(self, request, user_id: int):
+        stores = []
+        owners = Owner.objects.filter(user_id=user_id)
+        for owner in owners:
+            stores.append(owner.store)
+        managers = Manager.objects.filter(user_id=user_id)
+        for manager in managers:
+            stores.append(manager.store)
+
+        return stores

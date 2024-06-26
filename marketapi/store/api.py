@@ -72,6 +72,11 @@ def search_products(
     return sc.search_products(request, search_query, filter_query)
 
 
+@router.get("/manager_or_owner", response=List[StoreSchemaOut])
+def get_stores_that_manager_or_owner(request, user_id: int):
+    return sc.get_stores_that_manager_or_owner(request, user_id)
+
+
 @router.get("/{store_id}", response=StoreSchemaOut)
 def get_store(request, store_id: int):
     return sc.get_store(request, store_id)
