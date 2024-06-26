@@ -10,6 +10,7 @@ axios.defaults.withCredentials = true;
 const CategoryContext = createContext();
 const UserContext = createContext();
 const StoreProductsContext = createContext();
+const searchContext = createContext();
 const Layout = ({ children }) => {
   const [storesProducts, setStoresProducts] = useState({
   });
@@ -20,6 +21,7 @@ const Layout = ({ children }) => {
     cart_id: null,
   });
   const [categories, setCategories] = useState(null);
+  const [search, setSearch] = useState(null);
 
 useEffect(() => {
   axios.get('http://localhost:8000/api/users/', {
@@ -48,7 +50,9 @@ useEffect(() => {
     <UserContext.Provider value={{ user, setUser }}>
       <StoreProductsContext.Provider value={{ storesProducts, setStoresProducts }}>
         <CategoryContext.Provider value={{ categories, setCategories }}>
+          <searchContext.Provider value={{ search, setSearch }}>
         {children}
+        </searchContext.Provider>
       </CategoryContext.Provider>
       </StoreProductsContext.Provider>
     </UserContext.Provider>
@@ -59,3 +63,4 @@ export default Layout;
 export { UserContext}
 export { StoreProductsContext}
 export { CategoryContext}
+export { searchContext}
