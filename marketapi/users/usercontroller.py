@@ -9,6 +9,7 @@ from .schemas import *
 from django.contrib.auth.hashers import make_password
 from ninja.errors import *
 from datetime import datetime
+from .consumers import send_message_to_user, _mark_notification_as_seen
 
 
 class UserController:
@@ -129,11 +130,15 @@ class UserController:
             target_user = CustomUser.objects.get(id=target_user_id)
         except CustomUser.DoesNotExist as e:
             return HttpError(404, "User not found")
+
         notification = Notification.objects.create(
             sent_by=user.username, message=payload.msg, user=target_user
         )
         notification.save()
-        print(notification)
+        # print(notification)
+        if target_user.online_count > 0:
+            send_message_to_user(target_user_id, payload.msg)
+            _mark_notification_as_seen(notification.id)
 
         return notification
 
