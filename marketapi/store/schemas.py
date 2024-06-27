@@ -26,6 +26,22 @@ class RoleSchemaIn(Schema):
         abstract = True
 
 
+class OwnerSchemaIn(RoleSchemaIn):
+    assigned_by: int
+
+
+class RemoveOwnerSchemaIn(RoleSchemaIn):
+    removed_by: int
+
+
+class ManagerSchemaIn(RoleSchemaIn):
+    assigned_by: int
+
+
+class RemoveManagerSchemaIn(RoleSchemaIn):
+    removed_by: int
+
+
 class RoleSchemaInUpgraded(Schema):
     email: str
     store_id: int
@@ -34,19 +50,19 @@ class RoleSchemaInUpgraded(Schema):
         abstract = True
 
 
-class OwnerSchemaIn(RoleSchemaInUpgraded):
+class OwnerSchemaInEmail(RoleSchemaInUpgraded):
     assigned_by: int
 
 
-class RemoveOwnerSchemaIn(RoleSchemaInUpgraded):
+class RemoveOwnerSchemaInEmail(RoleSchemaInUpgraded):
     removed_by: int
 
 
-class ManagerSchemaIn(RoleSchemaInUpgraded):
+class ManagerSchemaInEmail(RoleSchemaInUpgraded):
     assigned_by: int
 
 
-class RemoveManagerSchemaIn(RoleSchemaInUpgraded):
+class RemoveManagerSchemaInEmail(RoleSchemaInUpgraded):
     removed_by: int
 
 
