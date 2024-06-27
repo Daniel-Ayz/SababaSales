@@ -31,10 +31,10 @@ export default function ManageStore({ params }) {
   const [store, setStore] = useState(null);
   const [items, setItems] = useState([]);
   const [staff, setStaff] = useState([]);
-  const [discountRules, setDiscountRules] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
+
 
   useEffect(() => {
     if (user.loggedIn === undefined) return; // Ensure the user context is fully initialized before fetching data
@@ -110,6 +110,16 @@ export default function ManageStore({ params }) {
     alert('Add discount rule logic to be implemented');
   };
 
+  const addPurchaseRule = () => {
+    // Implement the logic for adding discount rule
+    alert('Add discount rule logic to be implemented');
+  };
+
+  const addItem = () => {
+    // Implement the logic for adding discount rule
+    alert('Add discount rule logic to be implemented');
+  };
+
   // Ensure the user context is fully initialized before rendering
   if (user.loggedIn === undefined || loading) return null;
 
@@ -133,14 +143,14 @@ export default function ManageStore({ params }) {
             </Link>
             {error && <Alert severity="error">{error}</Alert>}
 
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Add New Item</h3>
-            <Link href={`/manage_stores/${store_id}/addItem`}>
-              <button className="flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-                Add Item
-              </button>
-            </Link>
-
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Appoint Onwer</h3>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Add Item</h3>
+            <button
+              onClick={addItem}
+              className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              Add Item
+            </button>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Appoint Owner</h3>
             <Dialog>
               <DialogTrigger asChild>
                 <button
@@ -153,7 +163,7 @@ export default function ManageStore({ params }) {
                 <DialogHeader>
                   <DialogTitle>Appoint Owner</DialogTitle>
                   <DialogDescription>
-                    Enter the email of the user new oneryou want to appoint.
+                    Enter the email of the user new owner you want to appoint.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex flex-col space-y-4">
@@ -222,6 +232,14 @@ export default function ManageStore({ params }) {
               className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               Add Discount Rule
+            </button>
+
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Add Purchase Rule</h3>
+            <button
+              onClick={addPurchaseRule}
+              className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              Add Purchase Rule
             </button>
 
             <p className="mt-10 text-center text-sm text-gray-500">
