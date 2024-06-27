@@ -73,9 +73,6 @@ class UserController:
         userSchema = UserSetupSchema(
             id=user.id, username=user.username, email=user.email, cart_id=cart_id
         )
-        print(user.username)
-        print(user.email)
-        print(userSchema)
         return userSchema
 
     def delete_user(self, request, user_id) -> any:
