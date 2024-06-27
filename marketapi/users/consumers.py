@@ -5,6 +5,8 @@ from channels.layers import get_channel_layer
 from .models import CustomUser, Notification
 from typing import List
 from .schemas import NotificationSchema
+from django.db import transaction
+
 
 # Channel layer - a global variable that allows us to send messages to specific channels
 channel_layer = get_channel_layer()
@@ -16,7 +18,7 @@ def reset_all_online_count():
     for user in users:
         user.online_count = 0
         user.save()
-    print("All users online count reset to 0")
+    # print("All users online count reset to 0")
 
 
 reset_all_online_count()
@@ -44,17 +46,19 @@ def send_message_to_user(user_id, message):
 
 
 def update_user_increment_online_count(user_id):
-    user = CustomUser.objects.get(id=user_id)
-    user.online_count += 1
-    user.save()
-    print(f"User {user.username} online count: {user.online_count}")
+    with transaction.atomic():
+        user = CustomUser.objects.get(id=user_id)
+        user.online_count += 1
+        user.save()
+        # print(f"User {user.username} online count: {user.online_count}")
 
 
 def update_user_decrement_online_count(user_id):
-    user = CustomUser.objects.get(id=user_id)
-    user.online_count -= 1
-    user.save()
-    print(f"User {user.username} online count: {user.online_count}")
+    with transaction.atomic():
+        user = CustomUser.objects.get(id=user_id)
+        user.online_count -= 1
+        user.save()
+        # print(f"User {user.username} online count: {user.online_count}")
 
 
 # This is the consumer that will handle the websocket connection
@@ -68,7 +72,7 @@ class ChatConsumer(WebsocketConsumer):
             update_user_increment_online_count(self.user.id)
         else:
             self.room_group_name = "chat_anonymous"
-        print(f"New Connection: {self.room_group_name}")
+        # print(f"New Connection: {self.room_group_name}")
 
         async_to_sync(self.channel_layer.group_add)(
             self.room_group_name, self.channel_name
@@ -101,7 +105,7 @@ class ChatConsumer(WebsocketConsumer):
     def disconnect(self, close_code):
         if self.user.is_authenticated:
             update_user_decrement_online_count(self.user.id)
-        print(f"Disconnected: {self.room_group_name}")
+        # print(f"Disconnected: {self.room_group_name}")
         async_to_sync(self.channel_layer.group_discard)(
             self.room_group_name, self.channel_name
         )
