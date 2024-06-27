@@ -26,118 +26,118 @@ class StoreAPITestCase(TransactionTestCase):
             "name": "Dairy Store",
             "description": "Store for dairy products"
         }
-        response = self.client.post(f'/stores?user_id={self.user_id}', json=data)
+        response = self.client.post(f'/?user_id={self.user_id}', json=data)
         self.store_id = response.json()['store_id']
 
         data = {
             "name": "Meat Store",
             "description": "Store for meat products"
         }
-        response = self.client.post(f'/stores?user_id={self.user_id}', json=data)
+        response = self.client.post(f'/?user_id={self.user_id}', json=data)
         self.store_id2 = response.json()['store_id']
 
         # Add product to store
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Milk", "quantity": 100, "initial_price": 7, "category": "Dairy"}
         })
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Cheese", "quantity": 50, "initial_price": 15, "category": "Dairy"}
         })
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Bread Loaf", "quantity": 100, "initial_price": 5, "category": "Pastry"}
         })
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Bun", "quantity": 100, "initial_price": 2, "category": "Pastry"}
         })
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Cottage Cheese", "quantity": 100, "initial_price": 3, "category": "Dairy"}
         })
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Yogurt", "quantity": 100, "initial_price": 4, "category": "Dairy"}
         })
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Pasta", "quantity": 100, "initial_price": 10, "category": "Pasta"}
         })
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Tomato", "quantity": 100, "initial_price": 7, "category": "Vegetable"}
         })
 
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Eggplant", "quantity": 100, "initial_price": 7, "category": "Vegetable"}
         })
 
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Vodka", "quantity": 100, "initial_price": 90, "category": "Alcohol"}
         })
 
-        reponse = self.client.post("/stores/{store_id}/add_product", json={
+        reponse = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Corn", "quantity": 10, "initial_price": 15, "category": "Vegetable"}
         })
 
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id2},
             "payload": {"name": "Steak", "quantity": 10, "initial_price": 100, "category": "Meat"}
         })
 
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id2},
             "payload": {"name": "Bread Loaf", "quantity": 20, "initial_price": 10, "category": "Pastry"}
         })
 
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Test Product", "quantity": 5, "initial_price": 50, "category": "Test Category"}
         })
 
         # Add owner to store
         self.owner2_id = 2
-        response = self.client.post("/stores/{store_id}/assign_owner", json={
+        response = self.client.post("/{store_id}/assign_owner", json={
             "user_id": self.owner2_id, "store_id": self.store_id, "assigned_by": self.user_id
         })
 
         # Add manager to store
         self.manager_id = 3
-        response = self.client.post("/stores/{store_id}/assign_manager", json={
+        response = self.client.post("/{store_id}/assign_manager", json={
             "user_id": self.manager_id, "store_id": self.store_id, "assigned_by": self.owner2_id
         })
 
         # Add manager permissions
         response = self.client.post(
-            "/stores/{store_id}/change_manager_permissions?assigning_owner_id=" + self.owner2_id.__str__(), json={
+            "/{store_id}/change_manager_permissions?assigning_owner_id=" + self.owner2_id.__str__(), json={
                 "manager": {"user_id": self.manager_id, "store_id": self.store_id},
                 "payload": {"can_add_product": True, "can_edit_product": True, "can_delete_product": True},
             })
 
         # Set purchase policy
-        # response = self.client.post("/stores/{store_id}/add_purchase_policy", json={
+        # response = self.client.post("/{store_id}/add_purchase_policy", json={
         #     "role": {"user_id": self.user_id, "store_id": self.store_id},
         #     "payload": {"min_items_per_purchase": 1}
         # })
 
-        # reponse = self.client.post("/stores/{store_id}/add_purchase_policy", json={
+        # reponse = self.client.post("/{store_id}/add_purchase_policy", json={
         #     "role": {"user_id": self.user_id, "store_id": self.store_id2},
         #     "payload": {"max_items_per_purchase": 10}
         # })
 
         # # Set discount policy
-        # response = self.client.post("/stores/{store_id}/add_discount_policy", json={
+        # response = self.client.post("/{store_id}/add_discount_policy", json={
         #     "role": {"user_id": self.user_id, "store_id": self.store_id},
         #     "payload": {"min_items": 5, "min_price": 500}
         # })
 
     def test_get_store(self):
-        response = self.client.get(f'/stores/{self.store_id}')
+        response = self.client.get(f'/{self.store_id}')
         self.assertEqual(response.status_code, 200)
         json_data = response.json()
         json_data_excluded = {key: value for key, value in json_data.items() if key != 'created_at'}
@@ -149,16 +149,16 @@ class StoreAPITestCase(TransactionTestCase):
         })
 
     def test_get_all_stores(self):
-        response = self.client.get(f'/stores')
+        response = self.client.get(f'/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 2)
 
     def test_get_store_with_invalid_id(self):
-        response = self.client.get(f'/stores/100')
+        response = self.client.get(f'/100')
         self.assertEqual(response.status_code, 404)
 
     def test_add_product(self):
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.manager_id, "store_id": self.store_id},
             "payload": {"name": "New Product", "quantity": 5, "initial_price": 50, "category": "New Category"}
         })
@@ -166,14 +166,14 @@ class StoreAPITestCase(TransactionTestCase):
         self.assertEqual(response.json(), {"message": "Product added successfully"})
 
     def test_remove_product(self):
-        response = self.client.delete("/stores/{store_id}/remove_product?product_name=Test Product", json={
+        response = self.client.delete("/{store_id}/remove_product?product_name=Test Product", json={
             "user_id": self.user_id, "store_id": self.store_id
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Product removed successfully"})
 
     def test_edit_product(self):
-        response = self.client.put("/stores/{store_id}/edit_product", json={
+        response = self.client.put("/{store_id}/edit_product", json={
             "role": {"user_id": self.owner2_id, "store_id": self.store_id},
             "payload": {"name": "Test Product", "quantity": 5, "initial_price": 50, "category": "New Category"}
         })
@@ -181,14 +181,14 @@ class StoreAPITestCase(TransactionTestCase):
         self.assertEqual(response.json(), {"message": "Product edited successfully"})
 
     def test_get_products(self):
-        response = self.client.get(f'/stores/{self.store_id}/get_products', json={
+        response = self.client.get(f'/{self.store_id}/get_products', json={
             "user_id": self.user_id, "store_id": self.store_id
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 12)
 
     def test_purchase_product(self):
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Test Product",
             "quantity": 1,
             "category": "Test Category"
@@ -206,7 +206,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the simple discount policy
-        response = self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": simple_discount_payload
         })
@@ -216,7 +216,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Simple discount policy added successfully"
 
         # Get the discount policies to verify the added discount
-        response = self.client.get(f"/stores/{self.store_id}/get_discount_policies", json={
+        response = self.client.get(f"/{self.store_id}/get_discount_policies", json={
             "user_id": self.user_id,
             "store_id": self.store_id
         })
@@ -261,7 +261,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the conditional discount policy
-        response = self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": conditional_discount_payload
         })
@@ -271,7 +271,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Conditional discount policy added successfully"
 
         # Get the discount policies to verify the added discount
-        response = self.client.get(f"/stores/{self.store_id}/get_discount_policies", json={
+        response = self.client.get(f"/{self.store_id}/get_discount_policies", json={
             "user_id": self.user_id,
             "store_id": self.store_id
         })
@@ -329,12 +329,12 @@ class StoreAPITestCase(TransactionTestCase):
             "conditions": conditions
         }
 
-        self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_discount_payload
         })
 
-        response = self.client.get(f"/stores/{self.store_id}/get_discount_policies", json={
+        response = self.client.get(f"/{self.store_id}/get_discount_policies", json={
             "user_id": self.user_id,
             "store_id": self.store_id
         })
@@ -355,7 +355,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the simple discount policy
-        response = self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": simple_discount_payload
         })
@@ -364,7 +364,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.status_code == 200
         assert response.json() == "Simple discount policy added successfully"
         #remove the discount policy
-        response = self.client.delete(f"/stores/{self.store_id}/remove_discount_policy", json={
+        response = self.client.delete(f"/{self.store_id}/remove_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"store_id": self.store_id, "discount_id": 1}
         })
@@ -374,7 +374,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json().get("message") == "Discount policy removed successfully"
 
         #check if the discount policy is removed
-        response = self.client.get(f"/stores/{self.store_id}/get_discount_policies", json={
+        response = self.client.get(f"/{self.store_id}/get_discount_policies", json={
             "user_id": self.user_id,
             "store_id": self.store_id
         })
@@ -393,7 +393,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the simple discount policy
-        response = self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": simple_discount_payload
         })
@@ -403,7 +403,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Simple discount policy added successfully"
 
         # Purchase a product
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Milk",
             "category": "Dairy",
             "quantity": 5
@@ -423,7 +423,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the simple discount policy
-        response = self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": simple_discount_payload
         })
@@ -433,7 +433,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Simple discount policy added successfully"
 
         # Purchase a product
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Milk",
             "category": "Dairy",
             "quantity": 5
@@ -472,7 +472,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the simple discount policy
-        response = self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": conditional_discount_payload
         })
@@ -482,7 +482,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Conditional discount policy added successfully"
 
         # Purchase a product
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Milk",
             "category": "Dairy",
             "quantity": 50
@@ -520,7 +520,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the simple discount policy
-        response = self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": conditional_discount_payload
         })
@@ -530,7 +530,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Conditional discount policy added successfully"
 
         # Purchase a product
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Milk",
             "category": "Dairy",
             "quantity": 5
@@ -578,12 +578,12 @@ class StoreAPITestCase(TransactionTestCase):
             "conditions": conditions
         }
 
-        self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_discount_payload
         })
 
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Milk",
             "category": "Dairy",
             "quantity": 5
@@ -625,12 +625,12 @@ class StoreAPITestCase(TransactionTestCase):
             "conditions": conditions
         }
 
-        self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_discount_payload
         })
 
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Milk",
             "category": "Dairy",
             "quantity": 5
@@ -678,12 +678,12 @@ class StoreAPITestCase(TransactionTestCase):
             "conditions": conditions
         }
 
-        self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_discount_payload
         })
 
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Bun",
             "category": "Pastry",
             "quantity": 5
@@ -731,12 +731,12 @@ class StoreAPITestCase(TransactionTestCase):
             "conditions": conditions
         }
 
-        self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_discount_payload
         })
 
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Bun",
             "category": "Pastry",
             "quantity": 5
@@ -784,12 +784,12 @@ class StoreAPITestCase(TransactionTestCase):
             "conditions": conditions
         }
 
-        self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_discount_payload
         })
 
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Cottage Cheese",
             "category": "Dairy",
             "quantity": 3
@@ -837,12 +837,12 @@ class StoreAPITestCase(TransactionTestCase):
             "conditions": conditions
         }
 
-        self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_discount_payload
         })
 
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Cottage Cheese",
             "category": "Dairy",
             "quantity": 2
@@ -883,12 +883,12 @@ class StoreAPITestCase(TransactionTestCase):
             "conditions": conditions
         }
 
-        self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_discount_payload
         })
 
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Milk",
             "category": "Dairy",
             "quantity": 5
@@ -917,17 +917,17 @@ class StoreAPITestCase(TransactionTestCase):
             "applicable_categories": ["all"]
         }
 
-        self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": simple_discount_payload
         })
 
-        self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": simple_discount_payload2
         })
 
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Milk",
             "category": "Dairy",
             "quantity": 5
@@ -946,13 +946,13 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the simple discount policy
-        response = self.client.post(f"/stores/{self.store_id}/add_discount_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": simple_discount_payload
         })
 
         #remove
-        response = self.client.delete(f"/stores/{self.store_id}/remove_discount_policy", json={
+        response = self.client.delete(f"/{self.store_id}/remove_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"store_id": self.store_id, "discount_id": 1}
         })
@@ -962,7 +962,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json().get("message") == "Discount policy removed successfully"
 
         #check if the discount policy is removed
-        response = self.client.get(f"/stores/{self.store_id}/get_discount_policies", json={
+        response = self.client.get(f"/{self.store_id}/get_discount_policies", json={
             "user_id": self.user_id,
             "store_id": self.store_id
         })
@@ -973,7 +973,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert len(policies) == 0
 
         #try to buy
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Milk",
             "category": "Dairy",
             "quantity": 5
@@ -998,7 +998,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the simple purchase policy
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": purchase_policy_payload
         })
@@ -1008,7 +1008,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Simple purchase policy added successfully"
 
         # Get the purchase policies to verify the added purchase policy
-        response = self.client.get(f"/stores/{self.store_id}/get_purchase_policies", json={
+        response = self.client.get(f"/{self.store_id}/get_purchase_policies", json={
             "user_id": self.user_id,
             "store_id": self.store_id
         })
@@ -1031,7 +1031,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the simple purchase policy
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": purchase_policy_payload
         })
@@ -1041,7 +1041,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Simple purchase policy added successfully"
 
         # Get the purchase policies to verify the added purchase policy
-        response = self.client.get(f"/stores/{self.store_id}/get_purchase_policies", json={
+        response = self.client.get(f"/{self.store_id}/get_purchase_policies", json={
             "user_id": self.user_id,
             "store_id": self.store_id
         })
@@ -1088,7 +1088,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the composite purchase policy
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_purchase_policy_payload
         })
@@ -1098,7 +1098,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Composite purchase policy added successfully"
 
         # Get the purchase policies to verify the added purchase policy
-        response = self.client.get(f"/stores/{self.store_id}/get_purchase_policies", json={
+        response = self.client.get(f"/{self.store_id}/get_purchase_policies", json={
             "user_id": self.user_id,
             "store_id": self.store_id
         })
@@ -1162,7 +1162,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the conditional purchase policy
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": conditional_purchase_policy_payload
         })
@@ -1172,7 +1172,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Conditional purchase policy added successfully"
 
         # Get the purchase policies to verify the added purchase policy
-        response = self.client.get(f"/stores/{self.store_id}/get_purchase_policies", json={
+        response = self.client.get(f"/{self.store_id}/get_purchase_policies", json={
             "user_id": self.user_id,
             "store_id": self.store_id
         })
@@ -1195,7 +1195,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the simple purchase policy
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": purchase_policy_payload
         })
@@ -1205,7 +1205,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Simple purchase policy added successfully"
 
         # Purchase a product
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Tomato",
             "category": "Vegetables",
             "quantity": 6
@@ -1229,7 +1229,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the simple purchase policy
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": purchase_policy_payload
         })
@@ -1239,7 +1239,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Simple purchase policy added successfully"
 
         # Purchase a product
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Tomato",
             "category": "Vegetables",
             "quantity": 5
@@ -1284,7 +1284,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the conditional purchase policy
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": conditional_purchase_policy_payload
         })
@@ -1294,7 +1294,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Conditional purchase policy added successfully"
 
         # Purchase a product
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Tomato",
             "category": "Vegetables",
             "quantity": 5
@@ -1343,7 +1343,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the conditional purchase policy
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": conditional_purchase_policy_payload
         })
@@ -1353,7 +1353,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Conditional purchase policy added successfully"
 
         # Purchase a product
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Tomato",
             "category": "Vegetables",
             "quantity": 5
@@ -1400,7 +1400,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the composite purchase policy
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_purchase_policy_payload
         })
@@ -1410,7 +1410,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Composite purchase policy added successfully"
 
         # Purchase a product
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Tomato",
             "category": "Vegetables",
             "quantity": 5
@@ -1462,7 +1462,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the composite purchase policy
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_purchase_policy_payload
         })
@@ -1472,7 +1472,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Composite purchase policy added successfully"
 
         # Purchase a product
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Tomato",
             "category": "Vegetables",
             "quantity": 5
@@ -1541,7 +1541,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the conditional purchase policy
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": conditional_purchase_policy_payload
         })
@@ -1551,7 +1551,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Conditional purchase policy added successfully"
 
         # Purchase a product
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Tomato",
             "category": "Vegetables",
             "quantity": 5
@@ -1618,7 +1618,7 @@ class StoreAPITestCase(TransactionTestCase):
         }
 
         # Add the conditional purchase policy
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": conditional_purchase_policy_payload
         })
@@ -1628,7 +1628,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.json() == "Conditional purchase policy added successfully"
 
         # Purchase a product
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Tomato",
             "category": "Vegetables",
             "quantity": 5
@@ -1670,7 +1670,7 @@ class StoreAPITestCase(TransactionTestCase):
             "restriction": simple_condition2
         }
 
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": conditional_purchase_policy_payload
         })
@@ -1678,7 +1678,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.status_code == 200
         assert response.json() == "Conditional purchase policy added successfully"
 
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Tomato",
             "category": "Vegetable",
             "quantity": 5
@@ -1719,7 +1719,7 @@ class StoreAPITestCase(TransactionTestCase):
             "restriction": simple_condition2
         }
 
-        response = self.client.post(f"/stores/{self.store_id}/add_purchase_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": conditional_purchase_policy_payload
         })
@@ -1727,7 +1727,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.status_code == 200
         assert response.json() == "Conditional purchase policy added successfully"
 
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Tomato",
             "category": "Vegetable",
             "quantity": 5
@@ -1741,39 +1741,133 @@ class StoreAPITestCase(TransactionTestCase):
         assert response.status_code == 200
         assert response.json()["total_price"] == 42.0
 
-        # Get the discount policies to verify the added discount
+    def test_remove_purchase_policy_valid_user(self):
+        condition = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+        purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": condition
+        }
 
-    # def test_get_discount_policies(self):
-    #     response = self.client.get(f'/stores/{self.store_id}/get_discount_policies', json={
-    #         "user_id": self.user_id, "store_id": self.store_id
-    #     })
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(len(response.json()), 1)
+        # Add the simple purchase policy
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": purchase_policy_payload
+        })
 
-    # def test_add_simple_discount_policy(self):
-    #     response = self.client.post("/stores/{store_id}/add_discount_policy", json={
-    #         "role": {"user_id": self.user_id, "store_id": self.store_id},
-    #         "payload": {"min_items": 5, "min_price": 500}
-    #     })
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(response.json(), {"message": "Discount policy added successfully"})
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Simple purchase policy added successfully"
+
+        # Get the purchase policies to verify the added purchase policy
+        response = self.client.get(f"/{self.store_id}/get_purchase_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
+
+        # Verify the response status code
+        assert response.status_code == 200
+        policies = response.json()
+        assert len(policies) == 1
+
+        # Remove the purchase policy
+        response = self.client.delete(f"/{self.store_id}/remove_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": {"store_id": self.store_id, "policy_id": 1}
+        })
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json().get("message") == "Purchase policy removed successfully"
+
+        # Get the purchase policies to verify the removed purchase policy
+        response = self.client.get(f"/{self.store_id}/get_purchase_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
+
+        # Verify the response status code
+        assert response.status_code == 200
+        policies = response.json()
+        assert len(policies) == 0
+
+    def test_remove_purchase_policy_invalid_user(self):
+        condition = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5
+        }
+        purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": condition
+        }
+
+        # Add the simple purchase policy
+        response = self.client.post(f"/{self.store_id}/add_purchase_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": purchase_policy_payload
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Simple purchase policy added successfully"
+
+        # Get the purchase policies to verify the added purchase policy
+        response = self.client.get(f"/{self.store_id}/get_purchase_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
+
+        # Verify the response status code
+        assert response.status_code == 200
+        policies = response.json()
+        assert len(policies) == 1
+
+        # Remove the purchase policy
+        response = self.client.delete(f"/{self.store_id}/remove_purchase_policy", json={
+            "role": {"user_id": 30, "store_id": self.store_id},
+            "payload": {"store_id": self.store_id, "policy_id": 1}
+        })
+
+        # Verify the response status code and message
+        assert response.status_code == 403
+        assert response.json().get("detail") == "User is not an owner or manager of the store"
+
+        # Get the purchase policies to verify the removed purchase policy
+        response = self.client.get(f"/{self.store_id}/get_purchase_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
+
+        # Verify the response status code
+        assert response.status_code == 200
+        policies = response.json()
+        assert len(policies) == 1
+
+
 
     def test_add_product_with_invalid_data(self):
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Check false", "quantity": -5, "initial_price": -50, "category": "New Category"}
         })
         self.assertEqual(response.status_code, 400)
 
     def test_manager_without_permissions_add_product(self):
-        response = self.client.post("/stores/{store_id}/assign_manager", json={
+        response = self.client.post("/{store_id}/assign_manager", json={
             "user_id": 4, "store_id": self.store_id, "assigned_by": self.owner2_id
         })
-        self.client.post("/stores/{store_id}/change_manager_permissions?assigning_owner_id=2", json={
+        self.client.post("/{store_id}/change_manager_permissions?assigning_owner_id=2", json={
             "manager": {"user_id": 4, "store_id": self.store_id},
             "payload": {"can_add_product": False, "can_edit_product": False, "can_delete_product": False}
         })
-        response = self.client.post("/stores/{store_id}/add_product", json={
+        response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": 4, "store_id": self.store_id},
             "payload": {"name": "New Product", "quantity": 5, "initial_price": 50, "category": "New Category"}
         })
@@ -1782,38 +1876,38 @@ class StoreAPITestCase(TransactionTestCase):
     def test_remove_owner(self):
         self.owner3_id = 10
         self.manager2_id = 11
-        # response = self.client.post("/stores/{store_id}/assign_owner", json={
+        # response = self.client.post("/{store_id}/assign_owner", json={
         #     "user_id": self.owner3_id, "store_id": self.store_id, "assigned_by": self.user_id
         # })
-        # response = self.client.post("/stores/{store_id}/assign_manager", json={
+        # response = self.client.post("/{store_id}/assign_manager", json={
         #                  "user_id": self.manager2_id, "store_id": self.store_id, "assigned_by": self.owner3_id
         # })
-        response = self.client.delete("/stores/{store_id}/remove_owner", json={
+        response = self.client.delete("/{store_id}/remove_owner", json={
             "user_id": self.owner2_id, "store_id": self.store_id, "removed_by": self.user_id
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Owner removed successfully"})
-        response = self.client.get(f'/stores/{self.store_id}/get_managers', json={
+        response = self.client.get(f'/{self.store_id}/get_managers', json={
             "user_id": self.user_id, "store_id": self.store_id
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 0)  #manager should have been removed because owner is removed
 
     def test_remove_non_existent_product(self):
-        response = self.client.delete("/stores/{store_id}/remove_product?product_name=Non Existent Product", json={
+        response = self.client.delete("/{store_id}/remove_product?product_name=Non Existent Product", json={
             "user_id": self.user_id, "store_id": self.store_id
         })
         self.assertEqual(response.status_code, 404)
 
     def test_edit_non_existent_product(self):
-        response = self.client.put("/stores/{store_id}/edit_product", json={
+        response = self.client.put("/{store_id}/edit_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": {"name": "Non Existent Product", "quantity": 5, "initial_price": 50, "category": "New Category"}
         })
         self.assertEqual(response.status_code, 404)
 
     def test_purchase_product_with_insufficient_quantity(self):
-        response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
+        response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
             "product_name": "Test Product",
             "quantity": 100,
             "category": "Test Category"
@@ -1822,60 +1916,92 @@ class StoreAPITestCase(TransactionTestCase):
         self.assertEqual(response.json(), {"detail": "Insufficient quantity of Test Product in store"})
 
     def test_concurrent_product_purchase(self):
-        # Create a second user
-        self.client.post("/stores/{store_id}/add_product", json={
-            "role": {"user_id": self.owner2_id, "store_id": self.store_id},
-            "payload": {"name": "Test Product 2", "quantity": 1, "initial_price": 100, "category": "Test Category"}})
+        for i in range(5): #test in loop?
+            self.client.post("/{store_id}/add_product", json={
+                "role": {"user_id": self.owner2_id, "store_id": self.store_id},
+                "payload": {"name": "Test Product 2", "quantity": 1, "initial_price": 100, "category": "Test Category"}})
 
-        def purchase_product(queue):
-            response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
-                "product_name": "Test Product 2",
-                "quantity": 1,
-                "category": "Test Category"
-            }])
-            queue.put(response)  # Put response in the queue
+            def purchase_product(queue):
+                response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
+                    "product_name": "Test Product 2",
+                    "quantity": 1,
+                    "category": "Test Category"
+                }])
+                queue.put(response)  # Put response in the queue
 
-        # Create a queue to store responses
-        response_queue = queue.Queue()
+            # Create a queue to store responses
+            response_queue = queue.Queue()
 
-        # Create threads for each request
-        thread1 = threading.Thread(target=purchase_product, args=(response_queue,))
-        thread2 = threading.Thread(target=purchase_product, args=(response_queue,))
+            # Create threads for each request
+            thread1 = threading.Thread(target=purchase_product, args=(response_queue,))
+            thread2 = threading.Thread(target=purchase_product, args=(response_queue,))
 
-        # Start both threads
-        thread1.start()
-        thread2.start()
+            # Start both threads
+            thread1.start()
+            thread2.start()
 
-        # Wait for both threads to finish
-        thread1.join()
-        thread2.join()
+            # Wait for both threads to finish
+            thread1.join()
+            thread2.join()
 
-        # Get responses from the queue
-        response1 = response_queue.get()
-        response2 = response_queue.get()
+            # Get responses from the queue
+            response1 = response_queue.get()
+            response2 = response_queue.get()
 
-        # One of the requests should fail (return 404)
-        self.assertTrue(response1.status_code == 404 or response2.status_code == 404) and self.assertTrue(
-            response1.status_code == 200 or response2.status_code == 200)
+            # One of the requests should fail (return 404)
+            self.assertTrue(response1.status_code == 404 or response2.status_code == 404) and self.assertTrue(
+                response1.status_code == 200 or response2.status_code == 200)
 
     def test_concurrent_product_deletion_and_purchase(self):
-        response = self.client.post("/stores/{store_id}/add_product", json={
-            "role": {"user_id": self.owner2_id, "store_id": self.store_id},
-            "payload": {"name": "Test Product 3", "quantity": 1, "initial_price": 100, "category": "Test Category"}})
+        for i in range(5):
+            response = self.client.post("/{store_id}/add_product", json={
+                "role": {"user_id": self.owner2_id, "store_id": self.store_id},
+                "payload": {"name": "Test Product 3", "quantity": 1, "initial_price": 100, "category": "Test Category"}})
 
-        # Store owner deletes a product
-        delete_response = self.client.delete("/stores/{store_id}/remove_product?product_name=Test Product 3", json={
-            "user_id": self.user_id, "store_id": self.store_id
+            def delete_product(queue):
+                response = self.client.delete("/{store_id}/remove_product?product_name=Test Product 3", json={
+                    "user_id": self.user_id, "store_id": self.store_id
+                })
+                queue.put(response)
+
+            def purchase_product(queue):
+                response = self.client.put(f'/{self.store_id}/purchase_product', json=[{
+                    "product_name": "Test Product 3",
+                    "quantity": 1,
+                    "category": "Test Category"
+                }])
+                queue.put(response)
+
+            # Create a queue to store responses
+            response_queue = queue.Queue()
+
+            # Create threads for each request
+            thread1 = threading.Thread(target=delete_product, args=(response_queue,))
+            thread2 = threading.Thread(target=purchase_product, args=(response_queue,))
+
+            # Start both threads
+            thread1.start()
+            thread2.start()
+
+            # Wait for both threads to finish
+            thread1.join()
+            thread2.join()
+
+            # Get responses from the queue
+            response1 = response_queue.get()
+            response2 = response_queue.get()
+
+            # One of the requests should fail (return 404)
+            self.assertTrue(response1.status_code == 404 or response2.status_code == 404) and self.assertTrue(
+                response1.status_code == 200 or response2.status_code == 200)
+
+
+    def test_empty_search(self):
+        response = self.client.get(f'/search', json={
+            "search_query": {}, "filter_query": {}
         })
-        # At the same time, another user tries to buy the product
-        purchase_response = self.client.put(f'/stores/{self.store_id}/purchase_product', json=[{
-            "product_name": "Test Product 3",
-            "quantity": 1,
-            "category": "Test Category"
-        }])
-
-        # The purchase request should fail
-        self.assertEqual(purchase_response.status_code, 404)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 14)
 
     def test_search_product_in_store_no_filter(self):
         search = {
@@ -1885,7 +2011,7 @@ class StoreAPITestCase(TransactionTestCase):
 
         filter = {}
 
-        response = self.client.get(f'/stores/{self.store_id}/search', json={
+        response = self.client.get(f'/search', json={
             "search_query": search, "filter_query": filter
         })
 
@@ -1903,7 +2029,7 @@ class StoreAPITestCase(TransactionTestCase):
             "max_price": 3
         }
 
-        response = self.client.get(f'/stores/{self.store_id}/search', json={
+        response = self.client.get(f'/search', json={
             "search_query": search, "filter_query": filter
         })
 
@@ -1917,7 +2043,7 @@ class StoreAPITestCase(TransactionTestCase):
 
         filter = {}
 
-        response = self.client.get(f'/stores/{self.store_id}/search', json={
+        response = self.client.get(f'/search', json={
             "search_query": search, "filter_query": filter
         })
 
@@ -1934,7 +2060,7 @@ class StoreAPITestCase(TransactionTestCase):
             "max_price": 5
         }
 
-        response = self.client.get(f'/stores/{self.store_id}/search', json={
+        response = self.client.get(f'/search', json={
             "search_query": search, "filter_query": filter
         })
 
@@ -1942,47 +2068,48 @@ class StoreAPITestCase(TransactionTestCase):
         self.assertEqual(len(response.json()), 1)
 
     def test_concurrent_manager_appointment(self):
-        self.owner3_id = 100
+        for i in range(5):
+            self.owner3_id = 100 + i
 
-        def make_request(queue, user_id, store_id, assigned_by):
-            response = self.client.post("/stores/{store_id}/assign_owner", json={
-                "user_id": user_id,
-                "store_id": self.store_id,
-                "assigned_by": assigned_by
-            })
-            queue.put(response)  # Put response in the queue
+            def make_request(queue, user_id, store_id, assigned_by):
+                response = self.client.post("/{store_id}/assign_owner", json={
+                    "user_id": user_id,
+                    "store_id": self.store_id,
+                    "assigned_by": assigned_by
+                })
+                queue.put(response)  # Put response in the queue
 
-        # Create a queue to store responses
-        response_queue = queue.Queue()
+            # Create a queue to store responses
+            response_queue = queue.Queue()
 
-        # Create threads for each request
-        thread1 = threading.Thread(target=make_request,
-                                   args=(response_queue, self.owner3_id, self.store_id, self.user_id))
-        thread2 = threading.Thread(target=make_request,
-                                   args=(response_queue, self.owner3_id, self.store_id, self.user_id))
+            # Create threads for each request
+            thread1 = threading.Thread(target=make_request,
+                                       args=(response_queue, self.owner3_id, self.store_id, self.user_id))
+            thread2 = threading.Thread(target=make_request,
+                                       args=(response_queue, self.owner3_id, self.store_id, self.user_id))
 
-        # Start both threads
-        thread1.start()
-        thread2.start()
+            # Start both threads
+            thread1.start()
+            thread2.start()
 
-        # Wait for both threads to finish
-        thread1.join()
-        thread2.join()
+            # Wait for both threads to finish
+            thread1.join()
+            thread2.join()
 
-        # Get responses from the queue
-        response1 = response_queue.get()
-        response2 = response_queue.get()
+            # Get responses from the queue
+            response1 = response_queue.get()
+            response2 = response_queue.get()
 
 
-        # Assert that at least one response has a conflict (400)
-        self.assertTrue(response1.status_code == 400 or response2.status_code == 400) and self.assertTrue(
-            response1.status_code == 200 or response2.status_code == 200)
+            # Assert that at least one response has a conflict (400)
+            self.assertTrue(response1.status_code == 400 or response2.status_code == 400) and self.assertTrue(
+                response1.status_code == 200 or response2.status_code == 200)
 
     def test_fake_data(self):
-        response = self.client.put(f'/stores/{self.store_id}/create_fake_data')
+        response = self.client.post(f'/create_fake_data')
         assert response.status_code == 200
     def test_make_bid(self):
-        response = self.client.post("/stores/{store_id}/make_bid", json={
+        response = self.client.post("/{store_id}/make_bid", json={
             "user_id": 100,
             "store_id": self.store_id,
             "product_name": "Bread Loaf",
@@ -1993,7 +2120,7 @@ class StoreAPITestCase(TransactionTestCase):
         self.assertEqual(response.json(), {"message": "Bid added successfully"})
 
     def test_get_bids(self):
-        response = self.client.post("/stores/{store_id}/make_bid", json={
+        response = self.client.post("/{store_id}/make_bid", json={
             "user_id": 100,
             "store_id": self.store_id,
             "product_name": "Bread Loaf",
@@ -2007,12 +2134,12 @@ class StoreAPITestCase(TransactionTestCase):
             "store_id": self.store_id
 
         }
-        response = self.client.get(f'/stores/{self.store_id}/get_bids', json=role_payload)
+        response = self.client.get(f'/{self.store_id}/get_bids', json=role_payload)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
 
     def test_decide_on_bid(self):
-        response = self.client.post("/stores/{store_id}/make_bid", json={
+        response = self.client.post("/{store_id}/make_bid", json={
             "user_id": 100,
             "store_id": self.store_id,
             "product_name": "Bread Loaf",
@@ -2029,7 +2156,7 @@ class StoreAPITestCase(TransactionTestCase):
             "decision": 1
         }
 
-        response = self.client.put(f'/stores/{self.store_id}/decide_on_bid', json={
+        response = self.client.put(f'/{self.store_id}/decide_on_bid', json={
             "role": role_payload,
             "payload": bid_payload
         })
@@ -2037,7 +2164,7 @@ class StoreAPITestCase(TransactionTestCase):
         self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
 
     def test_make_purchase_on_bid_not_accepted_by_all(self):
-        response = self.client.post("/stores/{store_id}/make_bid", json={
+        response = self.client.post("/{store_id}/make_bid", json={
             "user_id": 100,
             "store_id": self.store_id,
             "product_name": "Bread Loaf",
@@ -2054,20 +2181,24 @@ class StoreAPITestCase(TransactionTestCase):
             "decision": 1
         }
 
-        response = self.client.put(f'/stores/{self.store_id}/decide_on_bid', json={
+        response = self.client.put(f'/{self.store_id}/decide_on_bid', json={
             "role": role_payload,
             "payload": bid_payload
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
 
+        purchase_bid_payload = {
+            "store_id": self.store_id,
+            "bid_id": 1
+        }
 
-        response = self.client.put(f'/stores/{self.store_id}/make_purchase_on_bid?bid_id=1')
+        response = self.client.put(f'/{self.store_id}/make_purchase_on_bid', json=purchase_bid_payload)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json(), {"detail": "Bid has not been accepted by all managers or owners"})
 
     def test_make_purchase_on_bid_accepted_by_all(self):
-        response = self.client.post("/stores/{store_id}/make_bid", json={
+        response = self.client.post("/{store_id}/make_bid", json={
             "user_id": 100,
             "store_id": self.store_id,
             "product_name": "Bread Loaf",
@@ -2084,7 +2215,7 @@ class StoreAPITestCase(TransactionTestCase):
             "decision": 1
         }
 
-        response = self.client.put(f'/stores/{self.store_id}/decide_on_bid', json={
+        response = self.client.put(f'/{self.store_id}/decide_on_bid', json={
             "role": role_payload,
             "payload": bid_payload
         })
@@ -2100,15 +2231,19 @@ class StoreAPITestCase(TransactionTestCase):
             "decision": 1
         }
 
-        response = self.client.put(f'/stores/{self.store_id}/decide_on_bid', json={
+        response = self.client.put(f'/{self.store_id}/decide_on_bid', json={
             "role": role_payload,
             "payload": bid_payload
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
 
+        purchase_bid_payload = {
+            "store_id": self.store_id,
+            "bid_id": 1
+        }
 
-        response = self.client.put(f'/stores/{self.store_id}/make_purchase_on_bid?bid_id=1')
+        response = self.client.put(f'/{self.store_id}/make_purchase_on_bid', json=purchase_bid_payload)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["price"], 2)
 

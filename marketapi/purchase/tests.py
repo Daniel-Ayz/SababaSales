@@ -17,7 +17,7 @@ class TestPurchase(TransactionTestCase):
 
         self.user_id = 1
         response = self.store_client.post(
-            f"/stores?user_id={self.user_id}",
+            f"/?user_id={self.user_id}",
             json={"name": "Test Store", "description": "Test Description"},
         )
         self.store_id = response.json()["store_id"]
@@ -36,7 +36,7 @@ class TestPurchase(TransactionTestCase):
         # Add product to store
         self.Product_1_Quality = 10
         response = self.store_client.post(
-            "/stores/{store_id}/add_product",
+            "/{store_id}/add_product",
             json={
                 "role": {"user_id": self.user_id, "store_id": self.store_id},
                 "payload": {
@@ -62,7 +62,7 @@ class TestPurchase(TransactionTestCase):
         # Add owner to store
         self.owner2_id = 2
         response = self.store_client.post(
-            "/stores/{store_id}/assign_owner",
+            "/{store_id}/assign_owner",
             json={
                 "user_id": self.owner2_id,
                 "store_id": self.store_id,
@@ -73,7 +73,7 @@ class TestPurchase(TransactionTestCase):
         # Add manager to store
         self.manager_id = 3
         response = self.store_client.post(
-            "/stores/{store_id}/assign_manager",
+            "/{store_id}/assign_manager",
             json={
                 "user_id": self.manager_id,
                 "store_id": self.store_id,
@@ -83,7 +83,7 @@ class TestPurchase(TransactionTestCase):
 
         # Add manager permissions
         response = self.store_client.post(
-            "/stores/{store_id}/change_manager_permissions?assigning_owner_id="
+            "/{store_id}/change_manager_permissions?assigning_owner_id="
             + self.owner2_id.__str__(),
             json={
                 "manager": {"user_id": self.manager_id, "store_id": self.store_id},
@@ -97,7 +97,7 @@ class TestPurchase(TransactionTestCase):
 
         # Set purchase policy
         response = self.store_client.post(
-            "/stores/{store_id}/add_purchase_policy",
+            "/{store_id}/add_purchase_policy",
             json={
                 "role": {"user_id": self.user_id, "store_id": self.store_id},
                 "payload": {"min_items_per_purchase": 1},
