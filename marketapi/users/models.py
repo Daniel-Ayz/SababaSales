@@ -7,7 +7,6 @@ from django.contrib.auth.models import AbstractUser
 class CustomUser(AbstractUser):
     # make address optional
     address = models.CharField(max_length=100, blank=True)
-    online_count = models.IntegerField(default=0)
 
 
 class PaymentInformationUser(models.Model):
