@@ -1110,6 +1110,8 @@ class StoreController:
                         [store_data[store_names[i]]["category"]]
                     ),
                 )
+                discount.applicable_products.set([product])
+                discount.save()
 
         return {"message": "Fake data created successfully"}
 
