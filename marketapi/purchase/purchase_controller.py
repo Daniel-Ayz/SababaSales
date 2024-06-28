@@ -66,7 +66,7 @@ class purchaseController:
                 "baskets": [],
             }
 
-            history_baskets = HistoryBasket.objects.filter(purchase_id=purchase_id)
+            history_baskets = HistoryBasket.objects.filter(purchase=purchase)
             for history_basket in history_baskets:
                 history_basket_schema = {
                     "basket_id": history_basket.basket_id,
@@ -183,7 +183,7 @@ class purchaseController:
                 total_quantity += total_basket_quantity
                 history_basket = HistoryBasket.objects.create(
                     store_id=store_id,
-                    purchase_id=purchase,
+                    purchase=purchase,
                     total_price=response["total_price"],
                     total_quantity=total_basket_quantity,
                     discount=response["original_price"] - response["total_price"],
