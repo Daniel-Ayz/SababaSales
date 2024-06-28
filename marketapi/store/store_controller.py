@@ -68,6 +68,9 @@ from .schemas import (
 router = Router()
 store_lock = hash("store_lock")
 
+from users.user_controller import UserController
+uc = UserController()
+
 
 def get_list_from_string(conditions):
     jsonDec = json.decoder.JSONDecoder()
@@ -89,6 +92,8 @@ class StoreController:
                     raise HttpError(403, "Store with this name already exists")
                 store = Store.objects.create(**payload.dict(), is_active=True)
                 Owner.objects.create(user_id=user_id, store=store, is_founder=True)
+
+        uc.send_notification(user_id, f"Store {store.name} created successfully")
         return {"store_id": store.id}
 
     def get_stores(self, request):
@@ -122,6 +127,7 @@ class StoreController:
                     store=store,
                     is_founder=False,
                 )
+        uc.send_notification(payload.user_id, f"You have been assigned as an owner of {store.name}")
         return {"message": "Owner assigned successfully"}
 
     def remove_owner(self, request, payload: RemoveOwnerSchemaIn):
@@ -147,6 +153,7 @@ class StoreController:
                     )
 
                 removed_owner.delete()
+        uc.send_notification(payload.user_id, f"You have been removed as an owner of {store.name}")
         return {"message": "Owner removed successfully"}
 
     def leave_ownership(self, request, payload: RoleSchemaIn):
@@ -163,6 +170,7 @@ class StoreController:
                     raise HttpError(400, "Founder cannot leave ownership")
 
                 owner.delete()
+        uc.send_notification(payload.user_id, f"You have left ownership of {store.name}")
         return {"message": "Ownership left successfully"}
 
     def assign_manager(self, request, payload: ManagerSchemaIn):
@@ -196,7 +204,7 @@ class StoreController:
                 manager = Manager.objects.create(
                     user_id=payload.user_id, assigned_by=assigning_owner, store=store
                 )
-
+        uc.send_notification(payload.user_id, f"You have been assigned as a manager of {store.name}")
         return {"message": "Manager assigned successfully"}
 
     def remove_manager(self, request, payload: RemoveManagerSchemaIn):
@@ -222,6 +230,7 @@ class StoreController:
                     )
 
                 removed_manager.delete()
+                uc.send_notification(payload.user_id, f"You have been removed as a manager of {store.name}")
                 return {"message": "Manager removed successfully"}
 
     def assign_manager_permissions(
@@ -251,6 +260,7 @@ class StoreController:
                 except Exception as e:
                     raise HttpError(500, f"Error assigning permissions: {str(e)}")
 
+        uc.send_notification(manager.user_id, f"Your permissions have been updated in {store.name}")
         return {"message": "Manager permissions assigned successfully"}
 
     def get_manager_permissions(self, request, role: RoleSchemaIn, manager_id: int):
@@ -281,6 +291,10 @@ class StoreController:
 
                 store.is_active = False
                 store.save()
+                store_owners = self.get_owners(request, payload)
+                for owner in store_owners:
+                    uc.send_notification(owner.user_id, f"{store.name} has been closed")
+
         return {"message": "Store closed successfully"}
 
     def reopen_store(self, request, payload: RoleSchemaIn):
@@ -298,6 +312,9 @@ class StoreController:
 
                 store.is_active = True
                 store.save()
+                store_owners = self.get_owners(request, payload)
+                for owner in store_owners:
+                    uc.send_notification(owner.user_id, f"{store.name} has been reopened")
 
         return {"message": "Store reopened successfully"}
 
