@@ -78,7 +78,7 @@ class purchaseController:
                 }
 
                 history_basket_products = HistoryBasketProduct.objects.filter(
-                    history_basket_id=history_basket.basket_id
+                    history_basket=history_basket
                 )
                 for history_basket_product in history_basket_products:
                     history_basket_product_schema = {
