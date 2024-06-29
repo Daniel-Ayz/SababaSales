@@ -240,6 +240,12 @@ class CompositeDiscountSchemaOut(DiscountBaseSchemaOut):
     combine_function: str
 
 
+class GetConditionsSchemaIn(Schema):
+    store_id: int
+    to_discount: bool
+    target_id: int
+
+
 class SearchSchema(Schema):
     product_name: Optional[str] = None
     category: Optional[str] = None
@@ -274,6 +280,7 @@ class BidSchemaOut(Schema):
 class DecisionBidSchemaIn(Schema):  #manager makes a decision to accept or reject a bid
     bid_id: int
     decision: bool
+
 
 class MakePurchaseOnBidSchemaIn(Schema):
     bid_id: int
