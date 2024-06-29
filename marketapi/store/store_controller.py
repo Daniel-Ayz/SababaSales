@@ -1151,6 +1151,51 @@ class StoreController:
             )
             self.add_conditional_discount_policy(payload)
 
+            # Create simple purchase policies
+            condition1 = {
+                "applies_to": "product",
+                "name_of_apply": product.name,
+                "condition": "at_most",
+                "value": 5,
+            }
+            purchase_policy_payload1 = {
+                "store_id": stores[i].id,
+                "is_root": True,
+                "condition": condition1,
+            }
+            simple_policy_schema1 = SimplePurchasePolicySchemaIn(
+                **purchase_policy_payload1
+            )
+            self.add_simple_purchase_policy(simple_policy_schema1)
+
+            condition2 = {
+                "applies_to": "time",
+                "name_of_apply": "",
+                "condition": "at_most",
+                "value": 23,
+            }
+            purchase_policy_payload2 = {
+                "store_id": stores[i].id,
+                "is_root": True,
+                "condition": condition2,
+            }
+            simple_policy_schema2 = SimplePurchasePolicySchemaIn(
+                **purchase_policy_payload2
+            )
+            self.add_simple_purchase_policy(simple_policy_schema2)
+
+            # Create a composite purchase policy
+            composite_policy_payload = {
+                "store_id": stores[i].id,
+                "is_root": True,
+                "policies": [purchase_policy_payload1, purchase_policy_payload2],
+                "combine_function": "logical_and",
+            }
+            composite_policy_schema = CompositePurchasePolicySchemaIn(
+                **composite_policy_payload
+            )
+            self.add_composite_purchase_policy(composite_policy_schema)
+
         return {"message": "Fake data created successfully"}
 
     def make_bid(self, request, payload: BidSchemaIn):
