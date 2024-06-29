@@ -9,10 +9,20 @@ from .schemas import *
 from django.contrib.auth.hashers import make_password
 from ninja.errors import *
 from datetime import datetime
+from .consumers import (
+    reset_all_online_count,
+    send_message_to_user,
+    _mark_notification_as_seen,
+)
 
 
 class UserController:
     valid_id = lambda user, id: user.id == id
+
+    def __init__(self):
+        # Doesn't work - This is called also on migrations
+        # reset_all_online_count()
+        pass
 
     def _get_cart(self, request):
         if request.user.is_authenticated:
@@ -133,7 +143,10 @@ class UserController:
             sent_by=user.username, message=payload.msg, user=target_user
         )
         notification.save()
-        print(notification)
+
+        if target_user.online_count > 0:
+            send_message_to_user(target_user_id, payload.msg)
+            _mark_notification_as_seen(notification.id)
 
         return notification
 
