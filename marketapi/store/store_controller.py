@@ -846,6 +846,12 @@ class StoreController:
                     else:
                         product.save()
 
+                managing_lock = hash(f"{store.pk}_managing_lock")
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock])
+                owners = Owner.objects.filter(store=store)
+                for owner in owners:
+                    uc.send_notification(owner.user_id, f"{total_items} products have been purchased from {store.name}")
+
         return {
             "message": "Products purchased successfully",
             "total_price": total_price,
@@ -1142,7 +1148,17 @@ class StoreController:
                     user_id=payload.user_id,
                     quantity=payload.quantity,
                 )
-                # TODO: notify all managers that a bid has been made on a product
+                managing_lock = hash(f"{store.pk}_managing_lock")
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock])
+                owners = Owner.objects.filter(store=store)
+                managers_with_permission = self.get_managers_with_permissions(
+                    store.pk, "can_decide_on_bid"
+                )
+                for owner in owners:
+                    uc.send_notification(owner.user_id, f"A bid has been made on {product.name} in {store.name}")
+                for manager in managers_with_permission:
+                    uc.send_notification(manager.user_id, f"A bid has been made on {product.name} in {store.name}")
+
         return {"message": "Bid added successfully"}
 
     def decide_on_bid(self, request, role: RoleSchemaIn, payload: DecisionBidSchemaIn):
@@ -1159,7 +1175,7 @@ class StoreController:
                     "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock]
                 )
                 managers_with_permission = self.get_managers_with_permissions(
-                    role, "can_decide_on_bid"
+                    role.store_id, "can_decide_on_bid"
                 )
                 manager = get_object_or_404(Role, user_id=role.user_id, store=bid.store)
                 if manager in bid.accepted_by.all():
@@ -1170,16 +1186,13 @@ class StoreController:
                     bid.accepted_by.add(manager)
                     owners_count = self.get_owners(None, role).count()
                     count_managers_with_permission = len(managers_with_permission)
-                    if (
-                        bid.accepted_by.count()
-                        == owners_count + count_managers_with_permission
-                    ):
+                    if bid.accepted_by.count() == owners_count + count_managers_with_permission:
                         bid.can_purchase = True
                         bid.save()  # Ensure bid is saved after setting can_purchase to True
-                        # TODO: notify user that bid has been accepted
+                        uc.send_notification(bid.user_id, f"Your bid on {bid.product.name} in {bid.store.name} has been accepted, you can now purchase the product")
                 else:
                     bid.delete()
-                    ##TODO: notify user that bid has been rejected
+                    uc.send_notification(bid.user_id, f"Your bid on {bid.product.name} in {bid.store.name} has been rejected")
 
         return {"message": "Bid decision made successfully"}
 
@@ -1216,8 +1229,8 @@ class StoreController:
                 bid.delete()  # delete bid after purchase
         return {"message": "Purchase made successfully", "price": price}
 
-    def get_managers_with_permissions(self, role: RoleSchemaIn, permission: str):
-        store = get_object_or_404(Store, pk=role.store_id)
+    def get_managers_with_permissions(self, store_id: int, permission: str):
+        store = get_object_or_404(Store, pk=store_id)
         managers = Manager.objects.filter(store=store)
         managers_with_permission = []
         for manager in managers:
