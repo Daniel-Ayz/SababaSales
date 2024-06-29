@@ -20,7 +20,9 @@ class UserController:
     valid_id = lambda user, id: user.id == id
 
     def __init__(self):
-        reset_all_online_count()
+        # Doesn't work - This is called also on migrations
+        # reset_all_online_count()
+        pass
 
     def _get_cart(self, request):
         if request.user.is_authenticated:
