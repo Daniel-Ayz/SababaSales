@@ -105,14 +105,12 @@ export default function ManageStore({ params }) {
   };
 
 
-  const addDiscountRule = () => {
-    // Implement the logic for adding discount rule
-    alert('Add discount rule logic to be implemented');
+  const manageDiscountRules = () => {
+    window.location.href = `/manage_stores/${store_id}/discounts`;
   };
 
-  const addPurchaseRule = () => {
-    // Implement the logic for adding discount rule
-    alert('Add discount rule logic to be implemented');
+  const managePurchaseRules = () => {
+    window.location.href = `/manage_stores/${store_id}/purchase_rules`;
   };
 
   const addItem = () => {
@@ -226,20 +224,20 @@ export default function ManageStore({ params }) {
               </DialogContent>
             </Dialog>
 
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Add Discount Rule</h3>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Manage Discount Rules</h3>
             <button
-              onClick={addDiscountRule}
+              onClick={manageDiscountRules}
               className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
-              Add Discount Rule
+              Manage Discount Rules
             </button>
 
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Add Purchase Rule</h3>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Manage Purchase Rules</h3>
             <button
-              onClick={addPurchaseRule}
+              onClick={managePurchaseRules}
               className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
-              Add Purchase Rule
+              Manage Purchase Rules
             </button>
 
             <p className="mt-10 text-center text-sm text-gray-500">

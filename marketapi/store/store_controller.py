@@ -63,6 +63,7 @@ from .schemas import (
     BidSchemaIn,
     DecisionBidSchemaIn,
     MakePurchaseOnBidSchemaIn,
+    ConditionSchema,
 )
 from users.usercontroller import UserController
 
@@ -1067,16 +1068,16 @@ class StoreController:
 
         stores = []
         store_names = list(store_data.keys())
-        for i in range(1, 7):
+        for i in range(len(store_names)):
             stores.append(
                 Store.objects.create(
-                    name=store_names[i - 1],
-                    description=f"This is a fake store {i}",
+                    name=store_names[i],
+                    description=f"This is {store_names[i]} {i}",
                     is_active=True,
                 )
             )
 
-        for i in range(0, 6):
+        for i in range(len(stores)):
             owner = Owner.objects.create(user_id=i, store=stores[i], is_founder=True)
             manager = Manager.objects.create(
                 user_id=2 * len(store_names) - i - 1, store=stores[i], assigned_by=owner
@@ -1099,10 +1100,9 @@ class StoreController:
                     quantity=10,
                     initial_price=100,
                 )
-                # purchase_policy = PurchasePolicy.objects.create(
-                #     store=stores[i], max_items_per_purchase=5, min_items_per_purchase=1
-                # )
-                discount = SimpleDiscount.objects.create(
+
+                # Create a simple discount
+                simple_discount = SimpleDiscount.objects.create(
                     store=stores[i],
                     is_root=True,
                     percentage=10,
@@ -1110,8 +1110,46 @@ class StoreController:
                         [store_data[store_names[i]]["category"]]
                     ),
                 )
-                discount.applicable_products.set([product])
-                discount.save()
+                simple_discount.applicable_products.set([product])
+                simple_discount.save()
+
+                # Create a conditional discount
+                payload_dict = {
+                    "store_id": stores[i].id,
+                    "is_root": True,
+                    "condition": {
+                        "applies_to": "products",
+                        "name_of_apply": store_data[store_names[i]]["products"][j],
+                        "condition": "at_least",
+                        "value": 5,
+                    },
+                    "discount": {
+                        "store_id": stores[i].id,
+                        "is_root": False,
+                        "percentage": 15.0,
+                        "applicable_categories": [
+                            store_data[store_names[i]]["category"]
+                        ],
+                        "applicable_products": [
+                            str(product.id)
+                        ],  # Use the product ID as a string
+                    },
+                }
+
+            condition_schema = ConditionSchema(**payload_dict["condition"])
+            discount_data = payload_dict["discount"]
+            discount_data["applicable_categories"] = json.loads(
+                json.dumps(discount_data["applicable_categories"])
+            )
+            simple_discount_schema = SimpleDiscountSchemaIn(**discount_data)
+
+            payload = ConditionalDiscountSchemaIn(
+                store_id=payload_dict["store_id"],
+                is_root=payload_dict["is_root"],
+                condition=condition_schema,
+                discount=simple_discount_schema,
+            )
+            self.add_conditional_discount_policy(payload)
 
         return {"message": "Fake data created successfully"}
 
