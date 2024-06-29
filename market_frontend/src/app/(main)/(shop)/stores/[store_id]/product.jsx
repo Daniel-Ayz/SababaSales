@@ -5,8 +5,19 @@ import ProductStars from '../../product/productStars'
 import Link from 'next/link'
 
 // Function to generate a random star rating between 1 and 5
-function getRandomRating(id) {
-  return Math.floor(Math.random() * 5) + 1;
+function getRandomRating(name) {
+  // Simple hash function to convert name to a numeric value
+  let hash = 0;
+  if (name === null) {
+    return 1;
+  }
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  // Ensure the result is within 1 to 5
+  const rating = ((hash % 5) + 5) % 5 + 1;
+  return rating;
 }
 
 // Placeholder image URL
@@ -14,7 +25,7 @@ const placeholderImage = "https://tailwindui.com/img/ecommerce-images/shopping-c
 ;
 
 export default function ProductView({ prod ,store_id}) {
-  const randomRating = getRandomRating(prod.id);
+  const randomRating = 2//getRandomRating(prod.name);
 
   return (
     <div className='productPreview'>
