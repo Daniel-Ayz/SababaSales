@@ -9,10 +9,17 @@ from .schemas import *
 from django.contrib.auth.hashers import make_password
 from ninja.errors import *
 from datetime import datetime
-from .consumers import send_message_to_user, _mark_notification_as_seen
+from .consumers import (
+    send_message_to_user,
+    _mark_notification_as_seen,
+    reset_all_online_count,
+)
 
 
 class UserController:
+    def __init__(self):
+        reset_all_online_count()
+
     valid_id = lambda user, id: user.id == id
 
     def _get_cart(self, request):

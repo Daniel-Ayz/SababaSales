@@ -21,9 +21,6 @@ def reset_all_online_count():
     # print("All users online count reset to 0")
 
 
-reset_all_online_count()
-
-
 def _get_unseen_notifications(user_id: int) -> List[NotificationSchema]:
     user = CustomUser.objects.get(id=user_id)
     notifications = Notification.objects.filter(user=user, seen=False)
