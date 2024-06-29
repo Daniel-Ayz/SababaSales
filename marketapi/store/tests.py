@@ -343,7 +343,7 @@ class StoreAPITestCase(TransactionTestCase):
         assert added_policy["store"]["id"] == self.store_id
         assert added_policy["is_root"] is True
 
-    def test_get_conditions(self):
+    def test_get_conditions_composite(self):
         simple_discount_payload = {
             "store_id": self.store_id,
             "is_root": False,
@@ -385,6 +385,37 @@ class StoreAPITestCase(TransactionTestCase):
         self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_discount_payload
+        })
+
+        response = self.client.get(f"/{self.store_id}/get_discount_policies", json={
+            "user_id": self.user_id,
+            "store_id": self.store_id
+        })
+
+        discounts = response.json()[0]
+        discount_id = discounts["id"]
+
+        response = self.client.get(f"/{self.store_id}/get_conditions", json={
+            "store_id": self.store_id,
+            "target_id": discount_id,
+            "to_discount": True
+        })
+
+        conditions = response.json()
+        print(conditions)
+        assert response.status_code == 200
+
+    def test_get_conditions_simple(self):
+        simple_discount_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "percentage": 15.0,
+            "applicable_products": ["Milk"]
+        }
+
+        self.client.post(f"/{self.store_id}/add_discount_policy", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": simple_discount_payload
         })
 
         response = self.client.get(f"/{self.store_id}/get_discount_policies", json={
