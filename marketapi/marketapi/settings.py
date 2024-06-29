@@ -31,7 +31,6 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    "channels",
     "users",
     "corsheaders",
     "django.contrib.admin",
@@ -43,10 +42,6 @@ INSTALLED_APPS = [
     "store",
     "purchase",
 ]
-
-ASGI_APPLICATION = "marketapi.asgi.application"
-
-CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}
 
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
