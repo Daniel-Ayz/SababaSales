@@ -240,6 +240,11 @@ def get_conditions(request, payload: GetConditionsSchemaIn):
     return sc.get_conditions(request, payload)
 
 
+@router.post("/{store_id}/get_combine_function")
+def get_combine_funtion(request, payload: GetConditionsSchemaIn):
+    return sc.get_combine_function_for_policy(request, payload)
+
+
 @router.post("/{store_id}/add_product")
 def add_product(request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
     return sc.add_product(request, role, payload)
