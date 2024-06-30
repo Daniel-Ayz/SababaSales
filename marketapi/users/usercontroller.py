@@ -126,7 +126,10 @@ class UserController:
         notifications = Notification.objects.filter(user=user)
         return notifications
 
-    def send_notification(self, request, target_user_id, payload) -> NotificationSchema:
+    # Send notifications from an API call
+    def _send_notification(
+        self, request, target_user_id, payload
+    ) -> NotificationSchema:
         """
         sends a notification from current session user to the target user
 
@@ -146,6 +149,24 @@ class UserController:
             _mark_notification_as_seen(notification.id)
 
         return notification
+
+    # Send notifications from a System (Without API)
+    @staticmethod
+    def send_notification(target_user_id, message):
+        try:
+            target_user = CustomUser.objects.get(id=target_user_id)
+        except CustomUser.DoesNotExist as e:
+            return False
+        notification = Notification.objects.create(
+            sent_by="System", message=message, user=target_user
+        )
+        notification.save()
+
+        if target_user.online_count > 0:
+            send_message_to_user(target_user_id, message)
+            _mark_notification_as_seen(notification.id)
+
+        return True
 
     def get_user_cart(self, request) -> CartSchema:
         cart = self._get_cart(request)
