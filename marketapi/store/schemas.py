@@ -210,6 +210,7 @@ class StoreProductSchemaIn(Schema):
     initial_price: float
     quantity: int
     category: str
+    image_link: str
 
 
 class PurchaseStoreProductSchema(Schema):

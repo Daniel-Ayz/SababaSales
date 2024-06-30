@@ -37,65 +37,65 @@ class StoreAPITestCase(TransactionTestCase):
         # Add product to store
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Milk", "quantity": 100, "initial_price": 7, "category": "Dairy"}
+            "payload": {"name": "Milk", "quantity": 100, "initial_price": 7, "category": "Dairy", "image_link": "check"}
         })
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Cheese", "quantity": 50, "initial_price": 15, "category": "Dairy"}
+            "payload": {"name": "Cheese", "quantity": 50, "initial_price": 15, "category": "Dairy", "image_link": "check"}
         })
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Bread Loaf", "quantity": 100, "initial_price": 5, "category": "Pastry"}
+            "payload": {"name": "Bread Loaf", "quantity": 100, "initial_price": 5, "category": "Pastry", "image_link": "check"}
         })
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Bun", "quantity": 100, "initial_price": 2, "category": "Pastry"}
+            "payload": {"name": "Bun", "quantity": 100, "initial_price": 2, "category": "Pastry", "image_link": "check"}
         })
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Cottage Cheese", "quantity": 100, "initial_price": 3, "category": "Dairy"}
+            "payload": {"name": "Cottage Cheese", "quantity": 100, "initial_price": 3, "category": "Dairy", "image_link": "check"}
         })
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Yogurt", "quantity": 100, "initial_price": 4, "category": "Dairy"}
+            "payload": {"name": "Yogurt", "quantity": 100, "initial_price": 4, "category": "Dairy", "image_link": "check"}
         })
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Pasta", "quantity": 100, "initial_price": 10, "category": "Pasta"}
+            "payload": {"name": "Pasta", "quantity": 100, "initial_price": 10, "category": "Pasta", "image_link": "check"}
         })
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Tomato", "quantity": 100, "initial_price": 7, "category": "Vegetable"}
-        })
-
-        response = self.client.post("/{store_id}/add_product", json={
-            "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Eggplant", "quantity": 100, "initial_price": 7, "category": "Vegetable"}
+            "payload": {"name": "Tomato", "quantity": 100, "initial_price": 7, "category": "Vegetable", "image_link": "check"}
         })
 
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Vodka", "quantity": 100, "initial_price": 90, "category": "Alcohol"}
+            "payload": {"name": "Eggplant", "quantity": 100, "initial_price": 7, "category": "Vegetable", "image_link": "check"}
+        })
+
+        response = self.client.post("/{store_id}/add_product", json={
+            "role": {"user_id": self.user_id, "store_id": self.store_id},
+            "payload": {"name": "Vodka", "quantity": 100, "initial_price": 90, "category": "Alcohol", "image_link": "check"}
         })
 
         reponse = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Corn", "quantity": 10, "initial_price": 15, "category": "Vegetable"}
+            "payload": {"name": "Corn", "quantity": 10, "initial_price": 15, "category": "Vegetable", "image_link": "check"}
         })
 
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id2},
-            "payload": {"name": "Steak", "quantity": 10, "initial_price": 100, "category": "Meat"}
+            "payload": {"name": "Steak", "quantity": 10, "initial_price": 100, "category": "Meat", "image_link": "check"}
         })
 
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id2},
-            "payload": {"name": "Bread Loaf", "quantity": 20, "initial_price": 10, "category": "Pastry"}
+            "payload": {"name": "Bread Loaf", "quantity": 20, "initial_price": 10, "category": "Pastry", "image_link": "check"}
         })
 
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Test Product", "quantity": 5, "initial_price": 50, "category": "Test Category"}
+            "payload": {"name": "Test Product", "quantity": 5, "initial_price": 50, "category": "Test Category", "image_link": "check"}
         })
 
         # Add owner to store
@@ -158,7 +158,8 @@ class StoreAPITestCase(TransactionTestCase):
     def test_add_product(self):
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.manager_id, "store_id": self.store_id},
-            "payload": {"name": "New Product", "quantity": 5, "initial_price": 50, "category": "New Category"}
+            "payload": {"name": "New Product", "quantity": 5, "initial_price": 50, "category": "New Category",
+                        "image_link": "check"}
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Product added successfully"})
@@ -173,7 +174,7 @@ class StoreAPITestCase(TransactionTestCase):
     def test_edit_product(self):
         response = self.client.put("/{store_id}/edit_product", json={
             "role": {"user_id": self.owner2_id, "store_id": self.store_id},
-            "payload": {"name": "Test Product", "quantity": 5, "initial_price": 50, "category": "New Category"}
+            "payload": {"name": "Test Product", "quantity": 5, "initial_price": 50, "category": "New Category", "image_link": "check"}
         })
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Product edited successfully"})
@@ -274,6 +275,7 @@ class StoreAPITestCase(TransactionTestCase):
             "store_id": self.store_id
         })
 
+
         # Verify the response status code
         assert response.status_code == 200
 
@@ -327,7 +329,7 @@ class StoreAPITestCase(TransactionTestCase):
             "conditions": conditions
         }
 
-        self.client.post(f"/{self.store_id}/add_discount_policy", json={
+        response = self.client.post(f"/{self.store_id}/add_discount_policy", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
             "payload": composite_discount_payload
         })
@@ -402,7 +404,6 @@ class StoreAPITestCase(TransactionTestCase):
         })
 
         conditions = response.json()
-        print(conditions)
         assert response.status_code == 200
 
     def test_get_conditions_simple(self):
@@ -433,7 +434,6 @@ class StoreAPITestCase(TransactionTestCase):
         })
 
         conditions = response.json()
-        print(conditions)
         assert response.status_code == 200
 
     def test_remove_discount_policy(self):
@@ -1946,7 +1946,7 @@ class StoreAPITestCase(TransactionTestCase):
     def test_add_product_with_invalid_data(self):
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Check false", "quantity": -5, "initial_price": -50, "category": "New Category"}
+            "payload": {"name": "Check false", "quantity": -5, "initial_price": -50, "category": "New Category", "image_link": "check"}
         })
         self.assertEqual(response.status_code, 400)
 
@@ -1960,7 +1960,7 @@ class StoreAPITestCase(TransactionTestCase):
         })
         response = self.client.post("/{store_id}/add_product", json={
             "role": {"user_id": 4, "store_id": self.store_id},
-            "payload": {"name": "New Product", "quantity": 5, "initial_price": 50, "category": "New Category"}
+            "payload": {"name": "New Product", "quantity": 5, "initial_price": 50, "category": "New Category", "image_link": "check"}
         })
         self.assertEqual(response.status_code, 403)
 
@@ -1993,7 +1993,7 @@ class StoreAPITestCase(TransactionTestCase):
     def test_edit_non_existent_product(self):
         response = self.client.put("/{store_id}/edit_product", json={
             "role": {"user_id": self.user_id, "store_id": self.store_id},
-            "payload": {"name": "Non Existent Product", "quantity": 5, "initial_price": 50, "category": "New Category"}
+            "payload": {"name": "Non Existent Product", "quantity": 5, "initial_price": 50, "category": "New Category", "image_link": "check"}
         })
         self.assertEqual(response.status_code, 404)
 
