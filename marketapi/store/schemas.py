@@ -306,6 +306,12 @@ class CompositeDiscountSchemaOut(DiscountBaseSchemaOut):
     combine_function: str
 
 
+class GetConditionsSchemaIn(Schema):
+    store_id: int
+    to_discount: bool
+    target_id: int
+
+
 class SearchSchema(Schema):
     product_name: Optional[str] = None
     category: Optional[str] = None

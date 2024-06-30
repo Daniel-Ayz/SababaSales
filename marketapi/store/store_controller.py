@@ -64,6 +64,8 @@ from .schemas import (
     DecisionBidSchemaIn,
     MakePurchaseOnBidSchemaIn,
     ConditionSchema,
+    MakePurchaseOnBidSchemaIn,
+    GetConditionsSchemaIn,
 )
 from users.usercontroller import UserController
 
@@ -656,6 +658,24 @@ class StoreController:
                 discounts = DiscountBase.objects.filter(store=store, is_root=True)
 
         return discounts
+
+    def get_conditions(self, request, payload: GetConditionsSchemaIn):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                if payload.to_discount:
+                    discount_lock = f"{store.pk}_discount_lock"
+                    cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});")
+                    discount = get_object_or_404(DiscountBase, pk=payload.target_id)
+                    conditions = discount.conditions.all()
+                else:
+                    policy_lock = f"{store.pk}_policy_lock"
+                    cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});")
+                    policy = get_object_or_404(PurchasePolicyBase, pk=payload.target_id)
+                    conditions = policy.conditions.all()
+        return conditions
+
 
     def validate_permissions(
         self, role: RoleSchemaIn, store: Store, permission: str, cursor

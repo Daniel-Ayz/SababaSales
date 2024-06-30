@@ -3,6 +3,7 @@ import React from 'react';
 import NavBar from './navbar'; // Assuming Example component is in a separate file
 import Footer from './footer'; // Assuming Example component is in a separate file
 import Cart from './cart'; // Assuming Example component is in a separate file
+import ChatApp from './chat'; // Adjust the path based on your directory structure
 
 
 const Layout = ({ children }) => {
@@ -19,6 +20,7 @@ const Layout = ({ children }) => {
       <NavBar setCart = {setCart} />
       <Cart isOpen={cart} setCart = {setCart}/>
 
+        <ChatApp />
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto bg-gray-100">
         {children}
