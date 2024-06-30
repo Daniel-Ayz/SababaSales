@@ -235,9 +235,10 @@ def get_discount_policies(request, role: RoleSchemaIn):
     return sc.get_discount_policies(request, role)
 
 
-@router.get("/{store_id}/get_conditions", response=List[ConditionSchemaOut])
+@router.post("/{store_id}/get_conditions", response=List[ConditionSchemaOut])
 def get_conditions(request, payload: GetConditionsSchemaIn):
     return sc.get_conditions(request, payload)
+
 
 @router.post("/{store_id}/add_product")
 def add_product(request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
