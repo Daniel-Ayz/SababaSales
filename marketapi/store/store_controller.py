@@ -74,7 +74,7 @@ from users.usercontroller import UserController
 router = Router()
 store_lock = hash("store_lock")
 
-from users.user_controller import UserController
+from users.usercontroller import UserController
 
 uc = UserController()
 
@@ -100,7 +100,7 @@ class StoreController:
                 store = Store.objects.create(**payload.dict(), is_active=True)
                 Owner.objects.create(user_id=user_id, store=store, is_founder=True)
 
-        uc.send_notification(user_id, f"Store {store.name} created successfully")
+        uc.send_notification(store.name, user_id, f"Store {store.name} created successfully")
         return {"store_id": store.id}
 
     def get_stores(self, request):
@@ -121,24 +121,24 @@ class StoreController:
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
                 )
-                user_id_to_assign = uc.get_user_id_by_email(payload.email)
+                #user_id_to_assign = uc.get_user_id_by_email(payload.email)
 
                 if Owner.objects.filter(
-                    user_id=user_id_to_assign, store=store
+                    user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already an owner")
                 if Manager.objects.filter(
-                    user_id=user_id_to_assign, store=store
+                    user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
 
                 owner = Owner.objects.create(
-                    user_id=user_id_to_assign,
+                    user_id=payload.user_id,
                     assigned_by=assigning_owner,
                     store=store,
                     is_founder=False,
                 )
-        uc.send_notification(payload.user_id, f"You have been assigned as an owner of {store.name}")
+        uc.send_notification(store.name, payload.user_id, f"You have been assigned as an owner of {store.name}")
         return {"message": "Owner assigned successfully"}
 
     def remove_owner(self, request, payload: RemoveOwnerSchemaIn):
@@ -154,9 +154,9 @@ class StoreController:
                 removing_owner = get_object_or_404(
                     Owner, user_id=payload.removed_by, store=store
                 )
-                user_id_to_assign = uc.get_user_id_by_email(payload.email)
+                #user_id_to_assign = uc.get_user_id_by_email(payload.email)
                 removed_owner = get_object_or_404(
-                    Owner, user_id=user_id_to_assign, store=store
+                    Owner, user_id=payload.user_id, store=store
                 )
 
                 if removed_owner.assigned_by != removing_owner:
@@ -165,7 +165,7 @@ class StoreController:
                     )
 
                 removed_owner.delete()
-        uc.send_notification(payload.user_id, f"You have been removed as an owner of {store.name}")
+        uc.send_notification(store.name, payload.user_id, f"You have been removed as an owner of {store.name}")
         return {"message": "Owner removed successfully"}
 
     def leave_ownership(self, request, payload: RoleSchemaIn):
@@ -182,7 +182,7 @@ class StoreController:
                     raise HttpError(400, "Founder cannot leave ownership")
 
                 owner.delete()
-        uc.send_notification(payload.user_id, f"You have left ownership of {store.name}")
+        uc.send_notification(store.name, payload.user_id, f"You have left ownership of {store.name}")
         return {"message": "Ownership left successfully"}
 
     def assign_manager(self, request, payload: ManagerSchemaIn):
@@ -197,13 +197,13 @@ class StoreController:
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
                 )
-                user_id_to_assign = uc.get_user_id_by_email(payload.email)
+                #user_id_to_assign = uc.get_user_id_by_email(payload.email)
                 if Manager.objects.filter(
-                    user_id=user_id_to_assign, store=store
+                    user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
                 elif Owner.objects.filter(
-                    user_id=user_id_to_assign, store=store
+                    user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already an owner")
 
@@ -214,9 +214,9 @@ class StoreController:
                     raise HttpError(403, "Only owners can assign managers")
 
                 manager = Manager.objects.create(
-                    user_id=user_id_to_assign, assigned_by=assigning_owner, store=store
+                    user_id=payload.user_id, assigned_by=assigning_owner, store=store
                 )
-        uc.send_notification(payload.user_id, f"You have been assigned as a manager of {store.name}")
+        uc.send_notification(store.name, payload.user_id, f"You have been assigned as a manager of {store.name}")
         return {"message": "Manager assigned successfully"}
 
     def remove_manager(self, request, payload: RemoveManagerSchemaIn):
@@ -231,9 +231,9 @@ class StoreController:
                 removing_owner = get_object_or_404(
                     Owner, user_id=payload.removed_by, store=store
                 )
-                user_id_to_remove = uc.get_user_id_by_email(payload.email)
+                #user_id_to_remove = uc.get_user_id_by_email(payload.email)
                 removed_manager = get_object_or_404(
-                    Manager, user_id=user_id_to_remove, store=store
+                    Manager, user_id=payload.user_id, store=store
                 )
 
                 if removed_manager.assigned_by != removing_owner:
@@ -243,7 +243,7 @@ class StoreController:
                     )
 
                 removed_manager.delete()
-                uc.send_notification(payload.user_id, f"You have been removed as a manager of {store.name}")
+                uc.send_notification(store.name, payload.user_id, f"You have been removed as a manager of {store.name}")
                 return {"message": "Manager removed successfully"}
 
     def assign_manager_permissions(
@@ -273,7 +273,7 @@ class StoreController:
                 except Exception as e:
                     raise HttpError(500, f"Error assigning permissions: {str(e)}")
 
-        uc.send_notification(manager.user_id, f"Your permissions have been updated in {store.name}")
+        uc.send_notification(store.name, manager.user_id, f"Your permissions have been updated in {store.name}")
         return {"message": "Manager permissions assigned successfully"}
 
     def get_manager_permissions(self, request, role: RoleSchemaIn, manager_id: int):
@@ -306,7 +306,7 @@ class StoreController:
                 store.save()
                 store_owners = self.get_owners(request, payload)
                 for owner in store_owners:
-                    uc.send_notification(owner.user_id, f"{store.name} has been closed")
+                    uc.send_notification(store.name, owner.user_id, f"{store.name} has been closed")
 
         return {"message": "Store closed successfully"}
 
@@ -327,7 +327,7 @@ class StoreController:
                 store.save()
                 store_owners = self.get_owners(request, payload)
                 for owner in store_owners:
-                    uc.send_notification(owner.user_id, f"{store.name} has been reopened")
+                    uc.send_notification(store.name, owner.user_id, f"{store.name} has been reopened")
 
         return {"message": "Store reopened successfully"}
 
@@ -809,6 +809,7 @@ class StoreController:
                 product.quantity = payload.quantity
                 product.initial_price = payload.initial_price
                 product.category = payload.category
+                product.image_link = payload.image_link
                 product.save()
 
         return {"message": "Product edited successfully"}
@@ -916,7 +917,7 @@ class StoreController:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock])
                 owners = Owner.objects.filter(store=store)
                 for owner in owners:
-                    uc.send_notification(owner.user_id, f"{total_items} products have been purchased from {store.name}")
+                    uc.send_notification(store.name, owner.user_id, f"{total_items} products have been purchased from {store.name}")
 
         return {
             "message": "Products purchased successfully",
@@ -1337,9 +1338,9 @@ class StoreController:
                     store.pk, "can_decide_on_bid"
                 )
                 for owner in owners:
-                    uc.send_notification(owner.user_id, f"A bid has been made on {product.name} in {store.name}")
+                    uc.send_notification(store.name, owner.user_id, f"A bid has been made on {product.name} in {store.name}")
                 for manager in managers_with_permission:
-                    uc.send_notification(manager.user_id, f"A bid has been made on {product.name} in {store.name}")
+                    uc.send_notification(store.name, manager.user_id, f"A bid has been made on {product.name} in {store.name}")
 
         return {"message": "Bid added successfully"}
 
@@ -1371,10 +1372,10 @@ class StoreController:
                     if bid.accepted_by.count() == owners_count + count_managers_with_permission:
                         bid.can_purchase = True
                         bid.save()  # Ensure bid is saved after setting can_purchase to True
-                        uc.send_notification(bid.user_id, f"Your bid on {bid.product.name} in {bid.store.name} has been accepted, you can now purchase the product")
+                        uc.send_notification(store.name, bid.user_id, f"Your bid on {bid.product.name} in {bid.store.name} has been accepted, you can now purchase the product")
                 else:
                     bid.delete()
-                    uc.send_notification(bid.user_id, f"Your bid on {bid.product.name} in {bid.store.name} has been rejected")
+                    uc.send_notification(store.name, bid.user_id, f"Your bid on {bid.product.name} in {bid.store.name} has been rejected")
 
         return {"message": "Bid decision made successfully"}
 
