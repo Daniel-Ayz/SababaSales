@@ -207,3 +207,9 @@ def add_user_product(request, payload: StoreProduct):
 @router.post("/fake_data")
 def create_fake_data(request):
     return uc.create_fake_data()
+
+
+# get user id by email
+@router.get("/get_user_id", response={200: UserSchema, 404: Error})
+def get_user_id(request, email: str):
+    return uc.get_user_id(request, email)

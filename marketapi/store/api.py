@@ -40,10 +40,6 @@ from .schemas import (
     BidSchemaOut,
     DecisionBidSchemaIn,
     MakePurchaseOnBidSchemaIn,
-    ManagerSchemaInEmail,
-    OwnerSchemaInEmail,
-    RemoveOwnerSchemaInEmail,
-    RemoveManagerSchemaInEmail,
     MakePurchaseOnBidSchemaIn,
     ConditionSchemaOut,
     GetConditionsSchemaIn,
@@ -99,16 +95,6 @@ def remove_owner(request, payload: RemoveOwnerSchemaIn):
     return sc.remove_owner(request, payload)
 
 
-@router.post("/{store_id}/assign_owner_email")
-def assign_owner(request, payload: OwnerSchemaInEmail):
-    return sc.assign_owner(request, payload)
-
-
-@router.delete("/{store_id}/remove_owner_email")
-def remove_owner(request, payload: RemoveOwnerSchemaInEmail):
-    return sc.remove_owner(request, payload)
-
-
 @router.delete("/{store_id}/leave_ownership")
 def leave_ownership(request, payload: RoleSchemaIn):
     return sc.leave_ownership(request, payload)
@@ -121,16 +107,6 @@ def assign_manager(request, payload: ManagerSchemaIn):
 
 @router.delete("/{store_id}/remove_manager")
 def remove_manager(request, payload: RemoveManagerSchemaIn):
-    return sc.remove_manager(request, payload)
-
-
-@router.post("/{store_id}/assign_manager_email")
-def assign_manager(request, payload: ManagerSchemaInEmail):
-    return sc.assign_manager(request, payload)
-
-
-@router.delete("/{store_id}/remove_manager_email")
-def remove_manager(request, payload: RemoveManagerSchemaInEmail):
     return sc.remove_manager(request, payload)
 
 

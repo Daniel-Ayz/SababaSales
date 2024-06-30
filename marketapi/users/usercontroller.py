@@ -299,3 +299,10 @@ class UserController:
             payment_info.save()
 
         return {"msg": "Fake data created successfully"}
+
+    def get_user_id(self, request, email: str) -> UserSchema:
+        try:
+            user = CustomUser.objects.get(email=email)
+            return user
+        except CustomUser.DoesNotExist as e:
+            raise HttpError(404, "User not found")

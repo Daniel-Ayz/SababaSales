@@ -74,8 +74,6 @@ from users.usercontroller import UserController
 router = Router()
 store_lock = hash("store_lock")
 
-uc = UserController()
-
 
 def get_list_from_string(conditions):
     jsonDec = json.decoder.JSONDecoder()
@@ -117,19 +115,16 @@ class StoreController:
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
                 )
-                user_id_to_assign = uc.get_user_id_by_email(payload.email)
 
-                if Owner.objects.filter(
-                    user_id=user_id_to_assign, store=store
-                ).exists():
+                if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
                     raise HttpError(400, "User is already an owner")
                 if Manager.objects.filter(
-                    user_id=user_id_to_assign, store=store
+                    user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
 
                 owner = Owner.objects.create(
-                    user_id=user_id_to_assign,
+                    user_id=payload.user_id,
                     assigned_by=assigning_owner,
                     store=store,
                     is_founder=False,
@@ -149,9 +144,8 @@ class StoreController:
                 removing_owner = get_object_or_404(
                     Owner, user_id=payload.removed_by, store=store
                 )
-                user_id_to_assign = uc.get_user_id_by_email(payload.email)
                 removed_owner = get_object_or_404(
-                    Owner, user_id=user_id_to_assign, store=store
+                    Owner, user_id=payload.user_id, store=store
                 )
 
                 if removed_owner.assigned_by != removing_owner:
@@ -190,13 +184,12 @@ class StoreController:
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
                 )
-                user_id_to_assign = uc.get_user_id_by_email(payload.email)
                 if Manager.objects.filter(
-                    user_id=user_id_to_assign, store=store
+                    user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
                 elif Owner.objects.filter(
-                    user_id=user_id_to_assign, store=store
+                    user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already an owner")
 
@@ -207,7 +200,7 @@ class StoreController:
                     raise HttpError(403, "Only owners can assign managers")
 
                 manager = Manager.objects.create(
-                    user_id=user_id_to_assign, assigned_by=assigning_owner, store=store
+                    user_id=payload.user_id, assigned_by=assigning_owner, store=store
                 )
 
         return {"message": "Manager assigned successfully"}
@@ -224,9 +217,8 @@ class StoreController:
                 removing_owner = get_object_or_404(
                     Owner, user_id=payload.removed_by, store=store
                 )
-                user_id_to_remove = uc.get_user_id_by_email(payload.email)
                 removed_manager = get_object_or_404(
-                    Manager, user_id=user_id_to_remove, store=store
+                    Manager, user_id=payload.user_id, store=store
                 )
 
                 if removed_manager.assigned_by != removing_owner:

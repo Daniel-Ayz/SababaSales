@@ -67,9 +67,11 @@ export default function ManageStore({ params }) {
   };
 
   const assignOwner = async () => {
-    try {
-      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_owner_email`, {
-        email,
+    try{
+      const response_ = await axios.get(`http://localhost:8000/api/users/get_user_id?email=${email}`);
+      const user_id_ = response_.data.id;
+      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_owner`, {
+        user_id: user_id_,
         store_id,
         assigned_by: user.id,
       });
@@ -87,8 +89,10 @@ export default function ManageStore({ params }) {
 
   const assignManager = async () => {
     try {
-      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_manager_email`, {
-        email,
+      const response_ = await axios.get(`http://localhost:8000/api/users/get_user_id?email=${email}`);
+      const user_id_ = response_.data.id;
+      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_manager`, {
+        user_id: user_id_,
         store_id,
         assigned_by: user.id,
       });
