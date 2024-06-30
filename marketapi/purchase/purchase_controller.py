@@ -118,7 +118,7 @@ class purchaseController:
     ):
         try:
             # demo data
-            if flag_delivery:
+            if not flag_delivery:
                 delivery_information_user = uc.get_user_delivery_information(
                     request, user_id
                 )
@@ -133,7 +133,7 @@ class purchaseController:
                     "zip": "1234567",
                 }
                 delivery_information_user["name"] = "Israel Israeli"
-            if flag_payment:
+            if not flag_payment:
                 payment_information_user = uc.get_user_payment_information(
                     request, user_id
                 )
