@@ -202,6 +202,7 @@ class StoreProductSchemaOut(Schema):
     quantity: int
     store: StoreSchemaOut
     category: str
+    image_link: str
 
 
 class StoreProductSchemaIn(Schema):
