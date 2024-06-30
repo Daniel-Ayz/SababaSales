@@ -1,16 +1,23 @@
 // pages/checkout.js
 "use client"
-import { useClient } from 'next/client';
+import React from 'react';
 import { useState } from 'react';
 import axios from 'axios';
-import { UserContext } from '../layout'; // Adjust the import according to your file structure
+axios.defaults.withCredentials = true;
+import { UserContext } from '../layout';
 import { useContext } from "react";
 import { useRouter } from 'next/navigation';
-axios.defaults.withCredentials = true;
+import Alert from '@mui/material/Alert';
+import Link from 'next/link'
 
-const Checkout = () => {
+export default function Details() {
   const { user } = useContext(UserContext); // Access user context
   const [state, setState] = useState(false); // Mark the component as a Client Component
+  const [showAlert, setShowAlert] = useState(false)
+  const [showAlertGood, setShowAlertGood] = useState(false);
+  const [showAlertBad, setShowAlertBad] = useState(false);
+  
+  const router = useRouter()
 
   const [shippingInfo, setShippingInfo] = useState({
     firstName: '',
@@ -33,7 +40,6 @@ const Checkout = () => {
   });
 
   const [deliveryMethod, setDeliveryMethod] = useState('standard');
-  const router = useRouter();
   
   const handleShippingChange = (e) => {
     const { name, value } = e.target;
@@ -45,41 +51,48 @@ const Checkout = () => {
     setPaymentInfo({ ...paymentInfo, [name]: value });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-
-    const { id: user_id, cartId: cart_id } = user; // Destructure user context
-
-    axios.post(`http://localhost:8000/api/${user_id}/${cart_id}/make_purchase`, user, {
-      headers: { 'Content-Type': 'application/json' },
-      withCredentials: true,
-    })
-      .then(response => {
-        const purchaseId = response.data.purchase_id; // Extract purchase ID from response
-        console.log('Order successful:', response.data);
-        // Redirect to the receipt page with the purchase ID
-        router.push(`/receipt?purchaseId=${purchaseId}`);
-      })
-      .catch(error => {
-        console.error('Order failed:', error);
-        // Show an error message to the user
-      });
-  };
+  async function makePurchase() {
+    
+    if(!user.loggedIn){
+      console.log("user not logged in. please login before making a purchase")
+      setShowAlert(true)
+    }
+    else{
+      axios.post(`http://localhost:8000/api/purchase/${user.id}/${user.cart_id}/make_purchase`)
+        .then(function (response){
+          console.log('Order successful:', response.data)
+          setShowAlertGood(true)
+        })
+        .catch (function (error) {
+          console.error('Order failed:', error)
+          setShowAlertBad(true)
+        });
+    }
+  }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Checkout</h1>
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold">Shipping Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="container mx-auto p-2 h-screen flex flex-col justify-between">
+        {showAlert && (
+      <Alert severity="error">please login before making a purchase</Alert>
+      )}
+        {showAlert && (<p className="text-center text-xs text-gray-500">
+        Not logged in?{' '}
+        <Link href ="/login" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
+          Login here
+        </Link>
+      </p>)}
+      <h1 className="text-xl font-bold mb-2">Checkout</h1>
+      <form className="flex-1 overflow-auto" action={makePurchase}>
+        <div className="mb-2">
+          <h2 className="text-lg font-semibold">Shipping Information</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <input
               type="text"
               name="firstName"
               value={shippingInfo.firstName}
               onChange={handleShippingChange}
               placeholder="First name"
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
             <input
               type="text"
@@ -87,7 +100,7 @@ const Checkout = () => {
               value={shippingInfo.lastName}
               onChange={handleShippingChange}
               placeholder="Last name"
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
             <input
               type="text"
@@ -95,7 +108,7 @@ const Checkout = () => {
               value={shippingInfo.company}
               onChange={handleShippingChange}
               placeholder="Company"
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
             <input
               type="text"
@@ -103,7 +116,7 @@ const Checkout = () => {
               value={shippingInfo.address}
               onChange={handleShippingChange}
               placeholder="Address"
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
             <input
               type="text"
@@ -111,7 +124,7 @@ const Checkout = () => {
               value={shippingInfo.apartment}
               onChange={handleShippingChange}
               placeholder="Apartment, suite, etc."
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
             <input
               type="text"
@@ -119,13 +132,13 @@ const Checkout = () => {
               value={shippingInfo.city}
               onChange={handleShippingChange}
               placeholder="City"
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
             <select
               name="country"
               value={shippingInfo.country}
               onChange={handleShippingChange}
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             >
               <option value="United States">United States</option>
               {/* Add more country options here */}
@@ -136,7 +149,7 @@ const Checkout = () => {
               value={shippingInfo.state}
               onChange={handleShippingChange}
               placeholder="State / Province"
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
             <input
               type="text"
@@ -144,7 +157,7 @@ const Checkout = () => {
               value={shippingInfo.postalCode}
               onChange={handleShippingChange}
               placeholder="Postal code"
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
             <input
               type="text"
@@ -152,14 +165,14 @@ const Checkout = () => {
               value={shippingInfo.phone}
               onChange={handleShippingChange}
               placeholder="Phone"
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
           </div>
         </div>
 
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold">Delivery Method</h2>
-          <div className="flex gap-4">
+        <div className="mb-2">
+          <h2 className="text-lg font-semibold">Delivery Method</h2>
+          <div className="flex gap-2">
             <label className="flex items-center">
               <input
                 type="radio"
@@ -167,7 +180,7 @@ const Checkout = () => {
                 value="standard"
                 checked={deliveryMethod === 'standard'}
                 onChange={() => setDeliveryMethod('standard')}
-                className="mr-2"
+                className="mr-1"
               />
               Standard (4-10 business days) - $5.00
             </label>
@@ -178,16 +191,16 @@ const Checkout = () => {
                 value="express"
                 checked={deliveryMethod === 'express'}
                 onChange={() => setDeliveryMethod('express')}
-                className="mr-2"
+                className="mr-1"
               />
               Express (2-5 business days) - $16.00
             </label>
           </div>
         </div>
 
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold">Payment</h2>
-          <div className="flex gap-4">
+        <div className="mb-2">
+          <h2 className="text-lg font-semibold">Payment</h2>
+          <div className="flex gap-2">
             <label className="flex items-center">
               <input
                 type="radio"
@@ -195,7 +208,7 @@ const Checkout = () => {
                 value="creditCard"
                 checked={true}
                 readOnly
-                className="mr-2"
+                className="mr-1"
               />
               Credit card
             </label>
@@ -204,7 +217,7 @@ const Checkout = () => {
                 type="radio"
                 name="paymentMethod"
                 value="paypal"
-                className="mr-2"
+                className="mr-1"
               />
               PayPal
             </label>
@@ -213,19 +226,19 @@ const Checkout = () => {
                 type="radio"
                 name="paymentMethod"
                 value="etransfer"
-                className="mr-2"
+                className="mr-1"
               />
               eTransfer
             </label>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
             <input
               type="text"
               name="cardNumber"
               value={paymentInfo.cardNumber}
               onChange={handlePaymentChange}
               placeholder="Card number"
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
             <input
               type="text"
@@ -233,7 +246,7 @@ const Checkout = () => {
               value={paymentInfo.nameOnCard}
               onChange={handlePaymentChange}
               placeholder="Name on card"
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
             <input
               type="text"
@@ -241,7 +254,7 @@ const Checkout = () => {
               value={paymentInfo.expirationDate}
               onChange={handlePaymentChange}
               placeholder="Expiration date (MM/YY)"
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
             <input
               type="text"
@@ -249,29 +262,39 @@ const Checkout = () => {
               value={paymentInfo.cvc}
               onChange={handlePaymentChange}
               placeholder="CVC"
-              className="border p-2 w-full"
+              className="border p-1 w-full"
             />
           </div>
         </div>
-
-        <button
-          type="submit"
-          className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-        >
-        <a
-          href="/receipt"
-          className="flex items-center justify-center rounded-md border border-transparent bg-indigo-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-indigo-700"
-        >
-          Confirm Order
-        </a>
-        </button>
+        <div>
+          <button
+            type="submit"
+            className="flex w-full justify-center rounded-md bg-indigo-600 px-2 py-1 text-xs font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+          >
+              Confirm Order
+          </button>
+        </div>
       </form>
+      {showAlertBad && (
+          <Alert severity="error">Unsuccessful Order.</Alert>
+          )}
+        {showAlertGood && (
+          <Alert severity="success">Order confirmed!</Alert>
+          )}
+
+      <p className="text-center text-xs text-gray-500">
+          <Link href = "/" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
+            Back to home page
+            </Link>
+        </p>
+
+        {showAlertGood && (
+          <p className="text-center text-xs text-gray-500">
+          <Link href = "/history" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
+            To your orders
+            </Link>
+        </p>
+        )}
     </div>
   );
 };
-
-// from the confirm order button we will call the page to show the order confirmation and receipt
-// not written yet
-export default Checkout;
-
-

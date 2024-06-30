@@ -9,10 +9,20 @@ from .schemas import *
 from django.contrib.auth.hashers import make_password
 from ninja.errors import *
 from datetime import datetime
+from .consumers import (
+    reset_all_online_count,
+    send_message_to_user,
+    _mark_notification_as_seen,
+)
 
 
 class UserController:
     valid_id = lambda user, id: user.id == id
+
+    def __init__(self):
+        # Doesn't work - This is called also on migrations
+        # reset_all_online_count()
+        pass
 
     def _get_cart(self, request):
         if request.user.is_authenticated:
@@ -63,12 +73,17 @@ class UserController:
         logout(request)
         return {"msg": "Logged out"}
 
-    def get_user(self, request) -> UserSchema:
+    def get_user(self, request) -> UserSetupSchema:
         """
         returns the user with the given id,if the id matches the current session user id
         """
         user = CustomUser.objects.get(id=request.user.id)
-        return user
+        cart = self._get_cart(request)
+        cart_id = cart.id
+        userSchema = UserSetupSchema(
+            id=user.id, username=user.username, email=user.email, cart_id=cart_id
+        )
+        return userSchema
 
     def delete_user(self, request, user_id) -> any:
         """
@@ -111,7 +126,19 @@ class UserController:
         notifications = Notification.objects.filter(user=user)
         return notifications
 
-    def send_notification(self, request, target_user_id, payload) -> NotificationSchema:
+    def mark_notification_as_seen(self, request, notification_id) -> NotificationSchema:
+        """
+        marks a notification as seen
+        """
+        notification = Notification.objects.get(id=notification_id)
+        notification.seen = True
+        notification.save()
+        return notification
+
+    # Send notifications from an API call
+    def _send_notification(
+        self, request, target_user_id, payload
+    ) -> NotificationSchema:
         """
         sends a notification from current session user to the target user
 
@@ -125,9 +152,32 @@ class UserController:
             sent_by=user.username, message=payload.msg, user=target_user
         )
         notification.save()
-        print(notification)
+
+        if target_user.online_count > 0:
+            send_message_to_user(
+                target_user_id, payload.msg, notification.id, user.username
+            )
+            # _mark_notification_as_seen(notification.id)
 
         return notification
+
+    # Send notifications from a System (Without API)
+    @staticmethod
+    def send_notification(sent_by: str, target_user_id: int, message: str):
+        try:
+            target_user = CustomUser.objects.get(id=target_user_id)
+        except CustomUser.DoesNotExist as e:
+            return False
+        notification = Notification.objects.create(
+            sent_by=sent_by, message=message, user=target_user
+        )
+        notification.save()
+
+        if target_user.online_count > 0:
+            send_message_to_user(target_user_id, message)
+            _mark_notification_as_seen(notification.id)
+
+        return True
 
     def get_user_cart(self, request) -> CartSchema:
         cart = self._get_cart(request)
@@ -146,6 +196,14 @@ class UserController:
         cart = self._get_cart(request)
         store_id = payload.store_id
         basket, _ = Basket.objects.get_or_create(cart=cart, store_id=store_id)
+        # check if the product already exists in the basket:
+        try:
+            product = basket.products.get(name=payload.name)
+            product.quantity += payload.quantity
+            product.save()
+            return product
+        except BasketProduct.DoesNotExist:
+            pass
         product = BasketProduct.objects.create(
             store_product_id=payload.store_product_id,
             quantity=payload.quantity,
@@ -211,55 +269,30 @@ class UserController:
         delivery_info = DeliveryInformationUser.objects.get(user=user)
         return delivery_info
 
+    def get_user_id_by_email(self, email: str) -> int:
+        user = CustomUser.objects.get(email=email)
+        return user.id
+
     def create_fake_data(self):
         usernames = [
-            "Yishay Butzim",
-            "Hana Tzirlin",
-            "Hanan Margilan",
-            "Or Gazma",
-            "Mor Tal Combat",
-            "Adi Das",
-            "Beti Paul",
-            "Micha Napo",
-            "Moti Batzia",
-            "Itzik Hagingi",
-            "Pupik Levi",
-            "Ortal Gabot",
+            "Yishay_Butzim",
+            "Hana_Tzirlin",
+            "Hanan_Margilan",
+            "Or_Gazma",
+            "Mor_Tal_Combat",
+            "Adi_Das",
+            "Beti_Paul",
+            "Micha_Napo",
+            "Moti_Batzia",
+            "Itzik_Hagingi",
+            "Pupik_Levi",
+            "Ortal_Gabot",
         ]
-        passwords = [
-            "user1",
-            "user2",
-            "user3",
-            "user4",
-            "user5",
-            "user6",
-            "user7",
-            "user8",
-            "user9",
-            "user10",
-            "user11",
-            "user12",
-        ]
-        emails = [
-            "user1@gmail.com",
-            "user2@gmail.com",
-            "user3@gmail.com",
-            "user4@gmail.com",
-            "user5@gmail.com",
-            "user6@gmail.com",
-            "user7@gmail.com",
-            "user8@gmail.com",
-            "user9@gmail.com",
-            "user10@gmail.com",
-            "user11@gmail.com",
-            "user12@gmail.com",
-        ]
-
         for i in range(len(usernames)):
             user = CustomUser.objects.create(
                 username=usernames[i],
-                email=emails[i],
-                password=make_password(passwords[i]),
+                email=f"{usernames[i]}@gmail.com",
+                password=make_password(usernames[i]),
             )
             user.save()
 

@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, TransactionTestCase
 from ninja.testing import TestClient
 
 import store.api
@@ -8,7 +8,8 @@ from store.api import router as store_router
 from users.api import router as user_router
 
 # Create your tests here.
-class TestPurchase(TestCase):
+class TestPurchase(TransactionTestCase):
+    reset_sequences = True
     def setUp(self):
         self.client = TestClient(router)
         self.store_client = TestClient(store_router)
@@ -16,7 +17,7 @@ class TestPurchase(TestCase):
 
         self.user_id = 1
         response = self.store_client.post(
-            f"/stores?user_id={self.user_id}",
+            f"/?user_id={self.user_id}",
             json={"name": "Test Store", "description": "Test Description"},
         )
         self.store_id = response.json()["store_id"]
@@ -35,7 +36,7 @@ class TestPurchase(TestCase):
         # Add product to store
         self.Product_1_Quality = 10
         response = self.store_client.post(
-            "/stores/{store_id}/add_product",
+            "/{store_id}/add_product",
             json={
                 "role": {"user_id": self.user_id, "store_id": self.store_id},
                 "payload": {
@@ -61,7 +62,7 @@ class TestPurchase(TestCase):
         # Add owner to store
         self.owner2_id = 2
         response = self.store_client.post(
-            "/stores/{store_id}/assign_owner",
+            "/{store_id}/assign_owner",
             json={
                 "user_id": self.owner2_id,
                 "store_id": self.store_id,
@@ -72,7 +73,7 @@ class TestPurchase(TestCase):
         # Add manager to store
         self.manager_id = 3
         response = self.store_client.post(
-            "/stores/{store_id}/assign_manager",
+            "/{store_id}/assign_manager",
             json={
                 "user_id": self.manager_id,
                 "store_id": self.store_id,
@@ -82,7 +83,7 @@ class TestPurchase(TestCase):
 
         # Add manager permissions
         response = self.store_client.post(
-            "/stores/{store_id}/change_manager_permissions?assigning_owner_id="
+            "/{store_id}/change_manager_permissions?assigning_owner_id="
             + self.owner2_id.__str__(),
             json={
                 "manager": {"user_id": self.manager_id, "store_id": self.store_id},
@@ -96,7 +97,7 @@ class TestPurchase(TestCase):
 
         # Set purchase policy
         response = self.store_client.post(
-            "/stores/{store_id}/add_purchase_policy",
+            "/{store_id}/add_purchase_policy",
             json={
                 "role": {"user_id": self.user_id, "store_id": self.store_id},
                 "payload": {"min_items_per_purchase": 1},
