@@ -27,23 +27,34 @@ export default function Discounts({ params }) {
           user_id: user.id,
           store_id: store_id
         });
-        console.log('Fetched discounts:', response.data);
+        console.log('ALL:', response.data);
 
         const simpleDiscounts = [];
         const conditionalDiscounts = [];
+        const conditionsConditionalDiscounts = [];
         const compositeDiscounts = [];
 
-        response.data.forEach(discount => {
+        for (const discount of response.data) {
           if (discount.hasOwnProperty('discount')) {
             conditionalDiscounts.push(discount);
-          }
-          else {
+            const conditionsResponse = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_conditions`, {
+              store_id: store_id,
+              to_discount: true,
+              target_id: discount.id
+            });
+            conditionsConditionalDiscounts.push(conditionsResponse.data);
+          } else {
             simpleDiscounts.push(discount);
           }
-        });
+        }
+        // zip the conditions with the conditional discounts:
+        const zippedConditionalDiscounts = conditionalDiscounts.map((discount, index) => ({
+          ...discount,
+          conditions: conditionsConditionalDiscounts[index]
+        }));
 
         setSimpleDiscounts(simpleDiscounts);
-        setConditionalDiscounts(conditionalDiscounts);
+        setConditionalDiscounts(zippedConditionalDiscounts);
         setCompositeDiscounts(compositeDiscounts);
         setLoading(false);
       } catch (error) {
@@ -183,25 +194,33 @@ export default function Discounts({ params }) {
             {conditionalDiscounts.map((discount, index) => {
               const categories = JSON.parse(discount.discount.applicable_categories || '[]');
               const products = (discount.discount.applicable_products || []).map(product => product.name);
+              const conditions = discount.conditions || [];
               return (
-              <li key={index} className="flex flex-col justify-between items-start bg-white p-4 rounded shadow">
-                {/* Replace with actual discount properties to render */}
-                <div><strong>Percentage:</strong> {discount.discount.percentage}%</div>
-                <div><strong>Applicable Categories:</strong> {categories.join(', ')}</div>
-                <div><strong>Applicable Products:</strong> {products.join(', ')}</div>
-                <div><strong>Details:</strong> {discount.details}</div>
-                <button
-                  onClick={() => handleRemoveDiscount('Conditional', index)}
-                  className="text-red-500 hover:text-red-700 mt-2"
-                >
-                  Remove
-                </button>
-              </li>
+                <li key={index} className="flex flex-col justify-between items-start bg-white p-4 rounded shadow">
+                  <div><strong>Percentage:</strong> {discount.discount.percentage}%</div>
+                  <div><strong>Applicable Categories:</strong> {categories.join(', ')}</div>
+                  <div><strong>Applicable Products:</strong> {products.join(', ')}</div>
+                  <div><strong>Conditions:</strong>
+                    <ul className="ml-4 list-disc">
+                      {conditions.map((condition, condIndex) => (
+                        <li key={condIndex}>
+                          <strong>Condition {condIndex + 1}:</strong> {condition.name_of_apply} must be {condition.condition} {condition.value}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveDiscount('conditional', index)}
+                    className="text-red-500 hover:text-red-700 mt-2"
+                  >
+                    Remove
+                  </button>
+                </li>
               );
             })}
           </ul>
           <button
-            onClick={() => handleAddDiscount('Conditional')}
+            onClick={() => handleAddDiscount('conditional')}
             className="mt-4 w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm"
           >
             Add Conditional Discount
