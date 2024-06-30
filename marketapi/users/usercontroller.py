@@ -210,6 +210,7 @@ class UserController:
             name=payload.name,
             basket=basket,
             price=payload.price,
+            image_link=payload.image_link,
         )
         return product
 
@@ -293,6 +294,8 @@ class UserController:
                 username=usernames[i],
                 email=f"{usernames[i]}@gmail.com",
                 password=make_password(usernames[i]),
+                Full_Name=usernames[i],
+                Identification_number="123456789",
             )
             user.save()
 
@@ -304,7 +307,7 @@ class UserController:
                 user=user,
                 currency="USD",
                 holder=user.Full_Name,
-                holder_identification_number=user.Id,
+                holder_identification_number=user.Identification_number,
                 credit_card_number="1234567890",
                 expiration_date=expiration_date,
                 security_code="123",

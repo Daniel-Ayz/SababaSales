@@ -58,7 +58,7 @@ export default function ProductBuyingPage({ params }) {
         return <div>Loading...</div>;
     }
 
-    const { name, initial_price, quantity, store, category, description, image } = product;
+    const { name, initial_price, quantity, store, category, description, image, image_link } = product;
     console.log(product);
 
 
@@ -85,10 +85,12 @@ export default function ProductBuyingPage({ params }) {
                 name: name,
                 store_id: product['store'].id,
                 category: category,
+                image_link: image_link,
 
             };
 
             // Example POST request to add item to cart
+            console.log("DATAAAA", data);
             const response = await axios.post('http://localhost:8000/api/users/cart/products', data,{headers: {'Content-Type': 'application/json'}, withCredentials: true});
             console.log(response.data); // Log response from backend
 

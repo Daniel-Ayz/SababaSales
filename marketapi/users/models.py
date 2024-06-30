@@ -91,3 +91,4 @@ class BasketProduct(models.Model):
         Basket, on_delete=models.CASCADE, related_name="products"
     )
     category = models.CharField(max_length=100, default="category")
+    image_link = models.CharField(max_length=255, default="image_link")
