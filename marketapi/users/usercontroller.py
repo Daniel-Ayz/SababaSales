@@ -152,13 +152,13 @@ class UserController:
 
     # Send notifications from a System (Without API)
     @staticmethod
-    def send_notification(target_user_id, message):
+    def send_notification(sent_by: str, target_user_id: int, message: str):
         try:
             target_user = CustomUser.objects.get(id=target_user_id)
         except CustomUser.DoesNotExist as e:
             return False
         notification = Notification.objects.create(
-            sent_by="System", message=message, user=target_user
+            sent_by=sent_by, message=message, user=target_user
         )
         notification.save()
 
