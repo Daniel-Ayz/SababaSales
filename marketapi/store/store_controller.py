@@ -8,6 +8,8 @@ from django.db import transaction, connection
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.errors import HttpError
+from django.http import Http404
+import random
 
 
 from .discount import (
@@ -63,10 +65,16 @@ from .schemas import (
     BidSchemaIn,
     DecisionBidSchemaIn,
     MakePurchaseOnBidSchemaIn,
+    ConditionSchema,
+    MakePurchaseOnBidSchemaIn,
+    GetConditionsSchemaIn,
 )
+from users.usercontroller import UserController
 
 router = Router()
 store_lock = hash("store_lock")
+
+uc = UserController()
 
 
 def get_list_from_string(conditions):
@@ -109,15 +117,19 @@ class StoreController:
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
                 )
-                if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
+                user_id_to_assign = uc.get_user_id_by_email(payload.email)
+
+                if Owner.objects.filter(
+                    user_id=user_id_to_assign, store=store
+                ).exists():
                     raise HttpError(400, "User is already an owner")
                 if Manager.objects.filter(
-                    user_id=payload.user_id, store=store
+                    user_id=user_id_to_assign, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
 
                 owner = Owner.objects.create(
-                    user_id=payload.user_id,
+                    user_id=user_id_to_assign,
                     assigned_by=assigning_owner,
                     store=store,
                     is_founder=False,
@@ -137,8 +149,9 @@ class StoreController:
                 removing_owner = get_object_or_404(
                     Owner, user_id=payload.removed_by, store=store
                 )
+                user_id_to_assign = uc.get_user_id_by_email(payload.email)
                 removed_owner = get_object_or_404(
-                    Owner, user_id=payload.user_id, store=store
+                    Owner, user_id=user_id_to_assign, store=store
                 )
 
                 if removed_owner.assigned_by != removing_owner:
@@ -166,7 +179,6 @@ class StoreController:
         return {"message": "Ownership left successfully"}
 
     def assign_manager(self, request, payload: ManagerSchemaIn):
-
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
@@ -178,12 +190,13 @@ class StoreController:
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
                 )
+                user_id_to_assign = uc.get_user_id_by_email(payload.email)
                 if Manager.objects.filter(
-                    user_id=payload.user_id, store=store
+                    user_id=user_id_to_assign, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
                 elif Owner.objects.filter(
-                    user_id=payload.user_id, store=store
+                    user_id=user_id_to_assign, store=store
                 ).exists():
                     raise HttpError(400, "User is already an owner")
 
@@ -194,7 +207,7 @@ class StoreController:
                     raise HttpError(403, "Only owners can assign managers")
 
                 manager = Manager.objects.create(
-                    user_id=payload.user_id, assigned_by=assigning_owner, store=store
+                    user_id=user_id_to_assign, assigned_by=assigning_owner, store=store
                 )
 
         return {"message": "Manager assigned successfully"}
@@ -211,8 +224,9 @@ class StoreController:
                 removing_owner = get_object_or_404(
                     Owner, user_id=payload.removed_by, store=store
                 )
+                user_id_to_remove = uc.get_user_id_by_email(payload.email)
                 removed_manager = get_object_or_404(
-                    Manager, user_id=payload.user_id, store=store
+                    Manager, user_id=user_id_to_remove, store=store
                 )
 
                 if removed_manager.assigned_by != removing_owner:
@@ -647,6 +661,59 @@ class StoreController:
 
         return discounts
 
+    def get_conditions(self, request, payload: GetConditionsSchemaIn):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                if payload.to_discount:
+                    discount_lock = f"{store.pk}_discount_lock"
+                    cursor.execute(
+                        f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});"
+                    )
+                    discount = get_object_or_404(DiscountBase, pk=payload.target_id)
+                    conditions = discount.conditions.all()
+                else:
+                    policy_lock = f"{store.pk}_policy_lock"
+                    cursor.execute(
+                        f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});"
+                    )
+                    # first check if composite
+                    try:
+                        policy = get_object_or_404(
+                            CompositePurchasePolicy, pk=payload.target_id
+                        )
+                        policies = policy.policies.all()
+                        conditions = [
+                            condition
+                            for policy in policies
+                            for condition in policy.conditions.all()
+                        ]
+                    except Http404:
+                        policy = get_object_or_404(
+                            PurchasePolicyBase, pk=payload.target_id
+                        )
+                        conditions = policy.conditions.all()
+        return conditions
+
+    def get_combine_function_for_policy(self, request, payload: GetConditionsSchemaIn):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                if not payload.to_discount:
+                    policy_lock = f"{store.pk}_policy_lock"
+                    cursor.execute(
+                        f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});"
+                    )
+                    try:
+                        policy = get_object_or_404(
+                            CompositePurchasePolicy, pk=payload.target_id
+                        )
+                        return policy.combine_function
+                    except Http404:
+                        return None
+
     def validate_permissions(
         self, role: RoleSchemaIn, store: Store, permission: str, cursor
     ):
@@ -1017,10 +1084,20 @@ class StoreController:
             "Hummus Heaven": {
                 "category": "Food",
                 "products": ["Classic Hummus", "Spicy Hummus", "Garlic Hummus"],
+                "Links": [
+                    "https://www.eatingwell.com/thmb/whG5O2XFksPLrc73YGNoRiYNrFQ=/750x0/filters:no_upscale():max_bytes(150000):strip_icc():format(webp)/6080917-adf6cf9f2c1944a9bfbaeadd032013a5.jpg",
+                    "https://heartbeetkitchen.com/foodblog/wp-content/uploads/2023/03/spicy-hummus-13.jpg",
+                    "https://shoppy.co.il/cdn/shop/products/ahlahummuslemongarlic_720x.png?v=1641413539",
+                ],
             },
             "Falafel Fiesta": {
                 "category": "Food",
                 "products": ["Falafel Wrap", "Falafel Plate", "Falafel Salad"],
+                "Links": [
+                    "https://cookingwithayeh.com/wp-content/uploads/2024/03/Falafel-Wrap-1.jpg",
+                    "https://hilahcooking.com/wp-content/uploads/2017/03/spicy-falafel.jpg",
+                    "https://kitchenconfidante.com/wp-content/uploads/2019/05/Falafel-Salad-kitchenconfidante.com-9021.jpg",
+                ],
             },
             "Startup Nation Tech": {
                 "category": "Technology",
@@ -1028,6 +1105,11 @@ class StoreController:
                     "Israeli Smartphone",
                     "Kibbutz Laptop",
                     "Jerusalem Smartwatch",
+                ],
+                "Links": [
+                    "https://static.timesofisrael.com/www/uploads/2022/07/F210127YS44-640x400.jpg",
+                    "https://cdn.thewirecutter.com/wp-content/media/2023/06/bestlaptops-2048px-9765.jpg?auto=webp&quality=75&width=1024&dpr=2",
+                    "https://m.media-amazon.com/images/I/61ksrJ2LsgL._AC_SX679_.jpg",
                 ],
             },
             "Tel Aviv Trends": {
@@ -1037,6 +1119,11 @@ class StoreController:
                     "Negev Leather Jacket",
                     "Eilat Running Shoes",
                 ],
+                "Links": [
+                    "https://i.ebayimg.com/images/g/JlEAAOSwKmphgYSh/s-l1600.jpg",
+                    "https://img01.ztat.net/article/spp-media-p1/13e0e8a354eb4656a895b06a3e324f9b/305d7df6e4f34e339a1cf31b585adbd4.jpg?imwidth=762",
+                    "https://contents.mediadecathlon.com/p2606890/k$30ab17a373351d4761e138a9c3be9b02/jogflow-5001-men-s-running-shoes-white-blue-red.jpg?format=auto&quality=40&f=452x452",
+                ],
             },
             "Book Bazaar Israel": {
                 "category": "Books",
@@ -1044,6 +1131,11 @@ class StoreController:
                     "Hebrew Science Fiction Novel",
                     "Israeli Cookbook",
                     "Zionist Historical Biography",
+                ],
+                "Links": [
+                    "https://mosaicmagazine.com/wp-content/uploads/2018/10/Weingrad-ZF.jpg",
+                    "https://m.media-amazon.com/images/I/81KRghJo4YL._SL1500_.jpg",
+                    "https://www.urimpublications.com/mm5/graphics/00000001/historyzionismWeb2.jpg",
                 ],
             },
             "Toy Town Israel": {
@@ -1053,21 +1145,26 @@ class StoreController:
                     "Israeli Board Game",
                     "Jerusalem Puzzle Set",
                 ],
+                "Links": [
+                    "https://asufadesign.com/cdn/shop/files/BG-Product-PNG.png?v=1707639053",
+                    "https://www.dvarimbego.co.il/pub/123432/%D7%9E%D7%A9%D7%97%D7%A7%D7%99%20%D7%A9%D7%A4%D7%99%D7%A8/3694571.jpg?quality=65&height=380&mode=max",
+                    "https://eurographics.blob.core.windows.net/45a2776f-ae2f-4bb8-9e22-db4ab5a98cbe/ProductManagement/Products/01dd2e93-d552-4a74-b7cf-ae9fe130c1fa/6010-5550.jpg?t=638539811317412640",
+                ],
             },
         }
 
         stores = []
         store_names = list(store_data.keys())
-        for i in range(1, 7):
+        for i in range(len(store_names)):
             stores.append(
                 Store.objects.create(
-                    name=store_names[i - 1],
-                    description=f"This is a fake store {i}",
+                    name=store_names[i],
+                    description=f"This is {store_names[i]} {i}",
                     is_active=True,
                 )
             )
 
-        for i in range(0, 6):
+        for i in range(len(stores)):
             owner = Owner.objects.create(user_id=i, store=stores[i], is_founder=True)
             manager = Manager.objects.create(
                 user_id=2 * len(store_names) - i - 1, store=stores[i], assigned_by=owner
@@ -1088,12 +1185,12 @@ class StoreController:
                     name=store_data[store_names[i]]["products"][j],
                     category=store_data[store_names[i]]["category"],
                     quantity=10,
-                    initial_price=100,
+                    initial_price=random.randint(10, 100),
+                    image_link=store_data[store_names[i]]["Links"][j],
                 )
-                # purchase_policy = PurchasePolicy.objects.create(
-                #     store=stores[i], max_items_per_purchase=5, min_items_per_purchase=1
-                # )
-                discount = SimpleDiscount.objects.create(
+
+                # Create a simple discount
+                simple_discount = SimpleDiscount.objects.create(
                     store=stores[i],
                     is_root=True,
                     percentage=10,
@@ -1101,6 +1198,92 @@ class StoreController:
                         [store_data[store_names[i]]["category"]]
                     ),
                 )
+                simple_discount.applicable_products.set([product])
+                simple_discount.save()
+
+                # Create a conditional discount
+                payload_dict = {
+                    "store_id": stores[i].id,
+                    "is_root": True,
+                    "condition": {
+                        "applies_to": "products",
+                        "name_of_apply": store_data[store_names[i]]["products"][j],
+                        "condition": "at_least",
+                        "value": 5,
+                    },
+                    "discount": {
+                        "store_id": stores[i].id,
+                        "is_root": False,
+                        "percentage": 15.0,
+                        "applicable_categories": [
+                            store_data[store_names[i]]["category"]
+                        ],
+                        "applicable_products": [
+                            str(product.id)
+                        ],  # Use the product ID as a string
+                    },
+                }
+
+            condition_schema = ConditionSchema(**payload_dict["condition"])
+            discount_data = payload_dict["discount"]
+            discount_data["applicable_categories"] = json.loads(
+                json.dumps(discount_data["applicable_categories"])
+            )
+            simple_discount_schema = SimpleDiscountSchemaIn(**discount_data)
+
+            payload = ConditionalDiscountSchemaIn(
+                store_id=payload_dict["store_id"],
+                is_root=payload_dict["is_root"],
+                condition=condition_schema,
+                discount=simple_discount_schema,
+            )
+            self.add_conditional_discount_policy(payload)
+
+            # Create simple purchase policies
+            condition1 = {
+                "applies_to": "product",
+                "name_of_apply": product.name,
+                "condition": "at_most",
+                "value": 5,
+            }
+            purchase_policy_payload1 = {
+                "store_id": stores[i].id,
+                "is_root": True,
+                "condition": condition1,
+            }
+            simple_policy_schema1 = SimplePurchasePolicySchemaIn(
+                **purchase_policy_payload1
+            )
+            self.add_simple_purchase_policy(simple_policy_schema1)
+
+            condition2 = {
+                "applies_to": "time",
+                "name_of_apply": "",
+                "condition": "at_most",
+                "value": 23,
+            }
+            purchase_policy_payload2 = {
+                "store_id": stores[i].id,
+                "is_root": True,
+                "condition": condition2,
+            }
+            simple_policy_schema2 = SimplePurchasePolicySchemaIn(
+                **purchase_policy_payload2
+            )
+            self.add_simple_purchase_policy(simple_policy_schema2)
+            purchase_policy_payload1["is_root"] = False
+            purchase_policy_payload2["is_root"] = False
+            # Create a composite purchase policy
+            composite_policy_payload = {
+                "store_id": stores[i].id,
+                "is_root": True,
+                "policies": [purchase_policy_payload1, purchase_policy_payload2],
+                "combine_function": "logical_and",
+            }
+            composite_policy_schema = CompositePurchasePolicySchemaIn(
+                **composite_policy_payload
+            )
+            self.add_composite_purchase_policy(composite_policy_schema)
 
         return {"message": "Fake data created successfully"}
 
@@ -1211,3 +1394,14 @@ class StoreController:
             except ObjectDoesNotExist:
                 pass
         return managers_with_permission
+
+    def get_stores_that_manager_or_owner(self, request, user_id: int):
+        stores = []
+        owners = Owner.objects.filter(user_id=user_id)
+        for owner in owners:
+            stores.append(owner.store)
+        managers = Manager.objects.filter(user_id=user_id)
+        for manager in managers:
+            stores.append(manager.store)
+
+        return stores

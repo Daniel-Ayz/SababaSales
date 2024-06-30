@@ -1,7 +1,7 @@
 from typing import List
 
 from purchase.purchase_controller import purchaseController
-from purchase.schemas import PurchaseSchema
+from purchase.schemas import PurchaseHistorySchema
 
 import warnings
 
@@ -19,12 +19,12 @@ pc = purchaseController()
 
 
 # -------------------- Get history --------------------
-@router.get("/{user_id}/get_purchase_history", response=List[PurchaseSchema]) # response should be changed to the correct schema
+@router.get("/{user_id}/get_purchase_history", response=List[PurchaseHistorySchema]) 
 def get_purchase_history(request, user_id: int):
     return pc.get_purchase_history(request, user_id)
 
 # -------------------- Get purchase receipt --------------------
-@router.get("/{purchase_id}/get_purchase_receipt", response=PurchaseSchema) # response should be changed to the correct schema
+@router.get("/{purchase_id}/get_purchase_receipt", response=PurchaseHistorySchema) 
 def get_purchase_receipt(request, purchase_id: int):
     return pc.get_purchase_receipt(request, purchase_id)
 

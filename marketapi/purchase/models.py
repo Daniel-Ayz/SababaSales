@@ -40,7 +40,7 @@ class HistoryBasket(models.Model):
     basket_id = models.AutoField(primary_key=True)
     store_id = models.IntegerField()
     # many-to-one relationship with Cart
-    purchase_id = models.ForeignKey(Purchase, on_delete=models.CASCADE)
+    purchase = models.ForeignKey(Purchase, on_delete=models.CASCADE)
 
     total_price = models.FloatField()
     total_quantity = models.IntegerField()
