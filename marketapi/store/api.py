@@ -165,7 +165,7 @@ def remove_purchase_policy(
     return sc.remove_purchase_policy(request, role, payload)
 
 
-@router.post(
+@router.get(
     "/{store_id}/get_purchase_policies",
     response=List[
         Union[
@@ -197,7 +197,7 @@ def remove_discount_policy(
     return sc.remove_discount_policy(request, role, payload)
 
 
-@router.post(
+@router.get(
     "/{store_id}/get_discount_policies",
     response=List[
         Union[
@@ -211,7 +211,7 @@ def get_discount_policies(request, role: RoleSchemaIn):
     return sc.get_discount_policies(request, role)
 
 
-@router.post("/{store_id}/get_conditions", response=List[ConditionSchemaOut])
+@router.get("/{store_id}/get_conditions", response=List[ConditionSchemaOut])
 def get_conditions(request, payload: GetConditionsSchemaIn):
     return sc.get_conditions(request, payload)
 
