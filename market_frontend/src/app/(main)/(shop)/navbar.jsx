@@ -18,6 +18,12 @@ import {
 import { Bars3Icon, ShoppingCartIcon ,BellIcon  } from '@heroicons/react/24/outline';
 import { XIcon } from '@heroicons/react/24/solid';
 import axios from 'axios';
+import { NotificationsProvider } from './NotificationsContext';
+import NotificationsMenu from './notifications';
+import ChatApp from './chat'; // Adjust the path based on your directory structure
+
+
+
 axios.defaults.withCredentials = true;
 
 const navigation = [
@@ -143,8 +149,14 @@ export default function NavBar({setCart}) {
         <Categories className="ml-4" categoriesDict={CATEGORIES} />
       </div>
       <div>
-        {/* Your login button or other content */}
-
+      {user.loggedIn && (
+                <Link
+                  href="/manage_stores"
+                  className="ml-4 text-white hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md whitespace-nowrap"
+                >
+                  Manage Stores
+                </Link>
+              )}
                   <div className='space'></div>
       </div>
     </div>
@@ -156,7 +168,10 @@ export default function NavBar({setCart}) {
                 >
                   <span className="absolute -inset-1.5" />
                   <span className="sr-only">View notifications</span>
-                  <Notifications/>
+                  <NotificationsProvider>
+                  <NotificationsMenu />
+                  <ChatApp />
+                </NotificationsProvider>
                 </button>}
 
                 {/* Cart icon */}

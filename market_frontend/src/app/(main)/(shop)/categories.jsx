@@ -15,7 +15,6 @@ export default function Categories({categoriesDict}) {
     const [buttonText, setButtonText] = React.useState('Categories');
     // go over all values of storesProducts and get the categories
     const getAllCategories = () => {
-        console.log("LOKK AT ME", storesProducts)
         const categoriesSet = new Set();
 
         // Loop through each store's products
@@ -31,8 +30,6 @@ export default function Categories({categoriesDict}) {
     };
 
     const allCategories = getAllCategories();
-    console.log("Categories:")
-    console.log(allCategories)
 
     const handleCategoryClick = (category) => {
         setCategories(category);
