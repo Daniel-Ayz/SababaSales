@@ -15,7 +15,7 @@ class AbstractPaymentService(PaymentServiceInterface):
             "year": payment_details.expiration_date.year,
             "holder": payment_details.holder,
             "ccv": payment_details.security_code,
-            "id": payment_details.holder_id,
+            "id": payment_details.holder_identification_number,
         }
         response = requests.post(url, data=payload)
         if response.status_code == 200:

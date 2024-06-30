@@ -145,7 +145,7 @@ class purchaseController:
                     "security_code": "123",
                     "total_price": 0,
                     "holder": "Israel Israeli",
-                    "holder_id": "123456789",
+                    "holder_identification_number": "123456789",
                 }
 
             payment_details = {
@@ -155,7 +155,9 @@ class purchaseController:
                 "security_code": payment_information_user["security_code"],
                 "total_price": 0,
                 "holder": uc.get_user_full_name(request, user_id),
-                "holder_id": uc.get_user_identification_number(request, user_id),
+                "holder_identification_number": uc.get_user_identification_number(
+                    request, user_id
+                ),
             }
 
             # if payment is ok:

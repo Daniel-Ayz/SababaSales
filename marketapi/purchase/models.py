@@ -28,7 +28,7 @@ class Purchase(models.Model):
 
 class PaymentMethod(models.Model):
     holder = models.CharField(max_length=100)
-    holder_id = models.IntegerField()
+    holder_identification_number = models.IntegerField()
     currency = models.CharField(max_length=10)
     credit_card_number = models.CharField(max_length=16)
     expiration_date = models.DateField()
