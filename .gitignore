@@ -5,3 +5,4 @@
 /.idea
 /market_frontend/node_modules
 *.pyc
+/marketapi/store/migrations/*

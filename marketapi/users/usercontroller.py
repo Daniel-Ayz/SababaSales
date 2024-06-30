@@ -83,9 +83,6 @@ class UserController:
         userSchema = UserSetupSchema(
             id=user.id, username=user.username, email=user.email, cart_id=cart_id
         )
-        print(user.username)
-        print(user.email)
-        print(userSchema)
         return userSchema
 
     def delete_user(self, request, user_id) -> any:
@@ -228,55 +225,30 @@ class UserController:
         payment_info = PaymentInformationUser.objects.get(user=user)
         return payment_info
 
+    def get_user_id_by_email(self, email: str) -> int:
+        user = CustomUser.objects.get(email=email)
+        return user.id
+
     def create_fake_data(self):
         usernames = [
-            "Yishay Butzim",
-            "Hana Tzirlin",
-            "Hanan Margilan",
-            "Or Gazma",
-            "Mor Tal Combat",
-            "Adi Das",
-            "Beti Paul",
-            "Micha Napo",
-            "Moti Batzia",
-            "Itzik Hagingi",
-            "Pupik Levi",
-            "Ortal Gabot",
+            "Yishay_Butzim",
+            "Hana_Tzirlin",
+            "Hanan_Margilan",
+            "Or_Gazma",
+            "Mor_Tal_Combat",
+            "Adi_Das",
+            "Beti_Paul",
+            "Micha_Napo",
+            "Moti_Batzia",
+            "Itzik_Hagingi",
+            "Pupik_Levi",
+            "Ortal_Gabot",
         ]
-        passwords = [
-            "user1",
-            "user2",
-            "user3",
-            "user4",
-            "user5",
-            "user6",
-            "user7",
-            "user8",
-            "user9",
-            "user10",
-            "user11",
-            "user12",
-        ]
-        emails = [
-            "user1@gmail.com",
-            "user2@gmail.com",
-            "user3@gmail.com",
-            "user4@gmail.com",
-            "user5@gmail.com",
-            "user6@gmail.com",
-            "user7@gmail.com",
-            "user8@gmail.com",
-            "user9@gmail.com",
-            "user10@gmail.com",
-            "user11@gmail.com",
-            "user12@gmail.com",
-        ]
-
         for i in range(len(usernames)):
             user = CustomUser.objects.create(
                 username=usernames[i],
-                email=emails[i],
-                password=make_password(passwords[i]),
+                email=f"{usernames[i]}@gmail.com",
+                password=make_password(usernames[i]),
             )
             user.save()
 
