@@ -126,6 +126,15 @@ class UserController:
         notifications = Notification.objects.filter(user=user)
         return notifications
 
+    def mark_notification_as_seen(self, request, notification_id) -> NotificationSchema:
+        """
+        marks a notification as seen
+        """
+        notification = Notification.objects.get(id=notification_id)
+        notification.seen = True
+        notification.save()
+        return notification
+
     def send_notification(self, request, target_user_id, payload) -> NotificationSchema:
         """
         sends a notification from current session user to the target user
@@ -142,8 +151,10 @@ class UserController:
         notification.save()
 
         if target_user.online_count > 0:
-            send_message_to_user(target_user_id, payload.msg)
-            _mark_notification_as_seen(notification.id)
+            send_message_to_user(
+                target_user_id, payload.msg, notification.id, user.username
+            )
+            # _mark_notification_as_seen(notification.id)
 
         return notification
 
