@@ -72,7 +72,7 @@ export default function Discounts({ params }) {
     if (!discount) return;
 
     try {
-      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/add_discount_policies`, {
+      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/add_discount_policy`, {
         user_id: user.id,
         store_id: store_id
       });
