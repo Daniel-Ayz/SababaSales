@@ -9,6 +9,8 @@ from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.errors import HttpError
 from django.http import Http404
+import random
+
 
 from .discount import (
     SimpleDiscountClass,
@@ -1082,10 +1084,20 @@ class StoreController:
             "Hummus Heaven": {
                 "category": "Food",
                 "products": ["Classic Hummus", "Spicy Hummus", "Garlic Hummus"],
+                "Links": [
+                    "https://www.eatingwell.com/thmb/whG5O2XFksPLrc73YGNoRiYNrFQ=/750x0/filters:no_upscale():max_bytes(150000):strip_icc():format(webp)/6080917-adf6cf9f2c1944a9bfbaeadd032013a5.jpg",
+                    "https://heartbeetkitchen.com/foodblog/wp-content/uploads/2023/03/spicy-hummus-13.jpg",
+                    "https://shoppy.co.il/cdn/shop/products/ahlahummuslemongarlic_720x.png?v=1641413539",
+                ],
             },
             "Falafel Fiesta": {
                 "category": "Food",
                 "products": ["Falafel Wrap", "Falafel Plate", "Falafel Salad"],
+                "Links": [
+                    "https://cookingwithayeh.com/wp-content/uploads/2024/03/Falafel-Wrap-1.jpg",
+                    "https://hilahcooking.com/wp-content/uploads/2017/03/spicy-falafel.jpg",
+                    "https://kitchenconfidante.com/wp-content/uploads/2019/05/Falafel-Salad-kitchenconfidante.com-9021.jpg",
+                ],
             },
             "Startup Nation Tech": {
                 "category": "Technology",
@@ -1093,6 +1105,11 @@ class StoreController:
                     "Israeli Smartphone",
                     "Kibbutz Laptop",
                     "Jerusalem Smartwatch",
+                ],
+                "Links": [
+                    "https://static.timesofisrael.com/www/uploads/2022/07/F210127YS44-640x400.jpg",
+                    "https://cdn.thewirecutter.com/wp-content/media/2023/06/bestlaptops-2048px-9765.jpg?auto=webp&quality=75&width=1024&dpr=2",
+                    "https://m.media-amazon.com/images/I/61ksrJ2LsgL._AC_SX679_.jpg",
                 ],
             },
             "Tel Aviv Trends": {
@@ -1102,6 +1119,11 @@ class StoreController:
                     "Negev Leather Jacket",
                     "Eilat Running Shoes",
                 ],
+                "Links": [
+                    "https://i.ebayimg.com/images/g/JlEAAOSwKmphgYSh/s-l1600.jpg",
+                    "https://img01.ztat.net/article/spp-media-p1/13e0e8a354eb4656a895b06a3e324f9b/305d7df6e4f34e339a1cf31b585adbd4.jpg?imwidth=762",
+                    "https://contents.mediadecathlon.com/p2606890/k$30ab17a373351d4761e138a9c3be9b02/jogflow-5001-men-s-running-shoes-white-blue-red.jpg?format=auto&quality=40&f=452x452",
+                ],
             },
             "Book Bazaar Israel": {
                 "category": "Books",
@@ -1110,6 +1132,11 @@ class StoreController:
                     "Israeli Cookbook",
                     "Zionist Historical Biography",
                 ],
+                "Links": [
+                    "https://mosaicmagazine.com/wp-content/uploads/2018/10/Weingrad-ZF.jpg",
+                    "https://m.media-amazon.com/images/I/81KRghJo4YL._SL1500_.jpg",
+                    "https://www.urimpublications.com/mm5/graphics/00000001/historyzionismWeb2.jpg",
+                ],
             },
             "Toy Town Israel": {
                 "category": "Toys",
@@ -1117,6 +1144,11 @@ class StoreController:
                     "David Ben-Gurion Action Figure",
                     "Israeli Board Game",
                     "Jerusalem Puzzle Set",
+                ],
+                "Links": [
+                    "https://asufadesign.com/cdn/shop/files/BG-Product-PNG.png?v=1707639053",
+                    "https://www.dvarimbego.co.il/pub/123432/%D7%9E%D7%A9%D7%97%D7%A7%D7%99%20%D7%A9%D7%A4%D7%99%D7%A8/3694571.jpg?quality=65&height=380&mode=max",
+                    "https://eurographics.blob.core.windows.net/45a2776f-ae2f-4bb8-9e22-db4ab5a98cbe/ProductManagement/Products/01dd2e93-d552-4a74-b7cf-ae9fe130c1fa/6010-5550.jpg?t=638539811317412640",
                 ],
             },
         }
@@ -1153,7 +1185,8 @@ class StoreController:
                     name=store_data[store_names[i]]["products"][j],
                     category=store_data[store_names[i]]["category"],
                     quantity=10,
-                    initial_price=100,
+                    initial_price=random.randint(10, 100),
+                    image_link=store_data[store_names[i]]["Links"][j],
                 )
 
                 # Create a simple discount
