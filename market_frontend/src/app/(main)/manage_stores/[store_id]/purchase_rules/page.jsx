@@ -27,7 +27,28 @@ export default function PurchasePolicies({ params }) {
         });
         console.log('Fetched policies:', response.data);
 
-        setPurchasePolicies(response.data || []);
+        const policiesWithConditions = [];
+        for (const policy of response.data) {
+          const conditionsResponse = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_conditions`, {
+            store_id: store_id,
+            to_discount: false,
+            target_id: policy.id
+          });
+          const combination_functions = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_combine_function`, {
+            store_id: store_id,
+            to_discount: false,
+            target_id: policy.id
+          });
+
+          policiesWithConditions.push({
+            ...policy,
+            conditions: conditionsResponse.data,
+            combine_function: combination_functions.data || null
+          });
+        }
+        console.log('Policies with conditions:', policiesWithConditions);
+
+        setPurchasePolicies(policiesWithConditions);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching policies:', error);
@@ -100,19 +121,19 @@ export default function PurchasePolicies({ params }) {
           <ul className="space-y-2">
             {purchasePolicies.map((policy, index) => (
               <li key={index} className="flex flex-col justify-between items-start bg-white p-4 rounded shadow">
-                <div><strong>Combine Function:</strong> {policy.combine_function}</div>
-                <div><strong>Policies:</strong>
+                {policy.combine_function && (
+                  <div><strong>Combine Function:</strong> {policy.combine_function}</div>
+                )}
+                <div><strong>Conditions:</strong>
                   <ul className="ml-4 list-disc">
-                    {policy.policies && Array.isArray(policy.policies) ? (
-                      policy.policies.map((subPolicy, subIndex) => (
-                        <li key={subIndex}>
-                          <strong>Policy {subIndex + 1}:</strong>
-                          <div>Type: {subPolicy.type}</div>
-                          <div>Details: {JSON.stringify(subPolicy.details)}</div>
+                    {policy.conditions && Array.isArray(policy.conditions) ? (
+                      policy.conditions.map((condition, condIndex) => (
+                        <li key={condIndex}>
+                          <strong>Condition {condIndex + 1}:</strong> {condition.applies_to} : {condition.name_of_apply} must be {condition.condition} {condition.value}
                         </li>
                       ))
                     ) : (
-                      <li>No policies available</li>
+                      <li>No conditions available</li>
                     )}
                   </ul>
                 </div>

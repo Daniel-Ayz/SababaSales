@@ -20,20 +20,29 @@ class Role(PolymorphicModel):
 
 
 class Owner(Role):
-    #store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='owners')
+    # store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='owners')
     is_founder = models.BooleanField(default=False)
-    assigned_by = models.ForeignKey('self', on_delete=models.CASCADE, related_name='assigned_owners', null=True,
-                                    blank=True)
-    #because there is a related name we get both who assigned the owner and who else the owner assigned
+    assigned_by = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        related_name="assigned_owners",
+        null=True,
+        blank=True,
+    )
+    # because there is a related name we get both who assigned the owner and who else the owner assigned
 
 
 class Manager(Role):
-    #store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='managers')
-    assigned_by = models.ForeignKey(Owner, on_delete=models.CASCADE, related_name='assigned_managers')
+    # store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='managers')
+    assigned_by = models.ForeignKey(
+        Owner, on_delete=models.CASCADE, related_name="assigned_managers"
+    )
 
 
 class ManagerPermission(models.Model):
-    manager = models.ForeignKey(Manager, on_delete=models.CASCADE, related_name='manager_permissions')
+    manager = models.ForeignKey(
+        Manager, on_delete=models.CASCADE, related_name="manager_permissions"
+    )
     can_add_product = models.BooleanField(default=False)
     can_edit_product = models.BooleanField(default=False)
     can_delete_product = models.BooleanField(default=False)
@@ -45,11 +54,15 @@ class ManagerPermission(models.Model):
 
 
 class StoreProduct(models.Model):
-    store = models.ForeignKey(Store, on_delete=models.CASCADE, related_name='store_products')
+    store = models.ForeignKey(
+        Store, on_delete=models.CASCADE, related_name="store_products"
+    )
     initial_price = models.FloatField()
     quantity = models.IntegerField()
     name = models.CharField(max_length=255)
     category = models.CharField(max_length=255)
+    # added link to picture - not mandatory
+    image_link = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -57,19 +70,23 @@ class StoreProduct(models.Model):
 
 class DiscountBase(PolymorphicModel):
     store = models.ForeignKey(Store, on_delete=models.CASCADE)
-    #discount_type = models.CharField(max_length=50)
+    # discount_type = models.CharField(max_length=50)
     is_root = models.BooleanField(default=False)
 
 
 class SimpleDiscount(DiscountBase):
     percentage = models.FloatField()
-    applicable_products = models.ManyToManyField(StoreProduct, related_name='simple_discounts')
+    applicable_products = models.ManyToManyField(
+        StoreProduct, related_name="simple_discounts"
+    )
     applicable_categories = models.TextField(null=True, blank=True)
 
 
 class ConditionalDiscount(DiscountBase):
-    #condition_name = models.CharField(max_length=255)
-    discount = models.ForeignKey("DiscountBase", on_delete=models.CASCADE, related_name='conditional_discounts')
+    # condition_name = models.CharField(max_length=255)
+    discount = models.ForeignKey(
+        "DiscountBase", on_delete=models.CASCADE, related_name="conditional_discounts"
+    )
 
 
 @receiver(pre_delete, sender=ConditionalDiscount)
@@ -79,9 +96,11 @@ def delete_associated_discount(sender, instance, **kwargs):
 
 
 class CompositeDiscount(DiscountBase):
-    discounts = models.ManyToManyField("DiscountBase", related_name='composite_discounts')
+    discounts = models.ManyToManyField(
+        "DiscountBase", related_name="composite_discounts"
+    )
     combine_function = models.CharField(max_length=50)
-    #conditions = models.TextField(null=True, blank=True)
+    # conditions = models.TextField(null=True, blank=True)
 
 
 @receiver(pre_delete, sender=CompositeDiscount)
@@ -92,17 +111,38 @@ def cascade_delete_discounts(sender, instance, **kwargs):
 
 
 class Condition(models.Model):
-    applies_to = models.CharField(max_length=255)  #product, category, time, age, price
-    name_of_apply = models.CharField(max_length=255)  #name of the product, category, etc.
-    condition = models.CharField(max_length=255)  #greater than, less than, equal
+    applies_to = models.CharField(max_length=255)  # product, category, time, age, price
+    name_of_apply = models.CharField(
+        max_length=255
+    )  # name of the product, category, etc.
+    condition = models.CharField(max_length=255)  # greater than, less than, equal
     value = models.FloatField()
-    discount = models.ForeignKey(DiscountBase, on_delete=models.CASCADE, related_name='conditions', null=True,
-                                 blank=True)
-    purchase_policy = models.ForeignKey('PurchasePolicyBase', on_delete=models.CASCADE, related_name='conditions',
-                                        null=True, blank=True)
+    discount = models.ForeignKey(
+        DiscountBase,
+        on_delete=models.CASCADE,
+        related_name="conditions",
+        null=True,
+        blank=True,
+    )
+    purchase_policy = models.ForeignKey(
+        "PurchasePolicyBase",
+        on_delete=models.CASCADE,
+        related_name="conditions",
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
-        return "condition for " + self.applies_to + " " + self.name_of_apply + " " + self.condition + " " + self.value
+        return (
+            "condition for "
+            + self.applies_to
+            + " "
+            + self.name_of_apply
+            + " "
+            + self.condition
+            + " "
+            + self.value
+        )
 
 
 class PurchasePolicyBase(PolymorphicModel):
@@ -115,9 +155,14 @@ class SimplePurchasePolicy(PurchasePolicyBase):
 
 
 class ConditionalPurchasePolicy(PurchasePolicyBase):
-    restriction = models.ForeignKey(PurchasePolicyBase, on_delete=models.CASCADE,
-                                    related_name='restriction_policies')
-    condition = models.ForeignKey(PurchasePolicyBase, on_delete=models.CASCADE, related_name='condition_policies')
+    restriction = models.ForeignKey(
+        PurchasePolicyBase,
+        on_delete=models.CASCADE,
+        related_name="restriction_policies",
+    )
+    condition = models.ForeignKey(
+        PurchasePolicyBase, on_delete=models.CASCADE, related_name="condition_policies"
+    )
 
 
 @receiver(pre_delete, sender=ConditionalPurchasePolicy)
@@ -128,7 +173,9 @@ def delete_associated_condition_restriction(sender, instance, **kwargs):
 
 
 class CompositePurchasePolicy(PurchasePolicyBase):
-    policies = models.ManyToManyField(PurchasePolicyBase, related_name='composite_purchase_policies')
+    policies = models.ManyToManyField(
+        PurchasePolicyBase, related_name="composite_purchase_policies"
+    )
     combine_function = models.CharField(max_length=50)
 
 
@@ -144,8 +191,8 @@ class Bid(models.Model):
     product = models.ForeignKey(StoreProduct, on_delete=models.CASCADE)
     quantity = models.IntegerField()
     price = models.FloatField()
-    accepted_by = models.ManyToManyField(Role, related_name='accepted_bids', blank=True)
-    user_id = models.IntegerField()  #the user who made the bid
+    accepted_by = models.ManyToManyField(Role, related_name="accepted_bids", blank=True)
+    user_id = models.IntegerField()  # the user who made the bid
     can_purchase = models.BooleanField(default=False)
 
     def __str__(self):
