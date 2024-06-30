@@ -4,13 +4,17 @@ import {UserContext} from "@/app/(main)/layout";
 import {ToastContainer, toast, Bounce} from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+import { useNotifications } from './NotificationsContext';
+
+
 function ChatApp() {
+    const { addNotification } = useNotifications();
     const [message, setMessage] = useState('');
     const [messages, setMessages] = useState([]);
     const chatSocket = useRef(null);
     const {user} = useContext(UserContext);
 
-    const notify = (msg) => toast('🦄' + msg, {
+    const notify = (msg, sent_by) => toast('🦄 ' + sent_by + ": " + msg,{
                                                     position: "top-right",
                                                     autoClose: 10000,
                                                     hideProgressBar: false,
@@ -18,7 +22,7 @@ function ChatApp() {
                                                     pauseOnHover: true,
                                                     draggable: true,
                                                     progress: undefined,
-                                                    theme: "dark",
+                                                    theme: "light",
                                                     transition: Bounce,
                                                     });
 
@@ -32,8 +36,16 @@ function ChatApp() {
             const data = JSON.parse(e.data);
             if (data.type === 'chat') {
                 console.log("message: " + data.message);
+                console.log("id: " + data.notification_id);
+                console.log("sent_by: " + data.sent_by);
                 setMessages(prevMessages => [...prevMessages, data.message]);
-                notify(data.message);
+                addNotification({
+                    id: data.notification_id, // Generate a unique ID; modify as necessary
+                    message: data.message,
+                    sent_by: data.sent_by, // Adjust based on your data
+                    seen: false
+                });
+                notify(data.message, data.sent_by);
             }
         };
 

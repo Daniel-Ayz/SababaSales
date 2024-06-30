@@ -87,6 +87,14 @@ def send_notification(request, target_user_id: int, payload: NotificationIn):
     return uc._send_notification(request, target_user_id, payload)
 
 
+@router.put(
+    "/notifications/{int:notification_id}/",
+    response={200: NotificationSchema, 404: Error},
+)
+def mark_notification_as_seen(request, notification_id: int):
+    return uc.mark_notification_as_seen(request, notification_id)
+
+
 @router.get("/cart", response={200: CartSchema, 404: Error})
 def get_user_cart(request):
     """

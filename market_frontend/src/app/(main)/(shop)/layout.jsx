@@ -4,6 +4,8 @@ import NavBar from './navbar'; // Assuming Example component is in a separate fi
 import Footer from './footer'; // Assuming Example component is in a separate file
 import Cart from './cart'; // Assuming Example component is in a separate file
 import ChatApp from './chat'; // Adjust the path based on your directory structure
+import NotificationsMenu from './notifications';
+import { NotificationsProvider } from './NotificationsContext';
 
 
 const Layout = ({ children }) => {
@@ -20,7 +22,10 @@ const Layout = ({ children }) => {
       <NavBar setCart = {setCart} />
       <Cart isOpen={cart} setCart = {setCart}/>
 
-        <ChatApp />
+        {/*<NotificationsProvider>
+      <NotificationsMenu />
+      <ChatApp />
+    </NotificationsProvider>*/}
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto bg-gray-100">
         {children}
