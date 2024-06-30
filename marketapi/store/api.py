@@ -40,6 +40,13 @@ from .schemas import (
     BidSchemaOut,
     DecisionBidSchemaIn,
     MakePurchaseOnBidSchemaIn,
+    ManagerSchemaInEmail,
+    OwnerSchemaInEmail,
+    RemoveOwnerSchemaInEmail,
+    RemoveManagerSchemaInEmail,
+    MakePurchaseOnBidSchemaIn,
+    ConditionSchemaOut,
+    GetConditionsSchemaIn,
 )
 from django.shortcuts import get_object_or_404, aget_object_or_404
 
@@ -72,6 +79,11 @@ def search_products(
     return sc.search_products(request, search_query, filter_query)
 
 
+@router.get("/manager_or_owner", response=List[StoreSchemaOut])
+def get_stores_that_manager_or_owner(request, user_id: int):
+    return sc.get_stores_that_manager_or_owner(request, user_id)
+
+
 @router.get("/{store_id}", response=StoreSchemaOut)
 def get_store(request, store_id: int):
     return sc.get_store(request, store_id)
@@ -87,6 +99,16 @@ def remove_owner(request, payload: RemoveOwnerSchemaIn):
     return sc.remove_owner(request, payload)
 
 
+@router.post("/{store_id}/assign_owner_email")
+def assign_owner(request, payload: OwnerSchemaInEmail):
+    return sc.assign_owner(request, payload)
+
+
+@router.delete("/{store_id}/remove_owner_email")
+def remove_owner(request, payload: RemoveOwnerSchemaInEmail):
+    return sc.remove_owner(request, payload)
+
+
 @router.delete("/{store_id}/leave_ownership")
 def leave_ownership(request, payload: RoleSchemaIn):
     return sc.leave_ownership(request, payload)
@@ -99,6 +121,16 @@ def assign_manager(request, payload: ManagerSchemaIn):
 
 @router.delete("/{store_id}/remove_manager")
 def remove_manager(request, payload: RemoveManagerSchemaIn):
+    return sc.remove_manager(request, payload)
+
+
+@router.post("/{store_id}/assign_manager_email")
+def assign_manager(request, payload: ManagerSchemaInEmail):
+    return sc.assign_manager(request, payload)
+
+
+@router.delete("/{store_id}/remove_manager_email")
+def remove_manager(request, payload: RemoveManagerSchemaInEmail):
     return sc.remove_manager(request, payload)
 
 
@@ -157,7 +189,7 @@ def remove_purchase_policy(
     return sc.remove_purchase_policy(request, role, payload)
 
 
-@router.get(
+@router.post(
     "/{store_id}/get_purchase_policies",
     response=List[
         Union[
@@ -189,7 +221,7 @@ def remove_discount_policy(
     return sc.remove_discount_policy(request, role, payload)
 
 
-@router.get(
+@router.post(
     "/{store_id}/get_discount_policies",
     response=List[
         Union[
@@ -202,6 +234,10 @@ def remove_discount_policy(
 def get_discount_policies(request, role: RoleSchemaIn):
     return sc.get_discount_policies(request, role)
 
+
+@router.get("/{store_id}/get_conditions", response=List[ConditionSchemaOut])
+def get_conditions(request, payload: GetConditionsSchemaIn):
+    return sc.get_conditions(request, payload)
 
 @router.post("/{store_id}/add_product")
 def add_product(request, role: RoleSchemaIn, payload: StoreProductSchemaIn):

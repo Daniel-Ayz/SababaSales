@@ -73,7 +73,6 @@ def update_user(request, user_id: int, payload: UserRegisterSchema):
 @router.get(
     "/users/notifications",
     response={200: List[NotificationSchema], 404: Error},
-    auth=django_auth,
 )
 def get_user_notifications(request):
     return uc.get_user_notifications(request)
@@ -83,7 +82,6 @@ def get_user_notifications(request):
 @router.post(
     "/notifications/{int:target_user_id}",
     response={200: NotificationSchema, 404: Error},
-    auth=django_auth,
 )
 def send_notification(request, target_user_id: int, payload: NotificationIn):
     return uc.send_notification(request, target_user_id, payload)

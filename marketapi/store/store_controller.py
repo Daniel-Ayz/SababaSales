@@ -63,10 +63,16 @@ from .schemas import (
     BidSchemaIn,
     DecisionBidSchemaIn,
     MakePurchaseOnBidSchemaIn,
+    ConditionSchema,
+    MakePurchaseOnBidSchemaIn,
+    GetConditionsSchemaIn,
 )
+from users.usercontroller import UserController
 
 router = Router()
 store_lock = hash("store_lock")
+
+uc = UserController()
 
 
 def get_list_from_string(conditions):
@@ -109,15 +115,19 @@ class StoreController:
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
                 )
-                if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
+                user_id_to_assign = uc.get_user_id_by_email(payload.email)
+
+                if Owner.objects.filter(
+                    user_id=user_id_to_assign, store=store
+                ).exists():
                     raise HttpError(400, "User is already an owner")
                 if Manager.objects.filter(
-                    user_id=payload.user_id, store=store
+                    user_id=user_id_to_assign, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
 
                 owner = Owner.objects.create(
-                    user_id=payload.user_id,
+                    user_id=user_id_to_assign,
                     assigned_by=assigning_owner,
                     store=store,
                     is_founder=False,
@@ -137,8 +147,9 @@ class StoreController:
                 removing_owner = get_object_or_404(
                     Owner, user_id=payload.removed_by, store=store
                 )
+                user_id_to_assign = uc.get_user_id_by_email(payload.email)
                 removed_owner = get_object_or_404(
-                    Owner, user_id=payload.user_id, store=store
+                    Owner, user_id=user_id_to_assign, store=store
                 )
 
                 if removed_owner.assigned_by != removing_owner:
@@ -166,7 +177,6 @@ class StoreController:
         return {"message": "Ownership left successfully"}
 
     def assign_manager(self, request, payload: ManagerSchemaIn):
-
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
@@ -178,12 +188,13 @@ class StoreController:
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
                 )
+                user_id_to_assign = uc.get_user_id_by_email(payload.email)
                 if Manager.objects.filter(
-                    user_id=payload.user_id, store=store
+                    user_id=user_id_to_assign, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
                 elif Owner.objects.filter(
-                    user_id=payload.user_id, store=store
+                    user_id=user_id_to_assign, store=store
                 ).exists():
                     raise HttpError(400, "User is already an owner")
 
@@ -194,7 +205,7 @@ class StoreController:
                     raise HttpError(403, "Only owners can assign managers")
 
                 manager = Manager.objects.create(
-                    user_id=payload.user_id, assigned_by=assigning_owner, store=store
+                    user_id=user_id_to_assign, assigned_by=assigning_owner, store=store
                 )
 
         return {"message": "Manager assigned successfully"}
@@ -211,8 +222,9 @@ class StoreController:
                 removing_owner = get_object_or_404(
                     Owner, user_id=payload.removed_by, store=store
                 )
+                user_id_to_remove = uc.get_user_id_by_email(payload.email)
                 removed_manager = get_object_or_404(
-                    Manager, user_id=payload.user_id, store=store
+                    Manager, user_id=user_id_to_remove, store=store
                 )
 
                 if removed_manager.assigned_by != removing_owner:
@@ -647,6 +659,24 @@ class StoreController:
 
         return discounts
 
+    def get_conditions(self, request, payload: GetConditionsSchemaIn):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                if payload.to_discount:
+                    discount_lock = f"{store.pk}_discount_lock"
+                    cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});")
+                    discount = get_object_or_404(DiscountBase, pk=payload.target_id)
+                    conditions = discount.conditions.all()
+                else:
+                    policy_lock = f"{store.pk}_policy_lock"
+                    cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});")
+                    policy = get_object_or_404(PurchasePolicyBase, pk=payload.target_id)
+                    conditions = policy.conditions.all()
+        return conditions
+
+
     def validate_permissions(
         self, role: RoleSchemaIn, store: Store, permission: str, cursor
     ):
@@ -1058,16 +1088,16 @@ class StoreController:
 
         stores = []
         store_names = list(store_data.keys())
-        for i in range(1, 7):
+        for i in range(len(store_names)):
             stores.append(
                 Store.objects.create(
-                    name=store_names[i - 1],
-                    description=f"This is a fake store {i}",
+                    name=store_names[i],
+                    description=f"This is {store_names[i]} {i}",
                     is_active=True,
                 )
             )
 
-        for i in range(0, 6):
+        for i in range(len(stores)):
             owner = Owner.objects.create(user_id=i, store=stores[i], is_founder=True)
             manager = Manager.objects.create(
                 user_id=2 * len(store_names) - i - 1, store=stores[i], assigned_by=owner
@@ -1090,10 +1120,9 @@ class StoreController:
                     quantity=10,
                     initial_price=100,
                 )
-                # purchase_policy = PurchasePolicy.objects.create(
-                #     store=stores[i], max_items_per_purchase=5, min_items_per_purchase=1
-                # )
-                discount = SimpleDiscount.objects.create(
+
+                # Create a simple discount
+                simple_discount = SimpleDiscount.objects.create(
                     store=stores[i],
                     is_root=True,
                     percentage=10,
@@ -1101,6 +1130,91 @@ class StoreController:
                         [store_data[store_names[i]]["category"]]
                     ),
                 )
+                simple_discount.applicable_products.set([product])
+                simple_discount.save()
+
+                # Create a conditional discount
+                payload_dict = {
+                    "store_id": stores[i].id,
+                    "is_root": True,
+                    "condition": {
+                        "applies_to": "products",
+                        "name_of_apply": store_data[store_names[i]]["products"][j],
+                        "condition": "at_least",
+                        "value": 5,
+                    },
+                    "discount": {
+                        "store_id": stores[i].id,
+                        "is_root": False,
+                        "percentage": 15.0,
+                        "applicable_categories": [
+                            store_data[store_names[i]]["category"]
+                        ],
+                        "applicable_products": [
+                            str(product.id)
+                        ],  # Use the product ID as a string
+                    },
+                }
+
+            condition_schema = ConditionSchema(**payload_dict["condition"])
+            discount_data = payload_dict["discount"]
+            discount_data["applicable_categories"] = json.loads(
+                json.dumps(discount_data["applicable_categories"])
+            )
+            simple_discount_schema = SimpleDiscountSchemaIn(**discount_data)
+
+            payload = ConditionalDiscountSchemaIn(
+                store_id=payload_dict["store_id"],
+                is_root=payload_dict["is_root"],
+                condition=condition_schema,
+                discount=simple_discount_schema,
+            )
+            self.add_conditional_discount_policy(payload)
+
+            # Create simple purchase policies
+            condition1 = {
+                "applies_to": "product",
+                "name_of_apply": product.name,
+                "condition": "at_most",
+                "value": 5,
+            }
+            purchase_policy_payload1 = {
+                "store_id": stores[i].id,
+                "is_root": True,
+                "condition": condition1,
+            }
+            simple_policy_schema1 = SimplePurchasePolicySchemaIn(
+                **purchase_policy_payload1
+            )
+            self.add_simple_purchase_policy(simple_policy_schema1)
+
+            condition2 = {
+                "applies_to": "time",
+                "name_of_apply": "",
+                "condition": "at_most",
+                "value": 23,
+            }
+            purchase_policy_payload2 = {
+                "store_id": stores[i].id,
+                "is_root": True,
+                "condition": condition2,
+            }
+            simple_policy_schema2 = SimplePurchasePolicySchemaIn(
+                **purchase_policy_payload2
+            )
+            self.add_simple_purchase_policy(simple_policy_schema2)
+
+            # Create a composite purchase policy
+            composite_policy_payload = {
+                "store_id": stores[i].id,
+                "is_root": True,
+                "policies": [purchase_policy_payload1, purchase_policy_payload2],
+                "combine_function": "logical_and",
+            }
+            composite_policy_schema = CompositePurchasePolicySchemaIn(
+                **composite_policy_payload
+            )
+            self.add_composite_purchase_policy(composite_policy_schema)
 
         return {"message": "Fake data created successfully"}
 
@@ -1211,3 +1325,14 @@ class StoreController:
             except ObjectDoesNotExist:
                 pass
         return managers_with_permission
+
+    def get_stores_that_manager_or_owner(self, request, user_id: int):
+        stores = []
+        owners = Owner.objects.filter(user_id=user_id)
+        for owner in owners:
+            stores.append(owner.store)
+        managers = Manager.objects.filter(user_id=user_id)
+        for manager in managers:
+            stores.append(manager.store)
+
+        return stores
