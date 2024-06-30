@@ -74,12 +74,10 @@ const marks = [
     products = fuse.search(search).map((result) => result.item);
   }
   // filter out categories
-  console.log(categories)
+products = products.filter(product =>
+  product.category === categories || categories === null || categories === "No Category"
+);
 
-  // products.map((product) => { console.log(product.category) });
-  console.log(products)
-MIN
-  console.log(products)
   // filter initial_price:
   products = products.filter((product) => product.initial_price <= val);
 
