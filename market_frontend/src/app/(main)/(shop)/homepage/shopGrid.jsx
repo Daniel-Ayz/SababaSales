@@ -35,7 +35,10 @@ const {storesProducts, setStoresProducts}= useContext(StoreProductsContext);
               withCredentials: true
             });
             for (let i = 0; i < storeResponse.data.length; i++) {
-              storeResponse.data[i]['image'] = storeResponse.data[i].image_link;
+              if (storeResponse.data[i].image_link)
+                storeResponse.data[i]['image'] = storeResponse.data[i].image_link;
+              else
+                storeResponse.data[i]['image'] = "https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-01.jpg";
             }
             storesProducts[store.id] = storeResponse.data;
 
