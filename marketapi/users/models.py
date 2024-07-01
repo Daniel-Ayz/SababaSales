@@ -6,21 +6,37 @@ from django.contrib.auth.models import AbstractUser
 
 class CustomUser(AbstractUser):
     # make address optional
-    address = models.CharField(max_length=100, blank=True)
+    Full_Name = models.CharField(max_length=100, blank=True)
+    Identification_number = models.CharField(
+        max_length=9, blank=True, null=True
+    )  # because can start with 0
     online_count = models.IntegerField(default=0)
 
 
 class PaymentInformationUser(models.Model):
     # one-to-one relationship with CustomUser # This is in the for now
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
-    billing_address = models.CharField(max_length=100)
+    holder = models.CharField(max_length=100)  # double saving of information
+    holder_identification_number = models.CharField(max_length=9)
     currency = models.CharField(max_length=10)
     credit_card_number = models.CharField(max_length=16)
-    expiration_date = models.DateField()
+    expiration_date = models.CharField(max_length=5)
     security_code = models.CharField(max_length=3)
 
     def __str__(self):
         return f"Payment information for {self.user.username}"
+
+
+class DeliveryInformationUser(models.Model):
+    # one-to-one relationship with CustomUser
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    address = models.CharField(max_length=255)
+    city = models.CharField(max_length=100)
+    country = models.CharField(max_length=100)
+    zip = models.CharField(max_length=7)
+
+    def __str__(self):
+        return f"Delivery information for {self.user.username}"
 
 
 class Notification(models.Model):
@@ -74,3 +90,4 @@ class BasketProduct(models.Model):
         Basket, on_delete=models.CASCADE, related_name="products"
     )
     category = models.CharField(max_length=100, default="category")
+    image_link = models.CharField(max_length=255, default="image_link")

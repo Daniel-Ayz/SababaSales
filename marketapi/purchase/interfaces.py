@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from purchase.models import PaymentMethod
+from purchase.models import DeliveryMethod
 
 
 class PaymentServiceInterface(ABC):
@@ -10,5 +11,5 @@ class PaymentServiceInterface(ABC):
 
 class DeliveryServiceInterface(ABC):
     @abstractmethod
-    def create_shipment(self, address: str, item_quantity: float, **kwargs) -> dict:
+    def create_shipment(self, delivery_method: DeliveryMethod) -> dict:
         pass
