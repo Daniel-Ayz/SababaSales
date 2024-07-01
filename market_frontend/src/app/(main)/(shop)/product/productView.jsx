@@ -38,6 +38,9 @@ function getRandomRating(name) {
 
 
 export default function Prod({ prod ,store_id,storename}) {
+  if (!prod) {
+    return <div>Loading...</div>;
+  }
   const randomRating =  getRandomRating(prod.name);
 
   return (
