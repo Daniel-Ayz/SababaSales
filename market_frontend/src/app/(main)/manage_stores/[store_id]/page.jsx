@@ -61,9 +61,26 @@ export default function ManageStore({ params }) {
     fetchStoreData();
   }, [store_id, user]);
 
-  const manageItem = (itemId) => {
-    alert(`Managing item with id: ${itemId}`);
-    // Implement the logic for managing item, possibly showing a popup or navigating to another page
+  const removeItem = async (item_name) => {
+    // ask the user if they are sure they want to delete the item
+    if (confirm(`Are you sure you want to remove ${item_name} from the store?`)) {
+      const response = await axios.delete(`http://localhost:8000/api/stores/${store_id}/remove_product`, {
+        params: {
+          product_name: item_name
+        },
+        data: {
+          user_id: user.id,
+          store_id: store_id
+        },
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const updatedItems = items.filter(item => item.name !== item_name);
+      setItems(updatedItems);
+    }
+
   };
 
   const assignOwner = async () => {
@@ -134,7 +151,6 @@ export default function ManageStore({ params }) {
 
   if (!store) return <div>Loading...</div>;
 
-  const previewItems = items.slice(0, 5); // Select a few items to preview
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -267,12 +283,12 @@ export default function ManageStore({ params }) {
             </p>
           </div>
           <div className="space-y-4">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Preview Items</h3>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Select to remove an item</h3>
             <ul>
-              {previewItems.map(item => (
-                <li key={item.id} className="flex items-center justify-between p-4 bg-white rounded-md shadow-sm ring-1 ring-gray-300 cursor-pointer" onClick={() => manageItem(item.id)}>
+              {items.map(item => (
+                <li key={item.id} className="flex items-center justify-between p-4 bg-white rounded-md shadow-sm ring-1 ring-gray-300 cursor-pointer" onClick={() => removeItem(item.name)}>
                   <span className="text-lg font-medium text-gray-900">{item.name}</span>
-                  <span className="text-lg font-medium text-gray-500">${item.price}</span>
+                  <span className="text-lg font-medium text-gray-500">${item.initial_price}</span>
                 </li>
               ))}
             </ul>
