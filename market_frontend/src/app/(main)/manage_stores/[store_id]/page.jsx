@@ -1,4 +1,3 @@
-// pages/manage_stores/[store_id]/page.jsx
 "use client";
 
 import axios from "axios";
@@ -19,7 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
-
 } from "@/components/dialog";
 
 axios.defaults.withCredentials = true;
@@ -30,11 +28,12 @@ export default function ManageStore({ params }) {
   const { storesProducts, setStoresProducts } = useContext(StoreProductsContext);
   const [store, setStore] = useState(null);
   const [items, setItems] = useState([]);
-  const [staff, setStaff] = useState([]);
+  const [managers, setManagers] = useState([]);
+  const [owners, setOwners] = useState([]);
+
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState('');
-
 
   useEffect(() => {
     if (user.loggedIn === undefined) return; // Ensure the user context is fully initialized before fetching data
@@ -51,6 +50,17 @@ export default function ManageStore({ params }) {
         setStore(response.data);
         const itemsResponse = await axios.get(`http://localhost:8000/api/stores/${store_id}/products`);
         setItems(itemsResponse.data);
+        const managers_response = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_managers`, {
+          user_id: user.id,
+          store_id: store_id
+        });
+
+        setManagers(managers_response.data);
+        const owners_response = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_owners`, {
+          user_id: user.id,
+          store_id: store_id
+        });
+        setOwners(owners_response.data);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching store data:', error);
@@ -80,11 +90,10 @@ export default function ManageStore({ params }) {
       const updatedItems = items.filter(item => item.name !== item_name);
       setItems(updatedItems);
     }
-
   };
 
   const assignOwner = async () => {
-    try{
+    try {
       const response_ = await axios.get(`http://localhost:8000/api/users/get_user_id?email=${email}`);
       const user_id_ = response_.data.id;
       const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_owner`, {
@@ -125,7 +134,6 @@ export default function ManageStore({ params }) {
     }
   };
 
-
   const manageDiscountRules = () => {
     window.location.href = `/manage_stores/${store_id}/discounts`;
   };
@@ -151,7 +159,6 @@ export default function ManageStore({ params }) {
 
   if (!store) return <div>Loading...</div>;
 
-
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <main className="flex-1 overflow-y-auto p-8">
@@ -171,7 +178,6 @@ export default function ManageStore({ params }) {
             <h3 className="text-lg font-medium leading-6 text-gray-900">Add Item</h3>
             <button
               onClick={() => addItem(store.id)}
-              //onClick={() => manageStore(store.id)}
               className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               Add Item
@@ -179,7 +185,6 @@ export default function ManageStore({ params }) {
             <h3 className="text-lg font-medium leading-6 text-gray-900">Edit Item</h3>
             <button
               onClick={() => EditItem(store.id)}
-              //onClick={() => manageStore(store.id)}
               className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               Edit Item
@@ -193,7 +198,7 @@ export default function ManageStore({ params }) {
                   Appoint Owner
                 </button>
               </DialogTrigger>
-              <DialogContent className="bg-white"> {/* Change the background color to white */}
+              <DialogContent className="bg-white">
                 <DialogHeader>
                   <DialogTitle>Appoint Owner</DialogTitle>
                   <DialogDescription>
@@ -231,7 +236,7 @@ export default function ManageStore({ params }) {
                   Appoint Manager
                 </button>
               </DialogTrigger>
-              <DialogContent className="bg-white"> {/* Change the background color to white */}
+              <DialogContent className="bg-white">
                 <DialogHeader>
                   <DialogTitle>Appoint Manager</DialogTitle>
                   <DialogDescription>
@@ -289,6 +294,28 @@ export default function ManageStore({ params }) {
                 <li key={item.id} className="flex items-center justify-between p-4 bg-white rounded-md shadow-sm ring-1 ring-gray-300 cursor-pointer" onClick={() => removeItem(item.name)}>
                   <span className="text-lg font-medium text-gray-900">{item.name}</span>
                   <span className="text-lg font-medium text-gray-500">${item.initial_price}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Select to remove a manager</h3>
+            <ul>
+              {managers.map(member => (
+                <li key={member.id} className="flex items-center justify-between p-4 bg-white rounded-md shadow-sm ring-1 ring-gray-300 cursor-pointer" onClick={() => removeManager(member.id)}>
+                  <span className="text-lg font-medium text-gray-900">{member.name}</span>
+                  <span className="text-lg font-medium text-gray-500">{member.email}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Select to remove an owner</h3>
+            <ul>
+              {owners.map(member => (
+                <li key={member.id} className="flex items-center justify-between p-4 bg-white rounded-md shadow-sm ring-1 ring-gray-300 cursor-pointer" onClick={() => removeOwner(member.id)}>
+                  <span className="text-lg font-medium text-gray-900">{member.name}</span>
+                  <span className="text-lg font-medium text-gray-500">{member.email}</span>
                 </li>
               ))}
             </ul>

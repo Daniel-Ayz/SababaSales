@@ -135,12 +135,12 @@ def reopen_store(request, payload: RoleSchemaIn):
     return sc.reopen_store(request, payload)
 
 
-@router.get("/{store_id}/get_owners", response=List[OwnerSchemaOut])
+@router.post("/{store_id}/get_owners", response=List[OwnerSchemaOut])
 def get_owners(request, payload: RoleSchemaIn):
     return sc.get_owners(request, payload)
 
 
-@router.get("/{store_id}/get_managers", response=List[ManagerSchemaOut])
+@router.post("/{store_id}/get_managers", response=List[ManagerSchemaOut])
 def get_managers(request, payload: RoleSchemaIn):
     return sc.get_managers(request, payload)
 

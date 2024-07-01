@@ -2277,7 +2277,7 @@ class StoreAPITestCase(TransactionTestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"message": "Owner removed successfully"})
-        response = self.client.get(
+        response = self.client.post(
             f"/{self.store_id}/get_managers",
             json={"user_id": self.user_id, "store_id": self.store_id},
         )
