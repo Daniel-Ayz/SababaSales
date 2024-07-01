@@ -61,12 +61,11 @@
 # Installation
 
 ### Clone the project
-Use pycharm clone functionality or use something like:
-```
+``` bash
 git clone https://github.com/Daniel-Ayz/SababaSales.git
 ```
 
-# 🚀 Setup
+# Setup
 
 ## 🐳 Docker 
 Make sure you have the following installed on your machine:
@@ -98,7 +97,7 @@ To create a superuser for the Django admin, run the following command:
 ```bash
 docker-compose exec web python manage.py createsuperuser
 ```
-## 💣 4. Access the Application
+## 🚀 4. Access the Application
 run the containers with
 ```bash
  docker-compose up.
