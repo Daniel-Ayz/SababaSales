@@ -66,6 +66,74 @@ Use pycharm clone functionality or use something like:
 git clone https://github.com/Daniel-Ayz/SababaSales.git
 ```
 
+# 🚀 Setup
+
+## 🐳 Docker 
+Make sure you have the following installed on your machine:
+- [Docker](https://docs.docker.com/get-docker/)
+- [Docker Compose](https://docs.docker.com/compose/install/)
+
+## 🏛️  1. Build and start the containers
+Run the following command to build and start the Docker containers:
+
+```bash
+docker-compose up --build
+```
+this command will:
+
+Build the Docker images defined in the Dockerfile.
+Start the services defined in the docker-compose.yml file.
+we use the postgres docker image https://hub.docker.com/_/postgres.
+## 📊 2. Apply Database Migrations
+After the containers are up and running, you need to apply the database migrations. Open a new terminal and run(same working dir):
+```bash
+docker-compose exec web python manage.py makemigrations
+```
+
+```bash
+docker-compose exec web python manage.py migrate
+```
+## 👩‍💼 3. Create a Superuser
+To create a superuser for the Django admin, run the following command:
+```bash
+docker-compose exec web python manage.py createsuperuser
+```
+## 💣 4. Access the Application
+run the containers with
+```bash
+ docker-compose up.
+```
+Once the containers are up and running, you can access your application at http://localhost:8000
+
+
+## 🛑 5. Stopping the Application
+To stop the running containers, press CTRL+C in the terminal where docker-compose up is running, or run:
+```bash
+docker-compose down
+```
+
+💡 if does not work - try running:
+```bash
+docker-compose exec web python manage.py flush
+```
+
+## Useful Docker Commands
+View running containers:
+```bash
+docker ps
+```
+Stop a specific container:
+
+```bash
+docker stop <container_id>
+```
+Start a Django shell:
+
+```bash
+docker-compose exec web python manage.py shell
+```
+
+## 🗿 Setup backend without docker
 ### Create a Virtualenv
 
 - Windows
@@ -138,64 +206,6 @@ The application should be available at [http://localhost:8000/](http://127.0.0.1
 Click the Python Interpreter selector and choose Add Interpreter (Add the existing one you created in the virtual environment)
 https://www.jetbrains.com/help/pycharm/creating-virtual-environment.html#python_create_virtual_env
 
-# Docker
-Make sure you have the following installed on your machine:
-- [Docker](https://docs.docker.com/get-docker/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
-
-## 1. Build and start the containers
-Run the following command to build and start the Docker containers:
-
-```bash
-docker-compose up --build
-```
-is command will:
-
-Build the Docker images defined in the Dockerfile.
-Start the services defined in the docker-compose.yml file.
-## 2. Apply Database Migrations
-After the containers are up and running, you need to apply the database migrations. Open a new terminal and run(same working dir):
-```bash
-docker-compose exec web python manage.py makemigrations
-```
-
-```bash
-docker-compose exec web python manage.py migrate
-```
-3. Create a Superuser
-To create a superuser for the Django admin, run the following command:
-```bash
-docker-compose exec web python manage.py createsuperuser
-```
-## 4. Access the Application
-Once the containers are up and running, you can access your application at http://localhost:8000
-
-## 5. Stopping the Application
-To stop the running containers, press CTRL+C in the terminal where docker-compose up is running, or run:
-```bash
-docker-compose down
-```
-
-💡 if does not work - try running:
-```bash
-docker-compose exec web python manage.py flush
-```
-
-## Useful Docker Commands
-View running containers:
-```bash
-docker ps
-```
-Stop a specific container:
-
-```bash
-docker stop <container_id>
-```
-Start a Django shell:
-
-```bash
-docker-compose exec web python manage.py shell
-```
 
 \
 
