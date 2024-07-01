@@ -115,7 +115,14 @@ export default function ManageStore({ params }) {
 
   const addItem = () => {
     // Implement the logic for adding discount rule
-    alert('Add discount rule logic to be implemented');
+    window.location.href = `/manage_stores/${store_id}/addProduct`
+    //alert('Add discount rule logic to be implemented');
+  };
+
+  const EditItem = () => {
+    // Implement the logic for adding discount rule
+    window.location.href = `/manage_stores/${store_id}/editProduct`
+    //alert('Add discount rule logic to be implemented');
   };
 
   // Ensure the user context is fully initialized before rendering
@@ -143,10 +150,19 @@ export default function ManageStore({ params }) {
 
             <h3 className="text-lg font-medium leading-6 text-gray-900">Add Item</h3>
             <button
-              onClick={addItem}
+              onClick={() => addItem(store.id)}
+              //onClick={() => manageStore(store.id)}
               className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               Add Item
+            </button>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Edit Item</h3>
+            <button
+              onClick={() => EditItem(store.id)}
+              //onClick={() => manageStore(store.id)}
+              className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              Edit Item
             </button>
             <h3 className="text-lg font-medium leading-6 text-gray-900">Appoint Owner</h3>
             <Dialog>
