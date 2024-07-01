@@ -151,7 +151,7 @@ export default function Discounts({ params }) {
           "payload": {
             "store_id": store_id,
             "is_root": true,
-            "conditions": {
+            "condition": {
               "applies_to": discount.appliesTo,
               "name_of_apply": discount.appliesOn,
               "condition": discount.condition,
@@ -166,6 +166,7 @@ export default function Discounts({ params }) {
             }
           }
         });
+
         console.log(response);
         if (response.status === 200) {
           toast.success('Discount added successfully!');
@@ -245,7 +246,14 @@ export default function Discounts({ params }) {
           <h2 className="text-xl font-semibold mb-4">Simple Discounts</h2>
           <ul className="space-y-2">
             {simpleDiscounts.map((discount, index) => {
-              const categories = JSON.parse(discount.applicable_categories || '[]');
+              let categories = [];
+              try {
+                categories = Array.isArray(discount.applicable_categories)
+                  ? discount.applicable_categories
+                  : JSON.parse(discount.applicable_categories || '[]');
+              } catch (e) {
+                categories = [];
+              }
               const products = (discount.applicable_products || []).map(product => product.name);
               return (
                 <li key={index} className="flex flex-col justify-between items-start bg-white p-4 rounded shadow">
@@ -276,7 +284,15 @@ export default function Discounts({ params }) {
           <h2 className="text-xl font-semibold mb-4">Conditional Discounts</h2>
           <ul className="space-y-2">
             {conditionalDiscounts.map((discount, index) => {
-              const categories = JSON.parse(discount.discount.applicable_categories || '[]');
+              if (!discount.discount) return null;
+              let categories = [];
+              try {
+                categories = Array.isArray(discount.discount.applicable_categories)
+                  ? discount.discount.applicable_categories
+                  : JSON.parse(discount.discount.applicable_categories || '[]');
+              } catch (e) {
+                categories = [];
+              }
               const products = (discount.discount.applicable_products || []).map(product => product.name);
               const conditions = discount.conditions || [];
               return (
