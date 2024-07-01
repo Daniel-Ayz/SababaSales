@@ -2,9 +2,6 @@ from typing import List
 from django.shortcuts import get_object_or_404
 from ninja.errors import HttpError
 
-import store.api
-import users.api
-
 from ninja import Router
 
 from store.schemas import PurchaseStoreProductSchema
@@ -15,8 +12,8 @@ from users.models import Cart, CustomUser, Basket, BasketProduct
 from purchase.models import HistoryBasket, HistoryBasketProduct, Purchase
 from datetime import datetime
 
-from purchase.adapters.payment_service import AbstractPaymentService
-from purchase.adapters.delivery_service import (
+from purchase.services.payment_service import AbstractPaymentService
+from purchase.services.delivery_service import (
     AbstractDeliveryService,
 )  # Use actual delivery service when available
 
@@ -113,51 +110,32 @@ class purchaseController:
         request,
         user_id: int,  # the user that purchases this cart
         cart_id: int,
-        flag_delivery: bool = False,
-        flag_payment: bool = False,
     ):
         try:
-            if not flag_delivery:
-                delivery_information_user = uc.get_user_delivery_information(
-                    request, user_id
-                )
-                delivery_information_user["name"] = uc.get_user_full_name(
-                    request, user_id
-                )
-            else:
-                delivery_information_user = {
-                    "address": "Maze Pinat Yaffo 10",
-                    "city": "Tel Aviv",
-                    "country": "Israel",
-                    "zip": "1234567",
-                }
-                delivery_information_user["name"] = "Israel Israeli"
-            if not flag_payment:
-                payment_information_user = uc.get_user_payment_information(
-                    request, user_id
-                )
-            else:
-                payment_information_user = {
-                    "currency": "USD",
-                    "credit_card_number": "1234 5678 1234 5678",
-                    "expiration_date": "12/23",
-                    "security_code": "123",
-                    "total_price": 0,
-                    "holder": "Israel Israeli",
-                    "holder_identification_number": "123456789",
-                }
+            delivery_information_user = uc.get_delivery_information(request, user_id)
+            delivery_information_dict = {
+                "address": delivery_information_user.address,
+                "city": delivery_information_user.city,
+                "country": delivery_information_user.country,
+                "zip": delivery_information_user.zip,
+            }
+            delivery_information_dict["name"] = uc.get_user_full_name(request, user_id)
 
-            payment_details = {
-                "currency": payment_information_user["currency"],
-                "credit_card_number": payment_information_user["credit_card_number"],
-                "expiration_date": payment_information_user["expiration_date"],
-                "security_code": payment_information_user["security_code"],
+            payment_information_user = uc.get_payment_information(request, user_id)
+            print("HEREEEEEE")
+            payment_details_dict = {
+                "currency": payment_information_user.currency,
+                "credit_card_number": payment_information_user.credit_card_number,
+                "expiration_date": payment_information_user.expiration_date,
+                "security_code": payment_information_user.security_code,
                 "total_price": 0,
                 "holder": uc.get_user_full_name(request, user_id),
                 "holder_identification_number": uc.get_user_identification_number(
                     request, user_id
                 ),
             }
+
+            print("SECOND")
 
             # if payment is ok:
             cart = get_object_or_404(Cart, id=cart_id)
@@ -215,7 +193,7 @@ class purchaseController:
                     history_basket_product.save()
 
             delivery_result = delivery_service.create_shipment(
-                delivery_information_user
+                delivery_information_dict
             )
 
             if delivery_result["result"]:
@@ -223,8 +201,8 @@ class purchaseController:
 
             total_price += delivery_result["delivery_fee"]
 
-            payment_details["total_price"] = total_price
-            payment_result = payment_service.process_payment(payment_details)
+            payment_details_dict["total_price"] = total_price
+            payment_result = payment_service.process_payment(payment_details_dict)
             if payment_result["result"]:
                 raise HttpError(400, f'error": "Payment failed')
             Purchase.objects.filter(purchase_id=purchase.purchase_id).update(

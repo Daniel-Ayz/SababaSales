@@ -6,14 +6,25 @@ from purchase.interfaces import DeliveryServiceInterface
 class AbstractDeliveryService(DeliveryServiceInterface):
     def create_shipment(self, delivery_method: DeliveryMethod) -> dict:
         url = "https://damp-lynna-wsep-1984852e.koyeb.app/"
-        payload = {
-            "action_type": "supply",
-            "address": delivery_method.address,
-            "city": delivery_method.city,
-            "country": delivery_method.country,
-            "zip": delivery_method.zip,
-            "name": delivery_method.name,
-        }
+
+        if (
+            delivery_method.address != ""
+            and delivery_method.city != ""
+            and delivery_method.country != ""
+            and delivery_method.zip != ""
+            and delivery_method.name != ""
+        ):
+            payload = {
+                "action_type": "supply",
+                "address": delivery_method.address,
+                "city": delivery_method.city,
+                "country": delivery_method.country,
+                "zip": delivery_method.zip,
+                "name": delivery_method.name,
+            }
+        else:
+            raise ValueError("Delivery information is missing")
+
         response = requests.post(url, data=payload)
         if response.status_code == 200:
             result = response.json()

@@ -247,20 +247,28 @@ class UserController:
         return products
 
     def get_user_full_name(self, request, user_id: int) -> str:
-        user = CustomUser.objects.get(id=request.user.id)
+        user = CustomUser.objects.get(id=user_id)
         return user.Full_Name
 
-    def get_user_identification_number(self, request, user_id: int) -> int:
-        user = CustomUser.objects.get(id=request.user.id)
+    def get_user_identification_number(self, request, user_id: int) -> str:
+        user = CustomUser.objects.get(id=user_id)
         return user.Identification_number
 
-    def get_user_payment_information(self, request, user_id: int) -> dict:
-        user = CustomUser.objects.get(id=user_id)
+    def get_payment_information(self, request, user_id: int) -> PaymentInformationUser:
+        try:
+            user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            raise HttpError(404, "User not found")
         payment_info = PaymentInformationUser.objects.get(user=user)
         return payment_info
 
-    def get_user_delivery_information(self, request, user_id: int) -> dict:
-        user = CustomUser.objects.get(id=user_id)
+    def get_delivery_information(
+        self, request, user_id: int
+    ) -> DeliveryInformationUser:
+        try:
+            user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            raise HttpError(404, "User not found")
         delivery_info = DeliveryInformationUser.objects.get(user=user)
         return delivery_info
 
@@ -293,17 +301,13 @@ class UserController:
             )
             user.save()
 
-            exp_date = "12/25"
-            exp_month, exp_year = map(int, exp_date.split("/"))
-            exp_year += 2000  # Assuming the year is in the format YY
-            expiration_date = datetime(exp_year, exp_month, 1).date()
             payment_info = PaymentInformationUser.objects.create(
                 user=user,
                 currency="USD",
                 holder=user.Full_Name,
                 holder_identification_number=user.Identification_number,
                 credit_card_number="1234567890",
-                expiration_date=expiration_date,
+                expiration_date="12/25",
                 security_code="123",
             )
             payment_info.save()
@@ -352,11 +356,8 @@ class UserController:
         payment_info.currency = payload.currency
         payment_info.credit_card_number = payload.credit_card_number
         # need to convert the expiration date to a date object
-        exp_date = payload.expiration_date
-        exp_month, exp_year = map(int, exp_date.split("/"))
-        exp_year += 2000
 
-        payment_info.expiration_date = datetime(exp_year, exp_month, 1).date()
+        payment_info.expiration_date = payload.expiration_date
         payment_info.security_code = payload.security_code
         payment_info.save()
         return {"msg": "Payment info updated successfully"}

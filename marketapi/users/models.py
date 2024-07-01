@@ -17,10 +17,10 @@ class PaymentInformationUser(models.Model):
     # one-to-one relationship with CustomUser # This is in the for now
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     holder = models.CharField(max_length=100)  # double saving of information
-    holder_identification_number = models.IntegerField()
+    holder_identification_number = models.CharField(max_length=9)
     currency = models.CharField(max_length=10)
     credit_card_number = models.CharField(max_length=16)
-    expiration_date = models.DateField()
+    expiration_date = models.CharField(max_length=5)
     security_code = models.CharField(max_length=3)
 
     def __str__(self):

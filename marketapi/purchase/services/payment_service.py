@@ -6,13 +6,17 @@ import requests
 class AbstractPaymentService(PaymentServiceInterface):
     def process_payment(self, payment_details: PaymentMethod) -> dict:
         url = "https://damp-lynna-wsep-1984852e.koyeb.app/"
+
+        month = payment_details.expiration_date.split("/")[0]
+        year = payment_details.expiration_date.split("/")[1]
+
         payload = {
             "action_type": "pay",
             "amount": payment_details.total_price,
             "currency": payment_details.currency,
             "card_number": payment_details.credit_card_number,
-            "month": payment_details.expiration_date.month,
-            "year": payment_details.expiration_date.year,
+            "month": month,
+            "year": year,
             "holder": payment_details.holder,
             "ccv": payment_details.security_code,
             "id": payment_details.holder_identification_number,

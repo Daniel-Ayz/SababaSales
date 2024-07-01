@@ -28,10 +28,10 @@ class Purchase(models.Model):
 
 class PaymentMethod(models.Model):
     holder = models.CharField(max_length=100)
-    holder_identification_number = models.IntegerField()
+    holder_identification_number = models.CharField(max_length=9)
     currency = models.CharField(max_length=10)
     credit_card_number = models.CharField(max_length=16)
-    expiration_date = models.DateField()
+    expiration_date = models.CharField(max_length=5)
     security_code = models.CharField(max_length=3)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
 

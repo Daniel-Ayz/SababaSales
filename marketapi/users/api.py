@@ -145,3 +145,13 @@ def update_user_delivery_info(request, user_id, payload: DeliveryInfoSchema):
 @router.post("/{user_id}/update_payment_info")
 def update_user_payment_info(request, user_id, payload: PaymentInfoSchema):
     return uc.update_user_payment_info(request, user_id, payload)
+
+
+@router.get("/{user_id}/get_payment_information")
+def get_payment_information(request, user_id):
+    return uc.get_payment_information(request, user_id)
+
+
+@router.get("/{user_id}/get_delivery_information")
+def get_delivery_information(request, user_id):
+    return uc.get_delivery_information(request, user_id)
