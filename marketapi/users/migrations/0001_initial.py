@@ -114,7 +114,11 @@ class Migration(migrations.Migration):
                         default=django.utils.timezone.now, verbose_name="date joined"
                     ),
                 ),
-                ("address", models.CharField(blank=True, max_length=100)),
+                ("Full_Name", models.CharField(blank=True, max_length=100)),
+                (
+                    "Identification_number",
+                    models.CharField(blank=True, max_length=9, null=True),
+                ),
                 ("online_count", models.IntegerField(default=0)),
                 (
                     "groups",
@@ -168,6 +172,7 @@ class Migration(migrations.Migration):
                     models.DecimalField(decimal_places=2, default=0.0, max_digits=10),
                 ),
                 ("category", models.CharField(default="category", max_length=100)),
+                ("image_link", models.CharField(default="image_link", max_length=255)),
                 (
                     "basket",
                     models.ForeignKey(
@@ -209,6 +214,31 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.CreateModel(
+            name="DeliveryInformationUser",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("address", models.CharField(max_length=255)),
+                ("city", models.CharField(max_length=100)),
+                ("country", models.CharField(max_length=100)),
+                ("zip", models.CharField(max_length=7)),
+                (
+                    "user",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
             name="Notification",
             fields=[
                 (
@@ -245,10 +275,11 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("billing_address", models.CharField(max_length=100)),
+                ("holder", models.CharField(max_length=100)),
+                ("holder_identification_number", models.CharField(max_length=9)),
                 ("currency", models.CharField(max_length=10)),
                 ("credit_card_number", models.CharField(max_length=16)),
-                ("expiration_date", models.DateField()),
+                ("expiration_date", models.CharField(max_length=5)),
                 ("security_code", models.CharField(max_length=3)),
                 (
                     "user",

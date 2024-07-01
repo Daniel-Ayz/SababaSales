@@ -1,24 +1,10 @@
 from typing import List
-import time
 
 from ninja import Router
 
-from django.contrib.auth import authenticate, login as django_login
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth import login as django_login
 from ninja.security import django_auth
 
-from .models import CustomUser, Notification, Cart, Basket, BasketProduct
-
-# from .schemas import (
-#     UserRegisterSchema,
-#     UserLoginSchema,
-#     UserSchema,
-#     Error,
-#     NotificationSchema,
-#     CartSchema,
-#     BasketSchema,
-#     BasketProductSchema,
-# )
 from .schemas import *
 from .usercontroller import UserController
 
@@ -136,74 +122,6 @@ def add_user_product(request, payload: StoreProduct):
     return uc.add_basket_product(request, payload)
 
 
-# @router.get("/time")
-# def test_time(request):
-#     time.sleep(10)
-#     return {"msg" "waited!"}
-#
-#
-# @router.post(
-#     "/users/{int:user_id}/notifications", response={200: NotificationSchema, 404: Error}
-# )
-# def add_user_notification(request, user_id: int, payload: NotificationSchema):
-#     try:
-#         user = CustomUser.objects.get(id=user_id)
-#         notification = user.notification_set.create(
-#             sent_by=payload.sent_by, message=payload.message, seen=payload.seen
-#         )
-#         notification.save()
-#         return 200, notification
-#     except CustomUser.DoesNotExist as e:
-#         return 404, {"error": "User not found"}
-#
-#
-# @router.post("/users/{int:user_id}/cart", response={200: CartSchema, 404: Error})
-# def add_user_cart(request, user_id: int):
-#     try:
-#         user = CustomUser.objects.get(id=user_id)
-#         cart = user.cart_set.create(user=user)
-#         cart.save()
-#         return 200, cart
-#     except CustomUser.DoesNotExist as e:
-#         return 404, {"error": "User not found"}
-#
-#
-# @router.post(
-#     "/users/{int:user_id}/cart/basket", response={200: BasketSchema, 404: Error}
-# )
-# def add_user_basket(request, user_id: int, payload: BasketSchema):
-#     try:
-#         user = CustomUser.objects.get(id=user_id)
-#         cart = user.cart
-#         basket = cart.basket_set.create(store_id=payload.store_id)
-#         basket.save()
-#         return 200, basket
-#     except CustomUser.DoesNotExist as e:
-#         return 404, {"error": "User not found"}
-#
-#
-# @router.post(
-#     "/users/{int:user_id}/cart/basket/{int:basket_id}/products",
-#     response={200: BasketProductSchema, 404: Error},
-# )
-# def add_user_basket_product(
-#         request, user_id: int, basket_id: int, payload: BasketProductSchema
-# ):
-#     try:
-#         user = CustomUser.objects.get(id=user_id)
-#         cart = user.cart
-#         basket = cart.basket_set.get(id=basket_id)
-#         product = basket.basketproduct_set.create(
-#             id=payload.id, quantity=payload.quantity
-#         )
-#         product.save()
-#         return 200, product
-#     except CustomUser.DoesNotExist as e:
-#         return 404, {"error": "User not found"}
-#     except Basket.DoesNotExist as e:
-#         return 404, {"error": "Basket not found"}
-#
-# -------------------- Update --------------------
 @router.post("/fake_data")
 def create_fake_data(request):
     return uc.create_fake_data()
@@ -213,3 +131,35 @@ def create_fake_data(request):
 @router.get("/get_user_id", response={200: UserSchema, 404: Error})
 def get_user_id(request, email: str):
     return uc.get_user_id(request, email)
+
+
+@router.post("/{user_id}/update_Full_Name")
+def update_user_full_name(request, user_id, payload: FullnameSchemaIn):
+    return uc.update_user_full_name(request, user_id, payload)
+
+
+@router.post("/{user_id}/update_Identification_Number")
+def update_user_Identification_Number(
+    request, user_id, payload: IdentificationNumberSchemaIn
+):
+    return uc.update_user_Identification_Number(request, user_id, payload)
+
+
+@router.post("/{user_id}/update_delivery_info")
+def update_user_delivery_info(request, user_id, payload: DeliveryInfoSchema):
+    return uc.update_user_delivery_info(request, user_id, payload)
+
+
+@router.post("/{user_id}/update_payment_info")
+def update_user_payment_info(request, user_id, payload: PaymentInfoSchema):
+    return uc.update_user_payment_info(request, user_id, payload)
+
+
+@router.get("/{user_id}/get_payment_information")
+def get_payment_information(request, user_id):
+    return uc.get_payment_information(request, user_id)
+
+
+@router.get("/{user_id}/get_delivery_information")
+def get_delivery_information(request, user_id):
+    return uc.get_delivery_information(request, user_id)
