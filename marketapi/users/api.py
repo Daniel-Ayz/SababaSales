@@ -163,3 +163,8 @@ def get_payment_information(request, user_id):
 @router.get("/{user_id}/get_delivery_information")
 def get_delivery_information(request, user_id):
     return uc.get_delivery_information(request, user_id)
+
+
+@router.get("/{user_id}/get_full_name")
+def get_full_name(request, user_id):
+    return uc.get_user_full_name(request, user_id)

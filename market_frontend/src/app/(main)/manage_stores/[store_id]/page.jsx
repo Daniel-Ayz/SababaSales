@@ -54,12 +54,20 @@ export default function ManageStore({ params }) {
           user_id: user.id,
           store_id: store_id
         });
+        for (let i = 0; i < managers_response.data.length; i++) {
+          const full_name = await axios.get(`http://localhost:8000/api/users/${managers_response.data[i].user_id}/get_full_name`);
+          managers_response.data[i].Full_name = full_name.data;
+        }
 
         setManagers(managers_response.data);
         const owners_response = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_owners`, {
           user_id: user.id,
           store_id: store_id
         });
+        for (let i = 0; i < owners_response.data.length; i++) {
+          const full_name = await axios.get(`http://localhost:8000/api/users/${owners_response.data[i].user_id}/get_full_name`);
+          owners_response.data[i].Full_name = full_name.data;
+        }
         setOwners(owners_response.data);
         setLoading(false);
       } catch (error) {
@@ -104,6 +112,9 @@ export default function ManageStore({ params }) {
       if (response.status === 200) {
         toast.success("Owner appointed successfully!");
         setEmail('');
+        // Update the owners list
+        const full_name = await axios.get(`http://localhost:8000/api/users/${user_id_}/get_full_name`);
+        setOwners([...owners, { user_id: user_id_, Full_name: full_name.data }]);
       } else {
         toast.error("Failed to appoint owner.");
       }
@@ -125,6 +136,9 @@ export default function ManageStore({ params }) {
       if (response.status === 200) {
         toast.success("Manager appointed successfully!");
         setEmail('');
+        // Update the managers list
+        const full_name = await axios.get(`http://localhost:8000/api/users/${user_id_}/get_full_name`);
+        setManagers([...managers, { user_id: user_id_, Full_name: full_name.data }]);
       } else {
         toast.error("Failed to appoint manager.");
       }
@@ -154,6 +168,58 @@ export default function ManageStore({ params }) {
     //alert('Add discount rule logic to be implemented');
   };
 
+  const removeManager = async (user_id_) => {
+    // Ask the user if they are sure they want to delete the item
+    if (confirm(`Are you sure you want to remove this manager from the store?`)) {
+      try {
+        const response = await axios.delete(`http://localhost:8000/api/stores/${store_id}/remove_manager`, {
+          data: {
+            user_id: user_id_,
+            store_id: store_id,
+            removed_by: user.id,
+          },
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.status === 200) {
+          toast.success("Manager removed successfully!");
+          setManagers(managers.filter(member => member.user_id !== user_id_));
+        }
+      } catch (error) {
+        console.error("Error removing manager:", error);
+        toast.error("Failed to remove manager.");
+      }
+    }
+  };
+
+  const removeOwner = async (user_id_) => {
+    // Ask the user if they are sure they want to delete the item
+    if (confirm(`Are you sure you want to remove this owner from the store?`)) {
+      try {
+        const response = await axios.delete(`http://localhost:8000/api/stores/${store_id}/remove_owner`, {
+          data: {
+            user_id: user_id_,
+            store_id: store_id,
+            removed_by: user.id,
+          },
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.status === 200) {
+          toast.success("Owner removed successfully!");
+          setOwners(owners.filter(member => member.user_id !== user_id_));
+        }
+      } catch (error) {
+        console.error("Error removing owner:", error);
+        toast.error("Failed to remove owner.");
+      }
+    }
+  };
+
+
+
   // Ensure the user context is fully initialized before rendering
   if (user.loggedIn === undefined || loading) return null;
 
@@ -162,7 +228,7 @@ export default function ManageStore({ params }) {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <main className="flex-1 overflow-y-auto p-8">
-        <div className='w-[92vw] h-auto bg-white rounded-[40px] shadow-lg mx-auto grid grid-cols-[22vw_1fr] grid-rows-[auto_auto_auto_auto_1fr] gap-8 p-8'>
+        <div className='w-[92vw] h-auto bg-white rounded-[40px] shadow-lg mx-auto grid grid-cols-[22vw_1fr_1fr] grid-rows-[auto_auto_auto_auto_1fr] gap-8 p-8'>
           <img className="border-2 border-gray-300 rounded-[20px] w-[20vw] h-[20vw] object-cover" src={store.image} alt={store.name} />
           <div className="flex flex-col space-y-4">
             <h3 className="text-3xl font-bold">{store.name}</h3>
@@ -299,23 +365,23 @@ export default function ManageStore({ params }) {
             </ul>
           </div>
           <div className="space-y-4">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Select to remove a manager</h3>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Select to remove an owner</h3>
             <ul>
-              {managers.map(member => (
-                <li key={member.id} className="flex items-center justify-between p-4 bg-white rounded-md shadow-sm ring-1 ring-gray-300 cursor-pointer" onClick={() => removeManager(member.id)}>
-                  <span className="text-lg font-medium text-gray-900">{member.name}</span>
-                  <span className="text-lg font-medium text-gray-500">{member.email}</span>
+              {owners.map(member => (
+                <li key={member.user_id} className="flex items-center justify-between p-4 bg-white rounded-md shadow-sm ring-1 ring-gray-300 cursor-pointer" onClick={() => removeOwner(member.user_id)}>
+                  <span className="text-lg font-medium text-gray-900">{member.Full_name}</span>
+                  <span className="text-lg font-medium text-gray-500">{member.is_founder ? "Founder" : ""}</span>
                 </li>
               ))}
             </ul>
           </div>
           <div className="space-y-4">
-            <h3 className="text-lg font-medium leading-6 text-gray-900">Select to remove an owner</h3>
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Select to remove a manager</h3>
             <ul>
-              {owners.map(member => (
-                <li key={member.id} className="flex items-center justify-between p-4 bg-white rounded-md shadow-sm ring-1 ring-gray-300 cursor-pointer" onClick={() => removeOwner(member.id)}>
-                  <span className="text-lg font-medium text-gray-900">{member.name}</span>
-                  <span className="text-lg font-medium text-gray-500">{member.email}</span>
+              {managers.map(member => (
+                <li key={member.user_id} className="flex items-center justify-between p-4 bg-white rounded-md shadow-sm ring-1 ring-gray-300 cursor-pointer" onClick={() => removeManager(member.user_id)}>
+                  <span className="text-lg font-medium text-gray-900">{member.Full_name}</span>
+                  <span className="text-lg font-medium text-gray-500">{member.is_founder ? "Founder" : ""}</span>
                 </li>
               ))}
             </ul>
