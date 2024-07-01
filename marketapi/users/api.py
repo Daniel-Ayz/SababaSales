@@ -128,12 +128,14 @@ def create_fake_data(request):
 
 
 @router.post("/{user_id}/update_Full_Name")
-def update_user_full_name(request, user_id, payload: str):
+def update_user_full_name(request, user_id, payload: FullnameSchemaIn):
     return uc.update_user_full_name(request, user_id, payload)
 
 
 @router.post("/{user_id}/update_Identification_Number")
-def update_user_Identification_Number(request, user_id, payload: str):
+def update_user_Identification_Number(
+    request, user_id, payload: IdentificationNumberSchemaIn
+):
     return uc.update_user_Identification_Number(request, user_id, payload)
 
 

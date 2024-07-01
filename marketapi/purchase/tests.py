@@ -6,6 +6,7 @@ from .api import router
 from store.api import router as store_router
 from users.api import router as user_router
 
+
 # Create your tests here.
 class TestPurchase(TransactionTestCase):
     reset_sequences = True
@@ -45,14 +46,32 @@ class TestPurchase(TransactionTestCase):
             category="Test Category",
         )
 
+        # @router.post("/{store_id}/add_product")
+        # def add_product(request, role: RoleSchemaIn, payload: StoreProductSchemaIn):
+        #     return sc.add_product(request, role, payload)
+
+        response = self.store_client.post(
+            f"/{self.store_id}/add_product",
+            json={
+                "role": {"user_id": self.user_id, "store_id": self.store_id},
+                "payload": {
+                    "name": "Test Product",
+                    "initial_price": 100.00,
+                    "quantity": 10,
+                    "category": "Test Category",
+                    "image_link": "Test Image Link",
+                },
+            },
+        )
+
         # Additional setup for user details
         self.user_client.post(
             f"/{self.user_id}/update_Full_Name",
-            json={"payload": "New Full Name"},
+            json={"Full_Name": "Test User"},
         )
         self.user_client.post(
             f"/{self.user_id}/update_Identification_Number",
-            json={"payload": "123456789"},
+            json={"Identification_Number": "123456789"},
         )
         self.user_client.post(
             f"/{self.user_id}/update_delivery_info",
@@ -63,7 +82,7 @@ class TestPurchase(TransactionTestCase):
                 "zip": "123456",
             },
         )
-        response = self.user_client.post(
+        self.user_client.post(
             f"/{self.user_id}/update_payment_info",
             json={
                 "holder": "Test User",
@@ -74,8 +93,6 @@ class TestPurchase(TransactionTestCase):
                 "security_code": "123",
             },
         )
-        response = self.user_client.get(f"/{self.user_id}/get_payment_information")
-        print(response.json())
 
     def test_make_purchase_of_all_products_in_cart_positive(self):
         # Test 1: Positive test case, make purchase of all products in cart
@@ -91,7 +108,7 @@ class TestPurchase(TransactionTestCase):
         history_after = self.client.get(f"/{self.user_id}/get_purchase_history")
         self.assertNotEqual(history_before.json(), history_after.json())
         self.assertEqual(history_after.json()[0]["purchase_id"], 1)
-        self.assertEqual(history_after.json()[0]["cart"], self.cart_id)
+        self.assertEqual(history_after.json()[0]["cart_id"], self.cart_id)
         self.assertEqual(history_after.json()[0]["total_price"], 1000.00)
         self.assertEqual(history_after.json()[0]["total_quantity"], 10)
 
@@ -110,8 +127,9 @@ class TestPurchase(TransactionTestCase):
         )
 
         response = self.client.post(f"/{self.user_id}/{self.cart_id}/make_purchase")
-        self.assertEqual(response.status_code, 400)  # Expecting a failure status code
-        self.assertEqual(response.json()["detail"], "Delivery failed")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["detail"], "Invalid Delivery Information")
 
         # Ensure that the purchase was not made
         history_after = self.client.get(f"/{self.user_id}/get_purchase_history")
@@ -127,16 +145,15 @@ class TestPurchase(TransactionTestCase):
                 "holder": "Test User",
                 "holder_identification_number": "123456789",
                 "currency": "USD",
-                "card_number": "123456789",
+                "credit_card_number": "123456789",
                 "expiration_date": "00",  # invalid expiration date
                 "security_code": "123",
             },
         )
-
         response = self.client.post(f"/{self.user_id}/{self.cart_id}/make_purchase")
-        print(response.json())
-        self.assertEqual(response.status_code, 400)  # Expecting a failure status code
-        self.assertEqual(response.json()["detail"], "Payment failed")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["detail"], "Invalid Payment Information")
 
         # Ensure that the purchase was not made
         history_after = self.client.get(f"/{self.user_id}/get_purchase_history")
@@ -189,6 +206,6 @@ class TestPurchase(TransactionTestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["purchase_id"], 1)
-        self.assertEqual(response.json()["cart"], self.cart_id)
+        self.assertEqual(response.json()["cart_id"], self.cart_id)
         self.assertEqual(response.json()["total_price"], 1000.00)
         self.assertEqual(response.json()["total_quantity"], 10)

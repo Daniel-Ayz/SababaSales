@@ -18,6 +18,7 @@ from purchase.services.delivery_service import (
 )  # Use actual delivery service when available
 
 from users.usercontroller import UserController
+from django.db import transaction
 
 
 router = Router()
@@ -46,11 +47,11 @@ class purchaseController:
             return purchase_history
 
         except CustomUser.DoesNotExist as e:
-            raise HttpError(404, f'error": "User not found')
+            raise HttpError(404, "User not found")
         except HttpError as e:
             raise e
         except Exception as e:
-            raise HttpError(404, f'error": {str(e)}')
+            raise HttpError(404, f"{str(e)}")
 
     # -------------------- Get purchase receipt --------------------
     def get_purchase_receipt(self, request, purchase_id: int):
@@ -93,15 +94,15 @@ class purchaseController:
             return purchase_receipt
 
         except Purchase.DoesNotExist as e:
-            raise HttpError(404, f'error": "Purchase not found')
+            raise HttpError(404, "Purchase not found")
         except HistoryBasket.DoesNotExist as e:
-            raise HttpError(404, f'error": "HistoryBasket not found')
+            raise HttpError(404, "HistoryBasket not found")
         except HistoryBasketProduct.DoesNotExist as e:
-            raise HttpError(404, f'error": "HistoryBasketProduct not found')
+            raise HttpError(404, "HistoryBasketProduct not found")
         except HttpError as e:
             raise e
         except Exception as e:
-            raise HttpError(404, f'error": {str(e)}')
+            raise HttpError(404, f"{str(e)}")
 
     # -------------------- Make Purchase --------------------
 
@@ -114,20 +115,19 @@ class purchaseController:
         try:
             delivery_information_user = uc.get_delivery_information(request, user_id)
             delivery_information_dict = {
-                "address": delivery_information_user.address,
-                "city": delivery_information_user.city,
-                "country": delivery_information_user.country,
-                "zip": delivery_information_user.zip,
+                "address": delivery_information_user["address"],
+                "city": delivery_information_user["city"],
+                "country": delivery_information_user["country"],
+                "zip": delivery_information_user["zip"],
             }
             delivery_information_dict["name"] = uc.get_user_full_name(request, user_id)
 
             payment_information_user = uc.get_payment_information(request, user_id)
-            print("HEREEEEEE")
             payment_details_dict = {
-                "currency": payment_information_user.currency,
-                "credit_card_number": payment_information_user.credit_card_number,
-                "expiration_date": payment_information_user.expiration_date,
-                "security_code": payment_information_user.security_code,
+                "currency": payment_information_user["currency"],
+                "credit_card_number": payment_information_user["credit_card_number"],
+                "expiration_date": payment_information_user["expiration_date"],
+                "security_code": payment_information_user["security_code"],
                 "total_price": 0,
                 "holder": uc.get_user_full_name(request, user_id),
                 "holder_identification_number": uc.get_user_identification_number(
@@ -135,82 +135,80 @@ class purchaseController:
                 ),
             }
 
-            print("SECOND")
-
-            # if payment is ok:
-            cart = get_object_or_404(Cart, id=cart_id)
-            purchase = Purchase.objects.create(
-                cart=cart, purchase_date=datetime.now(), total_price=0, total_quantity=0
-            )
-            total_price = 0
-            total_quantity = 0
-            item_counter = 0  # this is for the delivery service - idk why not
-            for basket in Basket.objects.filter(cart_id=cart_id).values():
-                store_id = basket["store_id"]
-                products_list = []
-                for product in BasketProduct.objects.filter(
-                    basket_id=basket["id"]
-                ).values():
-                    name = product["name"]
-                    quantity = product["quantity"]
-                    category = product["category"]
-                    schema = PurchaseStoreProductSchema(
-                        product_name=name, quantity=quantity, category=category
-                    )
-                    products_list.append(schema)
-                    item_counter += quantity
-                try:
-                    response = sc.purchase_product(
-                        request=None, store_id=store_id, payload=products_list
-                    )
-                except HttpError as e:
-                    Purchase.objects.filter(purchase_id=purchase.purchase_id).delete()
-                    raise HttpError(400, str(e))
-
-                # calculate total price and quantity per basket
-                total_price += response["total_price"]
-                total_basket_quantity = 0
-                for basket_product in response["original_prices"]:
-                    total_basket_quantity += basket_product["quantity"]
-
-                total_quantity += total_basket_quantity
-                history_basket = HistoryBasket.objects.create(
-                    store_id=store_id,
-                    purchase=purchase,
-                    total_price=response["total_price"],
-                    total_quantity=total_basket_quantity,
-                    discount=response["original_price"] - response["total_price"],
+            with transaction.atomic():
+                cart = get_object_or_404(Cart, id=cart_id)
+                purchase = Purchase.objects.create(
+                    cart=cart,
+                    purchase_date=datetime.now(),
+                    total_price=0,
+                    total_quantity=0,
                 )
-                history_basket.save()
+                total_price = 0
+                total_quantity = 0
+                for basket in Basket.objects.filter(cart_id=cart_id).values():
+                    store_id = basket["store_id"]
+                    products_list = []
+                    for product in BasketProduct.objects.filter(
+                        basket_id=basket["id"]
+                    ).values():
+                        name = product["name"]
+                        quantity = product["quantity"]
+                        category = product["category"]
+                        schema = PurchaseStoreProductSchema(
+                            product_name=name, quantity=quantity, category=category
+                        )
+                        products_list.append(schema)
+                    try:
+                        response = sc.purchase_product(
+                            request=None, store_id=store_id, payload=products_list
+                        )
+                    except HttpError as e:
+                        raise HttpError(400, str(e))
 
-                for basket_product_schema in response["original_prices"]:
-                    history_basket_product = HistoryBasketProduct.objects.create(
-                        quantity=basket_product_schema["quantity"],
-                        name=basket_product_schema["name"],
-                        initial_price=basket_product_schema["initial price"],
-                        history_basket_id=history_basket.basket_id,
+                    total_price += response["total_price"]
+                    total_basket_quantity = 0
+                    for basket_product in response["original_prices"]:
+                        total_basket_quantity += basket_product["quantity"]
+
+                    total_quantity += total_basket_quantity
+                    history_basket = HistoryBasket.objects.create(
+                        store_id=store_id,
+                        purchase=purchase,
+                        total_price=response["total_price"],
+                        total_quantity=total_basket_quantity,
+                        discount=response["original_price"] - response["total_price"],
                     )
-                    history_basket_product.save()
+                    history_basket.save()
 
-            delivery_result = delivery_service.create_shipment(
-                delivery_information_dict
-            )
+                    for basket_product_schema in response["original_prices"]:
+                        history_basket_product = HistoryBasketProduct.objects.create(
+                            quantity=basket_product_schema["quantity"],
+                            name=basket_product_schema["name"],
+                            initial_price=basket_product_schema["initial price"],
+                            history_basket_id=history_basket.basket_id,
+                        )
+                        history_basket_product.save()
 
-            if delivery_result["result"]:
-                raise HttpError(400, f'error": "Delivery failed')
+                delivery_result = delivery_service.create_shipment(
+                    delivery_information_dict
+                )
 
-            total_price += delivery_result["delivery_fee"]
+                if not delivery_result["result"]:
+                    raise HttpError(400, "Delivery failed")
 
-            payment_details_dict["total_price"] = total_price
-            payment_result = payment_service.process_payment(payment_details_dict)
-            if payment_result["result"]:
-                raise HttpError(400, f'error": "Payment failed')
-            Purchase.objects.filter(purchase_id=purchase.purchase_id).update(
-                total_price=total_price, total_quantity=total_quantity
-            )
+                total_price += delivery_result["delivery_fee"]
 
-            purchase = Purchase.objects.get(purchase_id=purchase.purchase_id)
-            purchase.save()
+                payment_details_dict["total_price"] = total_price
+                payment_result = payment_service.process_payment(payment_details_dict)
+                if not payment_result["result"]:
+                    raise HttpError(400, "Payment failed")
+
+                Purchase.objects.filter(purchase_id=purchase.purchase_id).update(
+                    total_price=total_price, total_quantity=total_quantity
+                )
+
+                purchase = Purchase.objects.get(purchase_id=purchase.purchase_id)
+                purchase.save()
 
             return {
                 "message": "Purchase added successfully",
@@ -218,18 +216,18 @@ class purchaseController:
                 "purchase_date": purchase.purchase_date,
                 "total_price": purchase.total_price,
                 "total_quantity": purchase.total_quantity,
-                "cart_id": purchase.cart.cart_id,
+                "cart_id": purchase.cart.id,
             }
 
         except CustomUser.DoesNotExist as e:
-            raise HttpError(404, f'error": "User not found')
+            raise HttpError(404, "User not found")
         except Cart.DoesNotExist as e:
-            raise HttpError(404, f'error": "Cart not found')
+            raise HttpError(404, "Cart not found")
         except Basket.DoesNotExist as e:
-            raise HttpError(404, f'error": "Basket not found')
+            raise HttpError(404, "Basket not found")
         except BasketProduct.DoesNotExist as e:
-            raise HttpError(404, f'error": "BasketProduct not found')
+            raise HttpError(404, "BasketProduct not found")
         except HttpError as e:
             raise e
         except Exception as e:
-            raise HttpError(404, f'error": {str(e)}')
+            raise HttpError(404, f"{str(e)}")

@@ -98,3 +98,11 @@ class PaymentInfoSchema(Schema):
     credit_card_number: str
     expiration_date: str
     security_code: str
+
+
+class FullnameSchemaIn(Schema):
+    Full_Name: str
+
+
+class IdentificationNumberSchemaIn(Schema):
+    Identification_Number: str

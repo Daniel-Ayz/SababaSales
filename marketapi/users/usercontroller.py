@@ -254,23 +254,35 @@ class UserController:
         user = CustomUser.objects.get(id=user_id)
         return user.Identification_number
 
-    def get_payment_information(self, request, user_id: int) -> PaymentInformationUser:
+    def get_payment_information(self, request, user_id: int) -> dict:
         try:
             user = CustomUser.objects.get(id=user_id)
         except CustomUser.DoesNotExist:
             raise HttpError(404, "User not found")
         payment_info = PaymentInformationUser.objects.get(user=user)
-        return payment_info
+        payment_info_dict = {
+            "holder": payment_info.holder,
+            "holder_identification_number": payment_info.holder_identification_number,
+            "currency": payment_info.currency,
+            "credit_card_number": payment_info.credit_card_number,
+            "expiration_date": payment_info.expiration_date,
+            "security_code": payment_info.security_code,
+        }
+        return payment_info_dict
 
-    def get_delivery_information(
-        self, request, user_id: int
-    ) -> DeliveryInformationUser:
+    def get_delivery_information(self, request, user_id: int) -> dict:
         try:
             user = CustomUser.objects.get(id=user_id)
         except CustomUser.DoesNotExist:
             raise HttpError(404, "User not found")
         delivery_info = DeliveryInformationUser.objects.get(user=user)
-        return delivery_info
+        delivery_info_dict = {
+            "address": delivery_info.address,
+            "city": delivery_info.city,
+            "country": delivery_info.country,
+            "zip": delivery_info.zip,
+        }
+        return delivery_info_dict
 
     def get_user_id_by_email(self, email: str) -> int:
         user = CustomUser.objects.get(email=email)
@@ -314,17 +326,19 @@ class UserController:
 
         return {"msg": "Fake data created successfully"}
 
-    def update_user_full_name(self, request, user_id, payload: str) -> UserSchema:
+    def update_user_full_name(
+        self, request, user_id, payload: FullnameSchemaIn
+    ) -> UserSchema:
         user = CustomUser.objects.get(id=user_id)
-        user.Full_Name = payload
+        user.Full_Name = payload.Full_Name
         user.save()
         return {"msg": "Full name updated successfully"}
 
     def update_user_Identification_Number(
-        self, request, user_id, payload: str
+        self, request, user_id, payload: IdentificationNumberSchemaIn
     ) -> UserSchema:
         user = CustomUser.objects.get(id=user_id)
-        user.Identification_number = payload
+        user.Identification_number = payload.Identification_Number
         user.save()
         return {"msg": "Identification number updated successfully"}
 
