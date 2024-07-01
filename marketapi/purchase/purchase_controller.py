@@ -117,7 +117,6 @@ class purchaseController:
         flag_payment: bool = False,
     ):
         try:
-            # demo data
             if not flag_delivery:
                 delivery_information_user = uc.get_user_delivery_information(
                     request, user_id
@@ -241,7 +240,7 @@ class purchaseController:
                 "purchase_date": purchase.purchase_date,
                 "total_price": purchase.total_price,
                 "total_quantity": purchase.total_quantity,
-                "cart_id": purchase.cart_id,
+                "cart_id": purchase.cart.cart_id,
             }
 
         except CustomUser.DoesNotExist as e:

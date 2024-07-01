@@ -10,7 +10,6 @@ class CustomUser(AbstractUser):
     Identification_number = models.CharField(
         max_length=9, blank=True, null=True
     )  # because can start with 0
-    address = models.CharField(max_length=100, blank=True)
     online_count = models.IntegerField(default=0)
 
 
