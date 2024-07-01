@@ -127,6 +127,12 @@ def create_fake_data(request):
     return uc.create_fake_data()
 
 
+# get user id by email
+@router.get("/get_user_id", response={200: UserSchema, 404: Error})
+def get_user_id(request, email: str):
+    return uc.get_user_id(request, email)
+
+
 @router.post("/{user_id}/update_Full_Name")
 def update_user_full_name(request, user_id, payload: FullnameSchemaIn):
     return uc.update_user_full_name(request, user_id, payload)
@@ -157,3 +163,8 @@ def get_payment_information(request, user_id):
 @router.get("/{user_id}/get_delivery_information")
 def get_delivery_information(request, user_id):
     return uc.get_delivery_information(request, user_id)
+
+
+@router.get("/{user_id}/get_full_name")
+def get_full_name(request, user_id):
+    return uc.get_user_full_name(request, user_id)

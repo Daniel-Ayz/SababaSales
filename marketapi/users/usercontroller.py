@@ -326,6 +326,13 @@ class UserController:
 
         return {"msg": "Fake data created successfully"}
 
+    def get_user_id(self, request, email: str) -> UserSchema:
+        try:
+            user = CustomUser.objects.get(email=email)
+            return user
+        except CustomUser.DoesNotExist as e:
+            raise HttpError(404, "User not found")
+
     def update_user_full_name(
         self, request, user_id, payload: FullnameSchemaIn
     ) -> UserSchema:

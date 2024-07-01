@@ -24,7 +24,8 @@ const {storesProducts, setStoresProducts}= useContext(StoreProductsContext);
           withCredentials: true
         });
 
-        const stores = response.data;
+        var stores = response.data;
+        stores = stores.filter((store) => store.is_active === true);
         setStores(stores);
         const storesProducts = {};
 

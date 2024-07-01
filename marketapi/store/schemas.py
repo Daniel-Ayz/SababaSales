@@ -42,30 +42,6 @@ class RemoveManagerSchemaIn(RoleSchemaIn):
     removed_by: int
 
 
-class RoleSchemaInUpgraded(Schema):
-    email: str
-    store_id: int
-
-    class Meta:
-        abstract = True
-
-
-class OwnerSchemaInEmail(RoleSchemaInUpgraded):
-    assigned_by: int
-
-
-class RemoveOwnerSchemaInEmail(RoleSchemaInUpgraded):
-    removed_by: int
-
-
-class ManagerSchemaInEmail(RoleSchemaInUpgraded):
-    assigned_by: int
-
-
-class RemoveManagerSchemaInEmail(RoleSchemaInUpgraded):
-    removed_by: int
-
-
 class RoleSchemaOut(Schema):
     user_id: int
     store: StoreSchemaOut
