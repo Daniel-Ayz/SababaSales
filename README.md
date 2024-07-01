@@ -100,7 +100,7 @@ docker-compose exec web python manage.py createsuperuser
 ## 🚀 4. Access the Application
 run the containers with
 ```bash
- docker-compose up.
+ docker-compose up
 ```
 Once the containers are up and running, you can access your application at http://localhost:8000
 
