@@ -30,6 +30,7 @@ export default function AddProduct({ params }) {
                 initial_price: parseFloat(formData.get('initial_price')),
                 quantity: parseInt(formData.get('quantity')),
                 category: formData.get('category'),
+                image_link: formData.get('image_link'),
             }
         };
 
@@ -131,6 +132,17 @@ export default function AddProduct({ params }) {
                                     name="category"
                                     type="text"
                                     required
+                                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                />
+                            </div>
+                            <label htmlFor="category" className="block text-sm font-medium leading-6 text-gray-900">
+                                Image Link - Not Required
+                            </label>
+                            <div className="mt-2">
+                                <input
+                                    id="image_link"
+                                    name="image_link"
+                                    type="text"
                                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                                 />
                             </div>
