@@ -19,12 +19,13 @@ pc = purchaseController()
 
 
 # -------------------- Get history --------------------
-@router.get("/{user_id}/get_purchase_history", response=List[PurchaseHistorySchema]) 
+@router.get("/{user_id}/get_purchase_history", response=List[PurchaseHistorySchema])
 def get_purchase_history(request, user_id: int):
     return pc.get_purchase_history(request, user_id)
 
+
 # -------------------- Get purchase receipt --------------------
-@router.get("/{purchase_id}/get_purchase_receipt", response=PurchaseHistorySchema) 
+@router.get("/{purchase_id}/get_purchase_receipt", response=PurchaseHistorySchema)
 def get_purchase_receipt(request, purchase_id: int):
     return pc.get_purchase_receipt(request, purchase_id)
 
@@ -34,19 +35,4 @@ def get_purchase_receipt(request, purchase_id: int):
 
 @router.post("/{user_id}/{cart_id}/make_purchase")
 def make_purchase(request, user_id, cart_id: int):
-    return pc.make_purchase(
-        request, user_id, cart_id, flag_delivery=False, flag_payment=False
-    )
-
-
-# those are for tests
-@router.post("/{user_id}/{cart_id}/make_purchase_delivery_fail")
-def make_purchase(request, user_id, cart_id: int):
-    return pc.make_purchase(request,user_id, cart_id, flag_delivery=True, flag_payment=False)
-
-
-@router.post("/{user_id}/{cart_id}/make_purchase_payment_fail")
-def make_purchase(request, user_id, cart_id: int):
-    return pc.make_purchase(
-        request, user_id, cart_id, flag_delivery=False, flag_payment=True
-    )
+    return pc.make_purchase(request, user_id, cart_id)

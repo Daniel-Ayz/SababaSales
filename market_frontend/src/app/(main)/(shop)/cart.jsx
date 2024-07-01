@@ -79,10 +79,10 @@ function Cart({ isOpen, setCart }) {
             quantity: product.quantity,
             name: product.name,
             price: product.price,
+            image_link: product.image_link,
           });
         });
       });
-
       // Update the cart state with fetched data
       setCartData({ products: productsList });
       setTotalPrice(price);
@@ -148,7 +148,7 @@ function Cart({ isOpen, setCart }) {
                                   <div className="h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border border-gray-200">
                                     <img
                                     // this is a temporary image, replace with actual image
-                                      src={"https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-02.jpg"}
+                                      src={product.image_link}
                                       alt={"temp"}
                                       className="h-full w-full object-cover object-center"
                                     />

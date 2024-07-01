@@ -24,7 +24,8 @@ const {storesProducts, setStoresProducts}= useContext(StoreProductsContext);
           withCredentials: true
         });
 
-        const stores = response.data;
+        var stores = response.data;
+        stores = stores.filter((store) => store.is_active === true);
         setStores(stores);
         const storesProducts = {};
 
@@ -35,8 +36,10 @@ const {storesProducts, setStoresProducts}= useContext(StoreProductsContext);
               withCredentials: true
             });
             for (let i = 0; i < storeResponse.data.length; i++) {
-              storeResponse.data[i]['image'] =  "https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-01.jpg";
-
+              if (storeResponse.data[i].image_link)
+                storeResponse.data[i]['image'] = storeResponse.data[i].image_link;
+              else
+                storeResponse.data[i]['image'] = "https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-01.jpg";
             }
             storesProducts[store.id] = storeResponse.data;
 

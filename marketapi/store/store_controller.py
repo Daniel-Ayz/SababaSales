@@ -8,6 +8,8 @@ from django.db import transaction, connection
 from django.shortcuts import get_object_or_404
 from ninja import Router
 from ninja.errors import HttpError
+from django.http import Http404
+import random
 
 
 from .discount import (
@@ -67,10 +69,11 @@ from .schemas import (
     MakePurchaseOnBidSchemaIn,
     GetConditionsSchemaIn,
 )
-from users.usercontroller import UserController
 
 router = Router()
 store_lock = hash("store_lock")
+
+from users.usercontroller import UserController
 
 uc = UserController()
 
@@ -95,6 +98,10 @@ class StoreController:
                     raise HttpError(403, "Store with this name already exists")
                 store = Store.objects.create(**payload.dict(), is_active=True)
                 Owner.objects.create(user_id=user_id, store=store, is_founder=True)
+
+        uc.send_notification(
+            store.name, user_id, f"Store {store.name} created successfully"
+        )
         return {"store_id": store.id}
 
     def get_stores(self, request):
@@ -115,23 +122,26 @@ class StoreController:
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
                 )
-                user_id_to_assign = uc.get_user_id_by_email(payload.email)
+                # user_id_to_assign = uc.get_user_id_by_email(payload.email)
 
-                if Owner.objects.filter(
-                    user_id=user_id_to_assign, store=store
-                ).exists():
+                if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
                     raise HttpError(400, "User is already an owner")
                 if Manager.objects.filter(
-                    user_id=user_id_to_assign, store=store
+                    user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
 
                 owner = Owner.objects.create(
-                    user_id=user_id_to_assign,
+                    user_id=payload.user_id,
                     assigned_by=assigning_owner,
                     store=store,
                     is_founder=False,
                 )
+        uc.send_notification(
+            store.name,
+            payload.user_id,
+            f"You have been assigned as an owner of {store.name}",
+        )
         return {"message": "Owner assigned successfully"}
 
     def remove_owner(self, request, payload: RemoveOwnerSchemaIn):
@@ -147,9 +157,9 @@ class StoreController:
                 removing_owner = get_object_or_404(
                     Owner, user_id=payload.removed_by, store=store
                 )
-                user_id_to_assign = uc.get_user_id_by_email(payload.email)
+                # user_id_to_assign = uc.get_user_id_by_email(payload.email)
                 removed_owner = get_object_or_404(
-                    Owner, user_id=user_id_to_assign, store=store
+                    Owner, user_id=payload.user_id, store=store
                 )
 
                 if removed_owner.assigned_by != removing_owner:
@@ -158,6 +168,11 @@ class StoreController:
                     )
 
                 removed_owner.delete()
+        uc.send_notification(
+            store.name,
+            payload.user_id,
+            f"You have been removed as an owner of {store.name}",
+        )
         return {"message": "Owner removed successfully"}
 
     def leave_ownership(self, request, payload: RoleSchemaIn):
@@ -174,6 +189,9 @@ class StoreController:
                     raise HttpError(400, "Founder cannot leave ownership")
 
                 owner.delete()
+        uc.send_notification(
+            store.name, payload.user_id, f"You have left ownership of {store.name}"
+        )
         return {"message": "Ownership left successfully"}
 
     def assign_manager(self, request, payload: ManagerSchemaIn):
@@ -188,13 +206,13 @@ class StoreController:
                 assigning_owner = get_object_or_404(
                     Owner, user_id=payload.assigned_by, store=store
                 )
-                user_id_to_assign = uc.get_user_id_by_email(payload.email)
+                # user_id_to_assign = uc.get_user_id_by_email(payload.email)
                 if Manager.objects.filter(
-                    user_id=user_id_to_assign, store=store
+                    user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
                 elif Owner.objects.filter(
-                    user_id=user_id_to_assign, store=store
+                    user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already an owner")
 
@@ -205,9 +223,13 @@ class StoreController:
                     raise HttpError(403, "Only owners can assign managers")
 
                 manager = Manager.objects.create(
-                    user_id=user_id_to_assign, assigned_by=assigning_owner, store=store
+                    user_id=payload.user_id, assigned_by=assigning_owner, store=store
                 )
-
+        uc.send_notification(
+            store.name,
+            payload.user_id,
+            f"You have been assigned as a manager of {store.name}",
+        )
         return {"message": "Manager assigned successfully"}
 
     def remove_manager(self, request, payload: RemoveManagerSchemaIn):
@@ -222,9 +244,9 @@ class StoreController:
                 removing_owner = get_object_or_404(
                     Owner, user_id=payload.removed_by, store=store
                 )
-                user_id_to_remove = uc.get_user_id_by_email(payload.email)
+                # user_id_to_remove = uc.get_user_id_by_email(payload.email)
                 removed_manager = get_object_or_404(
-                    Manager, user_id=user_id_to_remove, store=store
+                    Manager, user_id=payload.user_id, store=store
                 )
 
                 if removed_manager.assigned_by != removing_owner:
@@ -234,6 +256,11 @@ class StoreController:
                     )
 
                 removed_manager.delete()
+                uc.send_notification(
+                    store.name,
+                    payload.user_id,
+                    f"You have been removed as a manager of {store.name}",
+                )
                 return {"message": "Manager removed successfully"}
 
     def assign_manager_permissions(
@@ -263,6 +290,11 @@ class StoreController:
                 except Exception as e:
                     raise HttpError(500, f"Error assigning permissions: {str(e)}")
 
+        uc.send_notification(
+            store.name,
+            manager.user_id,
+            f"Your permissions have been updated in {store.name}",
+        )
         return {"message": "Manager permissions assigned successfully"}
 
     def get_manager_permissions(self, request, role: RoleSchemaIn, manager_id: int):
@@ -293,6 +325,12 @@ class StoreController:
 
                 store.is_active = False
                 store.save()
+                store_owners = self.get_owners(request, payload)
+                for owner in store_owners:
+                    uc.send_notification(
+                        store.name, owner.user_id, f"{store.name} has been closed"
+                    )
+
         return {"message": "Store closed successfully"}
 
     def reopen_store(self, request, payload: RoleSchemaIn):
@@ -310,6 +348,11 @@ class StoreController:
 
                 store.is_active = True
                 store.save()
+                store_owners = self.get_owners(request, payload)
+                for owner in store_owners:
+                    uc.send_notification(
+                        store.name, owner.user_id, f"{store.name} has been reopened"
+                    )
 
         return {"message": "Store reopened successfully"}
 
@@ -666,16 +709,51 @@ class StoreController:
                 store = get_object_or_404(Store, pk=payload.store_id)
                 if payload.to_discount:
                     discount_lock = f"{store.pk}_discount_lock"
-                    cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});")
+                    cursor.execute(
+                        f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});"
+                    )
                     discount = get_object_or_404(DiscountBase, pk=payload.target_id)
                     conditions = discount.conditions.all()
                 else:
                     policy_lock = f"{store.pk}_policy_lock"
-                    cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});")
-                    policy = get_object_or_404(PurchasePolicyBase, pk=payload.target_id)
-                    conditions = policy.conditions.all()
+                    cursor.execute(
+                        f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});"
+                    )
+                    # first check if composite
+                    try:
+                        policy = get_object_or_404(
+                            CompositePurchasePolicy, pk=payload.target_id
+                        )
+                        policies = policy.policies.all()
+                        conditions = [
+                            condition
+                            for policy in policies
+                            for condition in policy.conditions.all()
+                        ]
+                    except Http404:
+                        policy = get_object_or_404(
+                            PurchasePolicyBase, pk=payload.target_id
+                        )
+                        conditions = policy.conditions.all()
         return conditions
 
+    def get_combine_function_for_policy(self, request, payload: GetConditionsSchemaIn):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_object_or_404(Store, pk=payload.store_id)
+                if not payload.to_discount:
+                    policy_lock = f"{store.pk}_policy_lock"
+                    cursor.execute(
+                        f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});"
+                    )
+                    try:
+                        policy = get_object_or_404(
+                            CompositePurchasePolicy, pk=payload.target_id
+                        )
+                        return policy.combine_function
+                    except Http404:
+                        return None
 
     def validate_permissions(
         self, role: RoleSchemaIn, store: Store, permission: str, cursor
@@ -756,6 +834,7 @@ class StoreController:
                 product.quantity = payload.quantity
                 product.initial_price = payload.initial_price
                 product.category = payload.category
+                product.image_link = payload.image_link
                 product.save()
 
         return {"message": "Product edited successfully"}
@@ -858,6 +937,18 @@ class StoreController:
                         product.delete()
                     else:
                         product.save()
+
+                managing_lock = hash(f"{store.pk}_managing_lock")
+                cursor.execute(
+                    "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock]
+                )
+                owners = Owner.objects.filter(store=store)
+                for owner in owners:
+                    uc.send_notification(
+                        store.name,
+                        owner.user_id,
+                        f"{total_items} products have been purchased from {store.name}",
+                    )
 
         return {
             "message": "Products purchased successfully",
@@ -1047,10 +1138,20 @@ class StoreController:
             "Hummus Heaven": {
                 "category": "Food",
                 "products": ["Classic Hummus", "Spicy Hummus", "Garlic Hummus"],
+                "Links": [
+                    "https://www.eatingwell.com/thmb/whG5O2XFksPLrc73YGNoRiYNrFQ=/750x0/filters:no_upscale():max_bytes(150000):strip_icc():format(webp)/6080917-adf6cf9f2c1944a9bfbaeadd032013a5.jpg",
+                    "https://heartbeetkitchen.com/foodblog/wp-content/uploads/2023/03/spicy-hummus-13.jpg",
+                    "https://shoppy.co.il/cdn/shop/products/ahlahummuslemongarlic_720x.png?v=1641413539",
+                ],
             },
             "Falafel Fiesta": {
                 "category": "Food",
                 "products": ["Falafel Wrap", "Falafel Plate", "Falafel Salad"],
+                "Links": [
+                    "https://cookingwithayeh.com/wp-content/uploads/2024/03/Falafel-Wrap-1.jpg",
+                    "https://hilahcooking.com/wp-content/uploads/2017/03/spicy-falafel.jpg",
+                    "https://kitchenconfidante.com/wp-content/uploads/2019/05/Falafel-Salad-kitchenconfidante.com-9021.jpg",
+                ],
             },
             "Startup Nation Tech": {
                 "category": "Technology",
@@ -1058,6 +1159,11 @@ class StoreController:
                     "Israeli Smartphone",
                     "Kibbutz Laptop",
                     "Jerusalem Smartwatch",
+                ],
+                "Links": [
+                    "https://static.timesofisrael.com/www/uploads/2022/07/F210127YS44-640x400.jpg",
+                    "https://cdn.thewirecutter.com/wp-content/media/2023/06/bestlaptops-2048px-9765.jpg?auto=webp&quality=75&width=1024&dpr=2",
+                    "https://m.media-amazon.com/images/I/61ksrJ2LsgL._AC_SX679_.jpg",
                 ],
             },
             "Tel Aviv Trends": {
@@ -1067,6 +1173,11 @@ class StoreController:
                     "Negev Leather Jacket",
                     "Eilat Running Shoes",
                 ],
+                "Links": [
+                    "https://i.ebayimg.com/images/g/JlEAAOSwKmphgYSh/s-l1600.jpg",
+                    "https://img01.ztat.net/article/spp-media-p1/13e0e8a354eb4656a895b06a3e324f9b/305d7df6e4f34e339a1cf31b585adbd4.jpg?imwidth=762",
+                    "https://contents.mediadecathlon.com/p2606890/k$30ab17a373351d4761e138a9c3be9b02/jogflow-5001-men-s-running-shoes-white-blue-red.jpg?format=auto&quality=40&f=452x452",
+                ],
             },
             "Book Bazaar Israel": {
                 "category": "Books",
@@ -1075,6 +1186,11 @@ class StoreController:
                     "Israeli Cookbook",
                     "Zionist Historical Biography",
                 ],
+                "Links": [
+                    "https://mosaicmagazine.com/wp-content/uploads/2018/10/Weingrad-ZF.jpg",
+                    "https://m.media-amazon.com/images/I/81KRghJo4YL._SL1500_.jpg",
+                    "https://www.urimpublications.com/mm5/graphics/00000001/historyzionismWeb2.jpg",
+                ],
             },
             "Toy Town Israel": {
                 "category": "Toys",
@@ -1082,6 +1198,11 @@ class StoreController:
                     "David Ben-Gurion Action Figure",
                     "Israeli Board Game",
                     "Jerusalem Puzzle Set",
+                ],
+                "Links": [
+                    "https://asufadesign.com/cdn/shop/files/BG-Product-PNG.png?v=1707639053",
+                    "https://www.dvarimbego.co.il/pub/123432/%D7%9E%D7%A9%D7%97%D7%A7%D7%99%20%D7%A9%D7%A4%D7%99%D7%A8/3694571.jpg?quality=65&height=380&mode=max",
+                    "https://eurographics.blob.core.windows.net/45a2776f-ae2f-4bb8-9e22-db4ab5a98cbe/ProductManagement/Products/01dd2e93-d552-4a74-b7cf-ae9fe130c1fa/6010-5550.jpg?t=638539811317412640",
                 ],
             },
         }
@@ -1118,7 +1239,8 @@ class StoreController:
                     name=store_data[store_names[i]]["products"][j],
                     category=store_data[store_names[i]]["category"],
                     quantity=10,
-                    initial_price=100,
+                    initial_price=random.randint(10, 100),
+                    image_link=store_data[store_names[i]]["Links"][j],
                 )
 
                 # Create a simple discount
@@ -1203,7 +1325,8 @@ class StoreController:
                 **purchase_policy_payload2
             )
             self.add_simple_purchase_policy(simple_policy_schema2)
-
+            purchase_policy_payload1["is_root"] = False
+            purchase_policy_payload2["is_root"] = False
             # Create a composite purchase policy
             composite_policy_payload = {
                 "store_id": stores[i].id,
@@ -1239,7 +1362,27 @@ class StoreController:
                     user_id=payload.user_id,
                     quantity=payload.quantity,
                 )
-                # TODO: notify all managers that a bid has been made on a product
+                managing_lock = hash(f"{store.pk}_managing_lock")
+                cursor.execute(
+                    "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock]
+                )
+                owners = Owner.objects.filter(store=store)
+                managers_with_permission = self.get_managers_with_permissions(
+                    store.pk, "can_decide_on_bid"
+                )
+                for owner in owners:
+                    uc.send_notification(
+                        store.name,
+                        owner.user_id,
+                        f"A bid has been made on {product.name} in {store.name}",
+                    )
+                for manager in managers_with_permission:
+                    uc.send_notification(
+                        store.name,
+                        manager.user_id,
+                        f"A bid has been made on {product.name} in {store.name}",
+                    )
+
         return {"message": "Bid added successfully"}
 
     def decide_on_bid(self, request, role: RoleSchemaIn, payload: DecisionBidSchemaIn):
@@ -1256,7 +1399,7 @@ class StoreController:
                     "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock]
                 )
                 managers_with_permission = self.get_managers_with_permissions(
-                    role, "can_decide_on_bid"
+                    role.store_id, "can_decide_on_bid"
                 )
                 manager = get_object_or_404(Role, user_id=role.user_id, store=bid.store)
                 if manager in bid.accepted_by.all():
@@ -1273,10 +1416,18 @@ class StoreController:
                     ):
                         bid.can_purchase = True
                         bid.save()  # Ensure bid is saved after setting can_purchase to True
-                        # TODO: notify user that bid has been accepted
+                        uc.send_notification(
+                            store.name,
+                            bid.user_id,
+                            f"Your bid on {bid.product.name} in {bid.store.name} has been accepted, you can now purchase the product",
+                        )
                 else:
                     bid.delete()
-                    ##TODO: notify user that bid has been rejected
+                    uc.send_notification(
+                        store.name,
+                        bid.user_id,
+                        f"Your bid on {bid.product.name} in {bid.store.name} has been rejected",
+                    )
 
         return {"message": "Bid decision made successfully"}
 
@@ -1313,8 +1464,8 @@ class StoreController:
                 bid.delete()  # delete bid after purchase
         return {"message": "Purchase made successfully", "price": price}
 
-    def get_managers_with_permissions(self, role: RoleSchemaIn, permission: str):
-        store = get_object_or_404(Store, pk=role.store_id)
+    def get_managers_with_permissions(self, store_id: int, permission: str):
+        store = get_object_or_404(Store, pk=store_id)
         managers = Manager.objects.filter(store=store)
         managers_with_permission = []
         for manager in managers:

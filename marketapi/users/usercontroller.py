@@ -50,6 +50,8 @@ class UserController:
         # check if user exists
         if CustomUser.objects.filter(username=payload.username).exists():
             raise HttpError(401, "User already exists")
+        if CustomUser.objects.filter(email=payload.email).exists():
+            raise HttpError(401, "Email already exists")
         # Hash the password before saving
         payload.password = make_password(payload.password)
         user = CustomUser.objects.create(
@@ -126,7 +128,19 @@ class UserController:
         notifications = Notification.objects.filter(user=user)
         return notifications
 
-    def send_notification(self, request, target_user_id, payload) -> NotificationSchema:
+    def mark_notification_as_seen(self, request, notification_id) -> NotificationSchema:
+        """
+        marks a notification as seen
+        """
+        notification = Notification.objects.get(id=notification_id)
+        notification.seen = True
+        notification.save()
+        return notification
+
+    # Send notifications from an API call
+    def _send_notification(
+        self, request, target_user_id, payload
+    ) -> NotificationSchema:
         """
         sends a notification from current session user to the target user
 
@@ -142,10 +156,30 @@ class UserController:
         notification.save()
 
         if target_user.online_count > 0:
-            send_message_to_user(target_user_id, payload.msg)
-            _mark_notification_as_seen(notification.id)
+            send_message_to_user(
+                target_user_id, payload.msg, notification.id, user.username
+            )
+            # _mark_notification_as_seen(notification.id)
 
         return notification
+
+    # Send notifications from a System (Without API)
+    @staticmethod
+    def send_notification(sent_by: str, target_user_id: int, message: str):
+        try:
+            target_user = CustomUser.objects.get(id=target_user_id)
+        except CustomUser.DoesNotExist as e:
+            return False
+        notification = Notification.objects.create(
+            sent_by=sent_by, message=message, user=target_user
+        )
+        notification.save()
+
+        if target_user.online_count > 0:
+            send_message_to_user(target_user_id, message)
+            _mark_notification_as_seen(notification.id)
+
+        return True
 
     def get_user_cart(self, request) -> CartSchema:
         cart = self._get_cart(request)
@@ -178,6 +212,7 @@ class UserController:
             name=payload.name,
             basket=basket,
             price=payload.price,
+            image_link=payload.image_link,
         )
         return product
 
@@ -211,19 +246,43 @@ class UserController:
 
         return products
 
-    # added 2 functions for the make purchase
-    def get_user_address(self, request, user_id: int) -> str:
-        if not self._verify_user_id(request, user_id):
-            raise HttpError(401, "Unauthorized")
-        user = CustomUser.objects.get(id=request.user.id)
-        return user.address
-
-    def get_user_payment_information(self, request, user_id: int) -> dict:
-        if not self._verify_user_id(request, user_id):
-            raise HttpError(401, "Unauthorized")
+    def get_user_full_name(self, request, user_id: int) -> str:
         user = CustomUser.objects.get(id=user_id)
+        return user.Full_Name
+
+    def get_user_identification_number(self, request, user_id: int) -> str:
+        user = CustomUser.objects.get(id=user_id)
+        return user.Identification_number
+
+    def get_payment_information(self, request, user_id: int) -> dict:
+        try:
+            user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            raise HttpError(404, "User not found")
         payment_info = PaymentInformationUser.objects.get(user=user)
-        return payment_info
+        payment_info_dict = {
+            "holder": payment_info.holder,
+            "holder_identification_number": payment_info.holder_identification_number,
+            "currency": payment_info.currency,
+            "credit_card_number": payment_info.credit_card_number,
+            "expiration_date": payment_info.expiration_date,
+            "security_code": payment_info.security_code,
+        }
+        return payment_info_dict
+
+    def get_delivery_information(self, request, user_id: int) -> dict:
+        try:
+            user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            raise HttpError(404, "User not found")
+        delivery_info = DeliveryInformationUser.objects.get(user=user)
+        delivery_info_dict = {
+            "address": delivery_info.address,
+            "city": delivery_info.city,
+            "country": delivery_info.country,
+            "zip": delivery_info.zip,
+        }
+        return delivery_info_dict
 
     def get_user_id_by_email(self, email: str) -> int:
         user = CustomUser.objects.get(email=email)
@@ -249,21 +308,77 @@ class UserController:
                 username=usernames[i],
                 email=f"{usernames[i]}@gmail.com",
                 password=make_password(usernames[i]),
+                Full_Name=usernames[i],
+                Identification_number="123456789",
             )
             user.save()
 
-            exp_date = "12/25"
-            exp_month, exp_year = map(int, exp_date.split("/"))
-            exp_year += 2000  # Assuming the year is in the format YY
-            expiration_date = datetime(exp_year, exp_month, 1).date()
             payment_info = PaymentInformationUser.objects.create(
                 user=user,
                 currency="USD",
-                billing_address="1234 Main St",
+                holder=user.Full_Name,
+                holder_identification_number=user.Identification_number,
                 credit_card_number="1234567890",
-                expiration_date=expiration_date,
+                expiration_date="12/25",
                 security_code="123",
             )
             payment_info.save()
 
         return {"msg": "Fake data created successfully"}
+
+    def get_user_id(self, request, email: str) -> UserSchema:
+        try:
+            user = CustomUser.objects.get(email=email)
+            return user
+        except CustomUser.DoesNotExist as e:
+            raise HttpError(404, "User not found")
+
+    def update_user_full_name(
+        self, request, user_id, payload: FullnameSchemaIn
+    ) -> UserSchema:
+        user = CustomUser.objects.get(id=user_id)
+        user.Full_Name = payload.Full_Name
+        user.save()
+        return {"msg": "Full name updated successfully"}
+
+    def update_user_Identification_Number(
+        self, request, user_id, payload: IdentificationNumberSchemaIn
+    ) -> UserSchema:
+        user = CustomUser.objects.get(id=user_id)
+        user.Identification_number = payload.Identification_Number
+        user.save()
+        return {"msg": "Identification number updated successfully"}
+
+    def update_user_delivery_info(
+        self, request, user_id, payload: DeliveryInfoSchema
+    ) -> UserSchema:
+        user = CustomUser.objects.get(id=user_id)
+        try:
+            delivery_info = DeliveryInformationUser.objects.get(user=user)
+        except DeliveryInformationUser.DoesNotExist:
+            delivery_info = DeliveryInformationUser.objects.create(user=user)
+        delivery_info.address = payload.address
+        delivery_info.city = payload.city
+        delivery_info.country = payload.country
+        delivery_info.zip = payload.zip
+        delivery_info.save()
+        return {"msg": "Delivery info updated successfully"}
+
+    def update_user_payment_info(
+        self, request, user_id, payload: PaymentInfoSchema
+    ) -> UserSchema:
+        user = CustomUser.objects.get(id=user_id)
+        try:
+            payment_info = PaymentInformationUser.objects.get(user=user)
+        except PaymentInformationUser.DoesNotExist:
+            payment_info = PaymentInformationUser.objects.create(user=user)
+        payment_info.holder = payload.holder
+        payment_info.holder_identification_number = payload.holder_identification_number
+        payment_info.currency = payload.currency
+        payment_info.credit_card_number = payload.credit_card_number
+        # need to convert the expiration date to a date object
+
+        payment_info.expiration_date = payload.expiration_date
+        payment_info.security_code = payload.security_code
+        payment_info.save()
+        return {"msg": "Payment info updated successfully"}

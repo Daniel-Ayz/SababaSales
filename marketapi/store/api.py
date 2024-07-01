@@ -40,10 +40,6 @@ from .schemas import (
     BidSchemaOut,
     DecisionBidSchemaIn,
     MakePurchaseOnBidSchemaIn,
-    ManagerSchemaInEmail,
-    OwnerSchemaInEmail,
-    RemoveOwnerSchemaInEmail,
-    RemoveManagerSchemaInEmail,
     MakePurchaseOnBidSchemaIn,
     ConditionSchemaOut,
     GetConditionsSchemaIn,
@@ -99,16 +95,6 @@ def remove_owner(request, payload: RemoveOwnerSchemaIn):
     return sc.remove_owner(request, payload)
 
 
-@router.post("/{store_id}/assign_owner_email")
-def assign_owner(request, payload: OwnerSchemaInEmail):
-    return sc.assign_owner(request, payload)
-
-
-@router.delete("/{store_id}/remove_owner_email")
-def remove_owner(request, payload: RemoveOwnerSchemaInEmail):
-    return sc.remove_owner(request, payload)
-
-
 @router.delete("/{store_id}/leave_ownership")
 def leave_ownership(request, payload: RoleSchemaIn):
     return sc.leave_ownership(request, payload)
@@ -121,16 +107,6 @@ def assign_manager(request, payload: ManagerSchemaIn):
 
 @router.delete("/{store_id}/remove_manager")
 def remove_manager(request, payload: RemoveManagerSchemaIn):
-    return sc.remove_manager(request, payload)
-
-
-@router.post("/{store_id}/assign_manager_email")
-def assign_manager(request, payload: ManagerSchemaInEmail):
-    return sc.assign_manager(request, payload)
-
-
-@router.delete("/{store_id}/remove_manager_email")
-def remove_manager(request, payload: RemoveManagerSchemaInEmail):
     return sc.remove_manager(request, payload)
 
 
@@ -159,12 +135,12 @@ def reopen_store(request, payload: RoleSchemaIn):
     return sc.reopen_store(request, payload)
 
 
-@router.get("/{store_id}/get_owners", response=List[OwnerSchemaOut])
+@router.post("/{store_id}/get_owners", response=List[OwnerSchemaOut])
 def get_owners(request, payload: RoleSchemaIn):
     return sc.get_owners(request, payload)
 
 
-@router.get("/{store_id}/get_managers", response=List[ManagerSchemaOut])
+@router.post("/{store_id}/get_managers", response=List[ManagerSchemaOut])
 def get_managers(request, payload: RoleSchemaIn):
     return sc.get_managers(request, payload)
 
@@ -235,9 +211,15 @@ def get_discount_policies(request, role: RoleSchemaIn):
     return sc.get_discount_policies(request, role)
 
 
-@router.get("/{store_id}/get_conditions", response=List[ConditionSchemaOut])
+@router.post("/{store_id}/get_conditions", response=List[ConditionSchemaOut])
 def get_conditions(request, payload: GetConditionsSchemaIn):
     return sc.get_conditions(request, payload)
+
+
+@router.post("/{store_id}/get_combine_function")
+def get_combine_funtion(request, payload: GetConditionsSchemaIn):
+    return sc.get_combine_function_for_policy(request, payload)
+
 
 @router.post("/{store_id}/add_product")
 def add_product(request, role: RoleSchemaIn, payload: StoreProductSchemaIn):

@@ -42,30 +42,6 @@ class RemoveManagerSchemaIn(RoleSchemaIn):
     removed_by: int
 
 
-class RoleSchemaInUpgraded(Schema):
-    email: str
-    store_id: int
-
-    class Meta:
-        abstract = True
-
-
-class OwnerSchemaInEmail(RoleSchemaInUpgraded):
-    assigned_by: int
-
-
-class RemoveOwnerSchemaInEmail(RoleSchemaInUpgraded):
-    removed_by: int
-
-
-class ManagerSchemaInEmail(RoleSchemaInUpgraded):
-    assigned_by: int
-
-
-class RemoveManagerSchemaInEmail(RoleSchemaInUpgraded):
-    removed_by: int
-
-
 class RoleSchemaOut(Schema):
     user_id: int
     store: StoreSchemaOut
@@ -202,6 +178,7 @@ class StoreProductSchemaOut(Schema):
     quantity: int
     store: StoreSchemaOut
     category: str
+    image_link: str
 
 
 class StoreProductSchemaIn(Schema):
@@ -209,6 +186,7 @@ class StoreProductSchemaIn(Schema):
     initial_price: float
     quantity: int
     category: str
+    image_link: str
 
 
 class PurchaseStoreProductSchema(Schema):

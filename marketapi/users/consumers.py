@@ -36,9 +36,15 @@ def _mark_notification_as_seen(notification_id: int):
 # Functions to send messages to a specific user
 #   - Each user is in a group named 'chat_{user_id}'
 #   ! can also send messages to ALL anonymous users -> when user_id == 'anonymous'
-def send_message_to_user(user_id, message):
+def send_message_to_user(user_id, message, notification_id=-1, sent_by="System"):
     async_to_sync(channel_layer.group_send)(
-        f"chat_{user_id}", {"type": "chat_message", "message": message}
+        f"chat_{user_id}",
+        {
+            "type": "chat_message",
+            "message": message,
+            "sent_by": sent_by,
+            "notification_id": notification_id,
+        },
     )
 
 
@@ -95,9 +101,14 @@ class ChatConsumer(WebsocketConsumer):
             for notification in notifications:
                 async_to_sync(self.channel_layer.group_send)(
                     self.room_group_name,
-                    {"type": "chat_message", "message": notification.message},
+                    {
+                        "type": "chat_message",
+                        "message": notification.message,
+                        "notification_id": notification.id,
+                        "sent_by": notification.sent_by,
+                    },
                 )
-                _mark_notification_as_seen(notification.id)
+                # _mark_notification_as_seen(notification.id)
 
     def disconnect(self, close_code):
         if self.user.is_authenticated:
@@ -113,11 +124,28 @@ class ChatConsumer(WebsocketConsumer):
         message = text_data_json["message"]
 
         async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name, {"type": "chat_message", "message": message}
+            self.room_group_name,
+            {
+                "type": "chat_message",
+                "message": message,
+                "sent_by": self.user.username,
+                "notification_id": -1,
+            },
         )
 
     # This function is called when a message is sent to the group
     def chat_message(self, event):
         message = event["message"]
+        sent_by = event["sent_by"]
+        notification_id = event["notification_id"]
 
-        self.send(text_data=json.dumps({"type": "chat", "message": message}))
+        self.send(
+            text_data=json.dumps(
+                {
+                    "type": "chat",
+                    "message": message,
+                    "sent_by": sent_by,
+                    "notification_id": notification_id,
+                }
+            )
+        )

@@ -36,18 +36,18 @@ function getRandomRating(name) {
 }
 
 
-// Placeholder image URL
-const placeholderImage = "https://tailwindui.com/img/ecommerce-images/shopping-cart-page-04-product-01.jpg";
-;
 
 export default function Prod({ prod ,store_id,storename}) {
+  if (!prod) {
+    return <div>Loading...</div>;
+  }
   const randomRating =  getRandomRating(prod.name);
 
   return (
 <div className='productPreview'>
   <div className="rectangle relative">
     <Link href={`/stores/${store_id}/${prod.name}`} className='imageRef block'>
-      <img className="productImage" src={placeholderImage} alt={prod.name} />
+      <img className="productImage" src={prod.image_link} alt={prod.name} />
     </Link>
     <div className="mt-auto">
       <Link className="nameRef" href={`/stores/${store_id}/${prod.name}`}>

@@ -1,21 +1,44 @@
 "use client"
-import React, { useState } from "react";
-import { XIcon } from "@heroicons/react/24/outline";
-import { BellIcon} from "@heroicons/react/24/outline";
-
+import React, { useState, useEffect } from "react";
+import { BellIcon } from "@heroicons/react/24/outline";
 import { Transition } from "@headlessui/react";
+import axios from 'axios';
+import { useNotifications } from './NotificationsContext';
+
+
 
 const NotificationsMenu = () => {
-  const [notifications, setNotifications] = useState([
-    { id: 1, severity: "info", title: "Info", message: "Notification 1" },
-    { id: 2, severity: "error", title: "Error", message: "Notification 2" },
-    { id: 3, severity: "success", title: "Success", message: "Notification 3" },
-  ]);
+  const { notifications, addNotification, deleteNotification } = useNotifications();
+    const [isOpen, setIsOpen] = useState(false);
 
-  const [isOpen, setIsOpen] = useState(false);
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/users/users/notifications');
+        setNotifications(response.data);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+      }
+    };
 
-  const deleteNotification = (id) => {
-    setNotifications(notifications.filter((notif) => notif.id !== id));
+    fetchNotifications();
+  }, []);
+
+  // const deleteNotification = (id) => {
+  //   setNotifications(notifications.filter(notif => notif.id !== id));
+  // };
+   const markNotificationAsRead = async (id) => {
+    try {
+      // Send a PUT request to the API
+      const response = await axios.put(`http://localhost:8000/api/users/notifications/${id}/`);
+      if (response.status === 200) {
+        // Optionally update notification state based on response
+        console.log('Notification marked as read:', response.data);
+        deleteNotification(id); // Assuming you still want to remove it from the list
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
   const getSeverityColor = (severity) => {
@@ -31,9 +54,8 @@ const NotificationsMenu = () => {
     }
   };
 
-  return (
+    return (
     <div className="relative">
-      {/* Notification Bell Icon */}
       <button
         className="text-gray-400 hover:text-gray-500 focus:outline-none focus:text-gray-500"
         onClick={() => setIsOpen(!isOpen)}
@@ -41,7 +63,6 @@ const NotificationsMenu = () => {
         <BellIcon className="h-6 w-6" />
       </button>
 
-      {/* Notification Menu */}
       <Transition
         show={isOpen}
         enter="transition ease-out duration-200 transform"
@@ -51,22 +72,25 @@ const NotificationsMenu = () => {
         leaveFrom="opacity-100 scale-100"
         leaveTo="opacity-0 scale-95"
       >
-        <div className="origin-top-right absolute right-0 mt-2 w-96 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none">
+        <div className="origin-top-right absolute right-0 mt-2 w-96 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none" style={{ maxHeight: '15rem', overflowY: 'auto' }}>
           <div className="py-2">
-            {notifications.map((notification) => (
-              <div key={notification.id} className="px-4 py-2">
-                <div className={`flex items-center justify-between ${getSeverityColor(notification.severity)} px-3 py-1 rounded-md mb-2`}>
-
-                  <p className="text-base font-medium">{notification.title}</p>
-                  <button onClick={() => deleteNotification(notification.id)}
-                    className="text-gray-400 hover:text-gray-500 focus:outline-none"
-                  >
-                    Mark as read
-                  </button>
+            {notifications.length > 0 ? (
+              notifications.map(notification => (
+                <div key={notification.id} className="px-4 py-2">
+                  <div className={`flex items-center justify-between ${getSeverityColor(notification.severity)} px-3 py-1 rounded-md mb-2`}>
+                    <p className="text-base font-medium">Notification from {notification.sent_by}</p>
+                    <button onClick={() => markNotificationAsRead(notification.id)}
+                      className="text-gray-400 hover:text-gray-500 focus:outline-none"
+                    >
+                      Mark as read
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-900 overflow-ellipsis whitespace-nowrap word-warp break-all">{notification.message}</p>
                 </div>
-                <p className="text-sm text-gray-900 overflow-ellipsis whitespace-nowrap word-warp break-all">sssssssssssssssssssssssssssssssssssssssssssssss{notification.message}</p>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div className="px-4 py-3 text-gray-600">No new notifications</div>
+            )}
           </div>
         </div>
       </Transition>
