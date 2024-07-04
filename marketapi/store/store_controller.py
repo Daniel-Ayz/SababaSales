@@ -1023,8 +1023,7 @@ class StoreController:
         else:
             with transaction.atomic():
                 with connection.cursor() as cursor:
-                    store_lock = f"{store_id}_store_lock"
-                    cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(store_lock)});")
+                    cursor.execute(f"SELECT pg_advisory_xact_lock_shared({store_lock});")
                     store = get_object_or_404(Store, pk=store_id)
                     return self.calculate_cart_discount(purchase_products, store=store, cursor=cursor)
 
