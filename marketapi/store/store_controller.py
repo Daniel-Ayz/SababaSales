@@ -11,7 +11,6 @@ from ninja.errors import HttpError
 from django.http import Http404
 import random
 
-
 from .discount import (
     SimpleDiscountClass,
     ConditionalDiscountClass,
@@ -127,7 +126,7 @@ class StoreController:
                 if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
                     raise HttpError(400, "User is already an owner")
                 if Manager.objects.filter(
-                    user_id=payload.user_id, store=store
+                        user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
 
@@ -208,17 +207,17 @@ class StoreController:
                 )
                 # user_id_to_assign = uc.get_user_id_by_email(payload.email)
                 if Manager.objects.filter(
-                    user_id=payload.user_id, store=store
+                        user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already a manager")
                 elif Owner.objects.filter(
-                    user_id=payload.user_id, store=store
+                        user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(400, "User is already an owner")
 
                 # Check if the assigning user is an owner
                 if not Owner.objects.filter(
-                    user_id=payload.assigned_by, store=store
+                        user_id=payload.assigned_by, store=store
                 ).exists():
                     raise HttpError(403, "Only owners can assign managers")
 
@@ -264,11 +263,11 @@ class StoreController:
                 return {"message": "Manager removed successfully"}
 
     def assign_manager_permissions(
-        self,
-        request,
-        payload: ManagerPermissionSchemaIn,
-        manager: RoleSchemaIn,
-        assigning_owner_id: int,
+            self,
+            request,
+            payload: ManagerPermissionSchemaIn,
+            manager: RoleSchemaIn,
+            assigning_owner_id: int,
     ):
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -366,7 +365,7 @@ class StoreController:
                     f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
                 )
                 if not Owner.objects.filter(
-                    user_id=payload.user_id, store=store
+                        user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(403, "User is not an owner of the store")
                 owners = Owner.objects.filter(store=store)
@@ -383,7 +382,7 @@ class StoreController:
                     f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
                 )
                 if not Owner.objects.filter(
-                    user_id=payload.user_id, store=store
+                        user_id=payload.user_id, store=store
                 ).exists():
                     raise HttpError(403, "User is not an owner of the store")
                 managers = Manager.objects.filter(store=store)
@@ -391,14 +390,14 @@ class StoreController:
         return managers
 
     def add_purchase_policy(
-        self,
-        request,
-        role: RoleSchemaIn,
-        payload: Union[
-            SimplePurchasePolicySchemaIn,
-            ConditionalPurchasePolicySchemaIn,
-            CompositePurchasePolicySchemaIn,
-        ],
+            self,
+            request,
+            role: RoleSchemaIn,
+            payload: Union[
+                SimplePurchasePolicySchemaIn,
+                ConditionalPurchasePolicySchemaIn,
+                CompositePurchasePolicySchemaIn,
+            ],
     ):
         if request is not None and role is not None:
             with transaction.atomic():
@@ -441,7 +440,7 @@ class StoreController:
         }
 
     def add_conditional_purchase_policy(
-        self, payload: ConditionalPurchasePolicySchemaIn
+            self, payload: ConditionalPurchasePolicySchemaIn
     ):
         store = get_object_or_404(Store, pk=payload.store_id)
         restriction = self.add_purchase_policy(None, None, payload.restriction).get(
@@ -494,7 +493,7 @@ class StoreController:
         }
 
     def remove_purchase_policy(
-        self, request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
+            self, request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
     ):
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -522,7 +521,7 @@ class StoreController:
                         "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock_id]
                     )
                     if not Owner.objects.filter(
-                        user_id=role.user_id, store=store
+                            user_id=role.user_id, store=store
                     ).exists():
                         raise HttpError(
                             403,
@@ -536,14 +535,14 @@ class StoreController:
         return policies
 
     def add_discount_policy(
-        self,
-        request,
-        role: RoleSchemaIn,
-        payload: Union[
-            SimpleDiscountSchemaIn,
-            ConditionalDiscountSchemaIn,
-            CompositeDiscountSchemaIn,
-        ],
+            self,
+            request,
+            role: RoleSchemaIn,
+            payload: Union[
+                SimpleDiscountSchemaIn,
+                ConditionalDiscountSchemaIn,
+                CompositeDiscountSchemaIn,
+            ],
     ):
 
         # Check if the user is authorized to add a discount policy
@@ -657,7 +656,7 @@ class StoreController:
         }
 
     def remove_discount_policy(
-        self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
+            self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
     ):
 
         with transaction.atomic():
@@ -688,7 +687,7 @@ class StoreController:
                         "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock_id]
                     )
                     if not Owner.objects.filter(
-                        user_id=role.user_id, store=store
+                            user_id=role.user_id, store=store
                     ).exists():
                         raise HttpError(
                             403,
@@ -756,7 +755,7 @@ class StoreController:
                         return None
 
     def validate_permissions(
-        self, role: RoleSchemaIn, store: Store, permission: str, cursor
+            self, role: RoleSchemaIn, store: Store, permission: str, cursor
     ):
         managing_lock = hash(f"{store.pk}_managing_lock")
         cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock])
@@ -850,7 +849,7 @@ class StoreController:
                         "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock]
                     )
                     if not Owner.objects.filter(
-                        user_id=role.user_id, store=store
+                            user_id=role.user_id, store=store
                     ).exists():
                         raise HttpError(
                             403,
@@ -884,7 +883,7 @@ class StoreController:
         return products
 
     def purchase_product(
-        self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
+            self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
     ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to purchase")
@@ -923,7 +922,7 @@ class StoreController:
                     raise HttpError(400, "Purchase policy validation failed")
 
                 # Apply discount policy
-                total_price -= self.calculate_cart_discount(payload, store, cursor)
+                total_price -= self.calculate_cart_discount(payload, store=store, cursor=cursor)
                 for item in payload:
                     product = get_object_or_404(
                         StoreProduct, store=store, name=item.product_name
@@ -958,7 +957,7 @@ class StoreController:
         }
 
     def return_products(
-        self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
+            self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
     ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to return")
@@ -1006,23 +1005,33 @@ class StoreController:
         return None
 
     def calculate_cart_discount(
-        self, purchase_products: List[PurchaseStoreProductSchema], store: Store, cursor
+            self, purchase_products: List[PurchaseStoreProductSchema], store_id: int = None, store: Store = None,
+            cursor=None
     ):
         total_discount = 0
         # Retrieve only root discount models to avoid duplicates
-        discount_lock = f"{store.pk}_discount_lock"
-        cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});")
-        all_discount_models = DiscountBase.objects.filter(is_root=True)
-        for discount_model in all_discount_models:
-            discount_instance = self.get_discount_instance(discount_model, store)
-            if discount_instance:
-                discount = discount_instance.apply_discount(purchase_products)
-                if discount:
-                    total_discount += discount
+        if cursor is not None and store is not None:  #after we have the cursor on the db and the store itself
+            discount_lock = f"{store.pk}_discount_lock"
+            cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});")
+            all_discount_models = DiscountBase.objects.filter(is_root=True)
+            for discount_model in all_discount_models:
+                discount_instance = self.get_discount_instance(discount_model, store)
+                if discount_instance:
+                    discount = discount_instance.apply_discount(purchase_products)
+                    if discount:
+                        total_discount += discount
+        else:
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    store_lock = f"{store_id}_store_lock"
+                    cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(store_lock)});")
+                    store = get_object_or_404(Store, pk=store_id)
+                    return self.calculate_cart_discount(purchase_products, store=store, cursor=cursor)
+
         return total_discount
 
     def get_purchase_policy_instance(
-        self, purchase_model: PurchasePolicyBase, store: Store
+            self, purchase_model: PurchasePolicyBase, store: Store
     ):
         if isinstance(purchase_model, SimplePurchasePolicy):
             return SimplePurchasePolicyClass(
@@ -1051,7 +1060,7 @@ class StoreController:
         return None
 
     def validate_purchase_policy(
-        self, store, payload, cursor
+            self, store: Store, payload: List[PurchaseStoreProductSchema], cursor
     ):  # Retrieve only root purchase models to avoid duplicates
         policy_lock = f"{store.pk}_policy_lock"
         cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});")
@@ -1067,7 +1076,7 @@ class StoreController:
         )  # all purchase policies should work
 
     def search_products(
-        self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
+            self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
     ):
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -1411,8 +1420,8 @@ class StoreController:
                     owners_count = self.get_owners(None, role).count()
                     count_managers_with_permission = len(managers_with_permission)
                     if (
-                        bid.accepted_by.count()
-                        == owners_count + count_managers_with_permission
+                            bid.accepted_by.count()
+                            == owners_count + count_managers_with_permission
                     ):
                         bid.can_purchase = True
                         bid.save()  # Ensure bid is saved after setting can_purchase to True
