@@ -197,7 +197,13 @@ export default function ManageStore({ params }) {
     // Ask the user if they are sure they want to delete the item
     if (confirm(`Are you sure you want to remove this owner from the store?`)) {
       try {
-        const response = await axios.delete(`http://localhost:8000/api/stores/${store_id}/remove_owner`, {
+        if (user.id === user_id_) {
+          const query = `http://localhost:8000/api/stores/${store_id}/leave_ownership`;
+        }
+        else {
+          const query = `http://localhost:8000/api/stores/${store_id}/remove_owner`;
+        }
+        const response = await axios.delete(query, {
           data: {
             user_id: user_id_,
             store_id: store_id,
