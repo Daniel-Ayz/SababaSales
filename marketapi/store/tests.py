@@ -2675,3 +2675,91 @@ class StoreAPITestCase(TransactionTestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["price"], 2)
+
+
+    def test_validate_purchase_policy(self):
+        condition = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5,
+        }
+        purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": condition,
+        }
+
+        # Add the simple purchase policy
+        response = self.client.post(
+            f"/{self.store_id}/add_purchase_policy",
+            json={
+                "role": {"user_id": self.user_id, "store_id": self.store_id},
+                "payload": purchase_policy_payload,
+            },
+        )
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Simple purchase policy added successfully"
+
+        # Purchase a product
+        response = self.client.post(
+            f"/{self.store_id}/validate_purchase_policy",
+            json=[{"product_name": "Tomato", "category": "Vegetables", "quantity": 6}],
+        )
+
+        # Verify the response status code and message
+        assert response.status_code == 400
+
+    def test_calculate_cart_discount(self):
+        simple_discount_payload = {
+            "store_id": self.store_id,
+            "is_root": False,
+            "percentage": 5.0,
+            "applicable_categories": ["Dairy"],
+        }
+
+        condition1 = {
+            "applies_to": "product",
+            "name_of_apply": "Cottage Cheese",
+            "condition": "at_least",
+            "value": 3,
+        }
+
+        condition2 = {
+            "applies_to": "product",
+            "name_of_apply": "Yogurt",
+            "condition": "at_least",
+            "value": 2,
+        }
+
+        conditions = [condition1, condition2]
+        combine_function = "logical_or"
+
+        composite_discount_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "discounts": [simple_discount_payload],
+            "combine_function": combine_function,
+            "conditions": conditions,
+        }
+
+        self.client.post(
+            f"/{self.store_id}/add_discount_policy",
+            json={
+                "role": {"user_id": self.user_id, "store_id": self.store_id},
+                "payload": composite_discount_payload,
+            },
+        )
+
+        response = self.client.post(
+            f"/{self.store_id}/calculate_cart_discount",
+            json=[
+                {"product_name": "Cottage Cheese", "category": "Dairy", "quantity": 3},
+                {"product_name": "Yogurt", "category": "Dairy", "quantity": 1},
+            ],
+        )
+
+        assert response.status_code == 200
+        assert response.json() == 0.65

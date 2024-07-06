@@ -116,6 +116,28 @@ docker-compose down
 docker-compose exec web python manage.py flush
 ```
 
+## 🔍 6. Monitoring Redis
+
+To monitor the Redis cache and check the requests being made, follow these steps:
+
+### 1. Access the Redis Container
+Open a terminal and access the Redis container by running:
+```bash
+docker exec -it marketapi-redis-1 sh
+```
+
+### 2. Use Redis CLI to Monitor Requests
+Once you are inside the Redis container, you can use the Redis CLI to monitor requests. Run the following command:
+```bash
+redis-cli
+```
+
+### 3. Monitor Requests
+To monitor requests, run the following command in the Redis CLI:
+```bash
+MONITOR
+```
+
 ## Useful Docker Commands
 View running containers:
 ```bash
@@ -131,6 +153,8 @@ Start a Django shell:
 ```bash
 docker-compose exec web python manage.py shell
 ```
+
+
 
 ## 🗿 Setup backend without docker
 ### Create a Virtualenv
