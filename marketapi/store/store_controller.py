@@ -921,7 +921,7 @@ class StoreController:
                 self.validate_purchase_policy(payload=payload, cursor=cursor, store=store)
 
                 # Apply discount policy
-                total_price -= self.calculate_cart_discount(payload, store, cursor)
+                total_price -= self.calculate_cart_discount(payload, store=store, cursor=cursor)
                 for item in payload:
                     product = get_object_or_404(
                         StoreProduct, store=store, name=item.product_name
@@ -1004,19 +1004,28 @@ class StoreController:
         return None
 
     def calculate_cart_discount(
-            self, purchase_products: List[PurchaseStoreProductSchema], store: Store, cursor
+            self, purchase_products: List[PurchaseStoreProductSchema], store_id: int = None, store: Store = None,
+            cursor=None
     ):
         total_discount = 0
         # Retrieve only root discount models to avoid duplicates
-        discount_lock = f"{store.pk}_discount_lock"
-        cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});")
-        all_discount_models = DiscountBase.objects.filter(is_root=True)
-        for discount_model in all_discount_models:
-            discount_instance = self.get_discount_instance(discount_model, store)
-            if discount_instance:
-                discount = discount_instance.apply_discount(purchase_products)
-                if discount:
-                    total_discount += discount
+        if cursor is not None and store is not None:  #after we have the cursor on the db and the store itself
+            discount_lock = f"{store.pk}_discount_lock"
+            cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});")
+            all_discount_models = DiscountBase.objects.filter(is_root=True)
+            for discount_model in all_discount_models:
+                discount_instance = self.get_discount_instance(discount_model, store)
+                if discount_instance:
+                    discount = discount_instance.apply_discount(purchase_products)
+                    if discount:
+                        total_discount += discount
+        else:
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    cursor.execute(f"SELECT pg_advisory_xact_lock_shared({store_lock});")
+                    store = get_object_or_404(Store, pk=store_id)
+                    return self.calculate_cart_discount(purchase_products, store=store, cursor=cursor)
+
         return total_discount
 
     def get_purchase_policy_instance(

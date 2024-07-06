@@ -44,6 +44,13 @@ INSTALLED_APPS = [
     "purchase",
 ]
 
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": "redis://redis:6379",
+    }
+}
+
 ASGI_APPLICATION = "marketapi.asgi.application"
 
 CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}

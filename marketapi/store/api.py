@@ -44,7 +44,6 @@ from .schemas import (
     ConditionSchemaOut,
     GetConditionsSchemaIn,
 )
-from django.shortcuts import get_object_or_404, aget_object_or_404
 
 from .store_controller import StoreController
 
@@ -209,6 +208,11 @@ def remove_discount_policy(
 )
 def get_discount_policies(request, role: RoleSchemaIn):
     return sc.get_discount_policies(request, role)
+
+
+@router.post("/{store_id}/calculate_cart_discount", response=float)
+def calculate_cart_discount(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
+    return sc.calculate_cart_discount(purchase_products=payload, store_id=store_id)
 
 
 @router.post("/{store_id}/get_conditions", response=List[ConditionSchemaOut])
