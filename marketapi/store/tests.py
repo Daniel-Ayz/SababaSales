@@ -2,6 +2,7 @@ import json
 
 from django.test import TestCase, TransactionTestCase
 from ninja.testing import TestClient
+from django.core.cache import cache
 
 from .api import router
 import threading
@@ -254,22 +255,8 @@ class StoreAPITestCase(TransactionTestCase):
             },
         )
 
-        # Set purchase policy
-        # response = self.client.post("/{store_id}/add_purchase_policy", json={
-        #     "role": {"user_id": self.user_id, "store_id": self.store_id},
-        #     "payload": {"min_items_per_purchase": 1}
-        # })
-
-        # reponse = self.client.post("/{store_id}/add_purchase_policy", json={
-        #     "role": {"user_id": self.user_id, "store_id": self.store_id2},
-        #     "payload": {"max_items_per_purchase": 10}
-        # })
-
-        # # Set discount policy
-        # response = self.client.post("/{store_id}/add_discount_policy", json={
-        #     "role": {"user_id": self.user_id, "store_id": self.store_id},
-        #     "payload": {"min_items": 5, "min_price": 500}
-        # })
+    def tearDown(self):
+        cache.clear()
 
     def test_get_store(self):
         response = self.client.get(f"/{self.store_id}")

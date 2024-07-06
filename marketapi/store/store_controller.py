@@ -3,6 +3,8 @@ import operator
 from functools import reduce
 from typing import List, Union
 
+import redis
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction, connection
 from django.shortcuts import get_object_or_404
@@ -81,22 +83,67 @@ def get_list_from_string(conditions):
     jsonDec = json.decoder.JSONDecoder()
     return jsonDec.decode(conditions)
 
+def get_keys_by_prefix(prefix):
+    redis_client = redis.Redis(host='redis', port=6379, db=0)
+    keys = redis_client.keys(f":1:{prefix}*")
+    filtered_keys = [key.decode('utf-8').replace(":1:", "")  for key in keys]
+    return filtered_keys
+
 
 class StoreController:
     def get_store(self, request, store_id: int):
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
-                return get_object_or_404(Store, pk=store_id)
+                cache_key_store = f"store_{store_id}"
+                store = cache.get(cache_key_store)
+                if store is None:
+                    store = get_object_or_404(Store, pk=store_id)
+                    cache.set(cache_key_store, store)
+
+                # cache_key_all_stores = "all_stores" #we have a cache for all stores and for each store separately
+                # store = cache.get(cache_key_store)
+                # stores = cache.get(cache_key_all_stores)
+                # if stores is None and store is None: #both caches dont exist
+                #     store = get_object_or_404(Store, pk=store_id)
+                #     cache.set(cache_key_store, store)
+                #     stores = [store]
+                #     cache.set(cache_key_all_stores, stores)
+                # elif store is None: #check the cache for the specific store given that the cache for all stores exist
+                #     store = next((store for store in stores if store.id == store_id), None) #if store is not in cache, we look for it in the list of all stores
+                #     if store is None: #cache for all stores exist but it doesnt contain the store we are looking for
+                #         store = get_object_or_404(Store, pk=store_id)
+                #         stores.append(store)
+                #         cache.set(cache_key_store, store)
+                #         cache.set(cache_key_all_stores, stores)
+                #     else:
+                #         cache.set(cache_key_store, store)
+                # elif stores is None: #check the cache for all stores given that the cache for the specific store exists
+                #     stores = [store]
+                #     cache.set(cache_key_all_stores, stores)
+
+        return store
 
     def create_store(self, request, payload: StoreSchemaIn, user_id: int):
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock(%s);", [store_lock])
-                if Store.objects.filter(name=payload.name).exists():
+                all_store_keys = get_keys_by_prefix('store_')
+                #print(all_store_keys)
+                for key in all_store_keys:
+                    #print(key)
+                    store = cache.get(key)
+                    if store.name == payload.name:
+                        raise HttpError(403, "Store with this name already exists")
+                if Store.objects.filter(name=payload.name).exists(): #still need to check the database because cache may not be updated
                     raise HttpError(403, "Store with this name already exists")
                 store = Store.objects.create(**payload.dict(), is_active=True)
-                Owner.objects.create(user_id=user_id, store=store, is_founder=True)
+                cache_key_store = f"store_{store.id}"
+                cache.set(cache_key_store, store)
+                owner = Owner.objects.create(user_id=user_id, store=store, is_founder=True)
+                cache_key_owner = f"owner_{store.id}_{user_id}"
+                cache.set(cache_key_owner, owner)
+
 
         uc.send_notification(
             store.name, user_id, f"Store {store.name} created successfully"
