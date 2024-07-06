@@ -258,6 +258,11 @@ def purchase_product(request, store_id: int, payload: List[PurchaseStoreProductS
     return sc.purchase_product(request, store_id, payload)
 
 
+@router.post("/{store_id}/validate_purchase_policy")
+def validate_purchase_policy(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
+    return sc.validate_purchase_policy(payload=payload, store_id=store_id)
+
+
 @router.post("/{store_id}/make_bid")
 def make_bid(request, payload: BidSchemaIn):
     return sc.make_bid(request, payload)

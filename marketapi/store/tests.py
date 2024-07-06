@@ -2676,6 +2676,42 @@ class StoreAPITestCase(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["price"], 2)
 
+
+    def test_validate_purchase_policy(self):
+        condition = {
+            "applies_to": "product",
+            "name_of_apply": "Tomato",
+            "condition": "at_most",
+            "value": 5,
+        }
+        purchase_policy_payload = {
+            "store_id": self.store_id,
+            "is_root": True,
+            "condition": condition,
+        }
+
+        # Add the simple purchase policy
+        response = self.client.post(
+            f"/{self.store_id}/add_purchase_policy",
+            json={
+                "role": {"user_id": self.user_id, "store_id": self.store_id},
+                "payload": purchase_policy_payload,
+            },
+        )
+
+        # Verify the response status code and message
+        assert response.status_code == 200
+        assert response.json() == "Simple purchase policy added successfully"
+
+        # Purchase a product
+        response = self.client.post(
+            f"/{self.store_id}/validate_purchase_policy",
+            json=[{"product_name": "Tomato", "category": "Vegetables", "quantity": 6}],
+        )
+
+        # Verify the response status code and message
+        assert response.status_code == 400
+
     def test_calculate_cart_discount(self):
         simple_discount_payload = {
             "store_id": self.store_id,

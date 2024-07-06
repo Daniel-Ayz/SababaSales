@@ -918,8 +918,7 @@ class StoreController:
                     for product, item in zip(products, payload)
                 ]
 
-                if not self.validate_purchase_policy(store, payload, cursor):
-                    raise HttpError(400, "Purchase policy validation failed")
+                self.validate_purchase_policy(payload=payload, cursor=cursor, store=store)
 
                 # Apply discount policy
                 total_price -= self.calculate_cart_discount(payload, store=store, cursor=cursor)
@@ -1059,20 +1058,29 @@ class StoreController:
         return None
 
     def validate_purchase_policy(
-            self, store: Store, payload: List[PurchaseStoreProductSchema], cursor
+            self, payload: List[PurchaseStoreProductSchema], store_id: int = None, cursor=None, store: Store = None
     ):  # Retrieve only root purchase models to avoid duplicates
-        policy_lock = f"{store.pk}_policy_lock"
-        cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});")
-        all_purchase_models = PurchasePolicyBase.objects.filter(is_root=True)
-        if len(all_purchase_models) == 0:
-            return True
-        return reduce(
-            operator.and_,
-            [
-                self.get_purchase_policy_instance(policy, store).apply_policy(payload)
-                for policy in all_purchase_models
-            ],
-        )  # all purchase policies should work
+        if cursor is not None and store is not None:
+            policy_lock = f"{store.pk}_policy_lock"
+            cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});")
+            all_purchase_models = PurchasePolicyBase.objects.filter(is_root=True)
+            if len(all_purchase_models) == 0:
+                return True
+            result = reduce(
+                operator.and_,
+                [
+                    self.get_purchase_policy_instance(policy, store).apply_policy(payload)
+                    for policy in all_purchase_models
+                ],
+            )  # all purchase policies should work
+            if not result:
+                raise HttpError(400, "Purchase policy validation failed")
+        else:
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                    store = get_object_or_404(Store, pk=store_id)
+                    return self.validate_purchase_policy(payload=payload, cursor=cursor, store=store)
 
     def search_products(
             self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
