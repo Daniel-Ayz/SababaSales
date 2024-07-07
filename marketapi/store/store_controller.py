@@ -1276,7 +1276,7 @@ class StoreController:
                     "store_id": stores[i].id,
                     "is_root": True,
                     "condition": {
-                        "applies_to": "products",
+                        "applies_to": "product",
                         "name_of_apply": store_data[store_names[i]]["products"][j],
                         "condition": "at_least",
                         "value": 5,
@@ -1289,71 +1289,71 @@ class StoreController:
                             store_data[store_names[i]]["category"]
                         ],
                         "applicable_products": [
-                            str(product.id)
+                            str(product.name)
                         ],  # Use the product ID as a string
                     },
                 }
 
-            condition_schema = ConditionSchema(**payload_dict["condition"])
-            discount_data = payload_dict["discount"]
-            discount_data["applicable_categories"] = json.loads(
-                json.dumps(discount_data["applicable_categories"])
-            )
-            simple_discount_schema = SimpleDiscountSchemaIn(**discount_data)
+                condition_schema = ConditionSchema(**payload_dict["condition"])
+                discount_data = payload_dict["discount"]
+                discount_data["applicable_categories"] = json.loads(
+                    json.dumps(discount_data["applicable_categories"])
+                )
+                simple_discount_schema = SimpleDiscountSchemaIn(**discount_data)
 
-            payload = ConditionalDiscountSchemaIn(
-                store_id=payload_dict["store_id"],
-                is_root=payload_dict["is_root"],
-                condition=condition_schema,
-                discount=simple_discount_schema,
-            )
-            self.add_conditional_discount_policy(payload)
+                payload = ConditionalDiscountSchemaIn(
+                    store_id=payload_dict["store_id"],
+                    is_root=payload_dict["is_root"],
+                    condition=condition_schema,
+                    discount=simple_discount_schema,
+                )
+                self.add_conditional_discount_policy(payload)
 
-            # Create simple purchase policies
-            condition1 = {
-                "applies_to": "product",
-                "name_of_apply": product.name,
-                "condition": "at_most",
-                "value": 5,
-            }
-            purchase_policy_payload1 = {
-                "store_id": stores[i].id,
-                "is_root": True,
-                "condition": condition1,
-            }
-            simple_policy_schema1 = SimplePurchasePolicySchemaIn(
-                **purchase_policy_payload1
-            )
-            self.add_simple_purchase_policy(simple_policy_schema1)
+                # Create simple purchase policies
+                condition1 = {
+                    "applies_to": "product",
+                    "name_of_apply": product.name,
+                    "condition": "at_most",
+                    "value": 5,
+                }
+                purchase_policy_payload1 = {
+                    "store_id": stores[i].id,
+                    "is_root": True,
+                    "condition": condition1,
+                }
+                simple_policy_schema1 = SimplePurchasePolicySchemaIn(
+                    **purchase_policy_payload1
+                )
+                self.add_simple_purchase_policy(simple_policy_schema1)
 
-            condition2 = {
-                "applies_to": "time",
-                "name_of_apply": "",
-                "condition": "at_most",
-                "value": 23,
-            }
-            purchase_policy_payload2 = {
-                "store_id": stores[i].id,
-                "is_root": True,
-                "condition": condition2,
-            }
-            simple_policy_schema2 = SimplePurchasePolicySchemaIn(
-                **purchase_policy_payload2
-            )
-            self.add_simple_purchase_policy(simple_policy_schema2)
-            purchase_policy_payload1["is_root"] = False
-            purchase_policy_payload2["is_root"] = False
-            # Create a composite purchase policy
-            composite_policy_payload = {
-                "store_id": stores[i].id,
-                "is_root": True,
-                "policies": [purchase_policy_payload1, purchase_policy_payload2],
-                "combine_function": "logical_and",
-            }
-            composite_policy_schema = CompositePurchasePolicySchemaIn(
-                **composite_policy_payload
-            )
-            self.add_composite_purchase_policy(composite_policy_schema)
+                condition2 = {
+                    "applies_to": "time",
+                    "name_of_apply": "",
+                    "condition": "at_most",
+                    "value": 23,
+                }
+                purchase_policy_payload2 = {
+                    "store_id": stores[i].id,
+                    "is_root": True,
+                    "condition": condition2,
+                }
+                simple_policy_schema2 = SimplePurchasePolicySchemaIn(
+                    **purchase_policy_payload2
+                )
+                self.add_simple_purchase_policy(simple_policy_schema2)
+                purchase_policy_payload1["is_root"] = False
+                purchase_policy_payload2["is_root"] = False
+                # Create a composite purchase policy
+                composite_policy_payload = {
+                    "store_id": stores[i].id,
+                    "is_root": True,
+                    "policies": [purchase_policy_payload1, purchase_policy_payload2],
+                    "combine_function": "logical_and",
+                }
+                composite_policy_schema = CompositePurchasePolicySchemaIn(
+                    **composite_policy_payload
+                )
+                self.add_composite_purchase_policy(composite_policy_schema)
 
         return {"message": "Fake data created successfully"}
 
