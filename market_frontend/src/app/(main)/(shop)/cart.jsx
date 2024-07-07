@@ -58,6 +58,7 @@ function Cart({ isOpen, setCart }) {
  const [deletedProduct, setDeletedProduct] = useState(false);
  const [totalPrice, setTotalPrice] = useState(0);
  const [discount, setDiscount] = useState(0);
+ const [total_discount, setTotalDiscount] = useState(0);
 
  useEffect(() => {
   if (isOpen) {
@@ -88,7 +89,7 @@ function Cart({ isOpen, setCart }) {
       });
       // Update the cart state with fetched data
       // check for discount:
-      var total_discount = 0;
+      // var total_discount = 0;
 
       var disc_prod = [];
       console.log(disc_prod)
@@ -111,8 +112,8 @@ function Cart({ isOpen, setCart }) {
               withCredentials: true,
             })
             .then(response => {
-              console.log("OMG", response.data);
-              total_discount += response.data;
+              console.log(parseFloat(response.data));
+              setTotalDiscount(total_discount + parseFloat(response.data));
             })
             .catch(error => {
               console.log("ERRRRRRRRRR");
@@ -123,7 +124,8 @@ function Cart({ isOpen, setCart }) {
 
 
       setCartData({ products: productsList });
-      setDiscount(0);
+      setDiscount(total_discount);
+      console.log("TOTAL DISCOUNT", total_discount)
       setTotalPrice(price);
       setDeletedProduct(false);
     })
