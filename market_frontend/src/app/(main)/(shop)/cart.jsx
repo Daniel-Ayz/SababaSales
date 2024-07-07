@@ -32,7 +32,7 @@ const products = [
 async function removeProductFromCart(product, setDeletedProduct) {
 
 
-    axios.delete(`http://localhost:8000/api/users/cart/${product.id}`,
+    axios.delete(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/cart/${product.id}`,
     {headers: {'Content-Type': 'application/json'}, withCredentials: true})
     .then(function (response) {
       // set the user context and redirect:
@@ -61,7 +61,7 @@ function Cart({ isOpen, setCart }) {
 
  useEffect(() => {
   if (isOpen) {
-    axios.get('http://localhost:8000/api/users/cart', {
+    axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}cart`, {
       headers: { 'Content-Type': 'application/json' },
       withCredentials: true
     })
@@ -123,7 +123,7 @@ function Cart({ isOpen, setCart }) {
 
 
       setCartData({ products: productsList });
-      setDiscount(total_discount);
+      setDiscount(0);
       setTotalPrice(price);
       setDeletedProduct(false);
     })

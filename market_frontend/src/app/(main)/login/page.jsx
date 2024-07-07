@@ -38,7 +38,7 @@ export default function Example() {
       username: formData.get('username'),
       password: formData.get('password'),
     }
-    axios.post('http://localhost:8000/api/users/login', {
+    axios.post(`${process.env.NEXT_PUBLIC_USERS_ROUTE}login`, {
       username:  formData.get('username'),
       password:  formData.get('password'),
     },{headers: {'Content-Type': 'application/json'}, withCredentials: true })
@@ -55,7 +55,7 @@ export default function Example() {
 
     });
 
-  //   const response = await fetch('http://localhost:8000/api/users/', {
+  //   const response = await fetch('${process.env.NEXT_PUBLIC_USERS_ROUTE}/', {
   //     method: 'GET',
   //     headers: {
   //       'Content-Type': 'application/json',
