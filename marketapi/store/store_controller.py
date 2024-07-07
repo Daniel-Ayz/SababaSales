@@ -83,11 +83,20 @@ def get_list_from_string(conditions):
     jsonDec = json.decoder.JSONDecoder()
     return jsonDec.decode(conditions)
 
+
 def get_keys_by_prefix(prefix):
     redis_client = redis.Redis(host='redis', port=6379, db=0)
     keys = redis_client.keys(f":1:{prefix}*")
-    filtered_keys = [key.decode('utf-8').replace(":1:", "")  for key in keys]
+    filtered_keys = [key.decode('utf-8').replace(":1:", "") for key in keys]
     return filtered_keys
+
+
+################
+# Rules of thumb when using cache #
+# 1. Always check cache first before accessing the db
+# 2. when doing a get operation to the cache - if its not there make sure to set it
+# 3. when accessing the db when its unavoidable, make sure to update the cache, but make it smart - use signals
+# so that the cache is updated when the db is updated and you dont have to manually update the cache (post_init, post_save, post_delete)
 
 
 class StoreController:
@@ -100,27 +109,6 @@ class StoreController:
                 if store is None:
                     store = get_object_or_404(Store, pk=store_id)
                     cache.set(cache_key_store, store)
-
-                # cache_key_all_stores = "all_stores" #we have a cache for all stores and for each store separately
-                # store = cache.get(cache_key_store)
-                # stores = cache.get(cache_key_all_stores)
-                # if stores is None and store is None: #both caches dont exist
-                #     store = get_object_or_404(Store, pk=store_id)
-                #     cache.set(cache_key_store, store)
-                #     stores = [store]
-                #     cache.set(cache_key_all_stores, stores)
-                # elif store is None: #check the cache for the specific store given that the cache for all stores exist
-                #     store = next((store for store in stores if store.id == store_id), None) #if store is not in cache, we look for it in the list of all stores
-                #     if store is None: #cache for all stores exist but it doesnt contain the store we are looking for
-                #         store = get_object_or_404(Store, pk=store_id)
-                #         stores.append(store)
-                #         cache.set(cache_key_store, store)
-                #         cache.set(cache_key_all_stores, stores)
-                #     else:
-                #         cache.set(cache_key_store, store)
-                # elif stores is None: #check the cache for all stores given that the cache for the specific store exists
-                #     stores = [store]
-                #     cache.set(cache_key_all_stores, stores)
 
         return store
 
@@ -135,15 +123,14 @@ class StoreController:
                     store = cache.get(key)
                     if store.name == payload.name:
                         raise HttpError(403, "Store with this name already exists")
-                if Store.objects.filter(name=payload.name).exists(): #still need to check the database because cache may not be updated
+                if Store.objects.filter(name=payload.name).exists():  #still need to check the database because cache may not be updated
                     raise HttpError(403, "Store with this name already exists")
                 store = Store.objects.create(**payload.dict(), is_active=True)
-                cache_key_store = f"store_{store.id}"
-                cache.set(cache_key_store, store)
+                # cache_key_store = f"store_{store.id}"
+                # cache.set(cache_key_store, store)
                 owner = Owner.objects.create(user_id=user_id, store=store, is_founder=True)
-                cache_key_owner = f"owner_{store.id}_{user_id}"
-                cache.set(cache_key_owner, owner)
-
+                # cache_key_owner = f"owner_{store.id}_{user_id}"
+                # cache.set(cache_key_owner, owner)
 
         uc.send_notification(
             store.name, user_id, f"Store {store.name} created successfully"
@@ -154,27 +141,43 @@ class StoreController:
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
-                return Store.objects.all()
+                stores = Store.objects.all() #to get stores we cant use cache because we need to get all stores
+                cache.set_many({f"store_{store.id}": store for store in stores}) #but we will save to cache
+                return stores
 
     def assign_owner(self, request, payload: OwnerSchemaIn):
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
-                store = get_object_or_404(Store, pk=payload.store_id)
+                cache_key_store = f"store_{payload.store_id}"
+                store = cache.get(cache_key_store)
+                if store is None:
+                    store = get_object_or_404(Store, pk=payload.store_id)
+                    cache.set(cache_key_store, store)
                 managing_lock_id = f"{store.pk}_managing_lock"
                 cursor.execute(
                     f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
                 )
-                assigning_owner = get_object_or_404(
-                    Owner, user_id=payload.assigned_by, store=store
-                )
-                # user_id_to_assign = uc.get_user_id_by_email(payload.email)
+                cache_key_assigning_owner = f"owner_{store.id}_{payload.assigned_by}"
+                assigning_owner = cache.get(cache_key_assigning_owner)
+                if assigning_owner is None:
+                    assigning_owner = get_object_or_404(Owner, user_id=payload.assigned_by, store=store)
+                    cache.set(cache_key_assigning_owner, assigning_owner)
 
-                if Owner.objects.filter(user_id=payload.user_id, store=store).exists():
+                cache_key_check_owner = f"owner_{store.id}_{payload.user_id}"
+                check_owner = cache.get(cache_key_check_owner)
+                if check_owner is not None:
                     raise HttpError(400, "User is already an owner")
-                if Manager.objects.filter(
-                        user_id=payload.user_id, store=store
-                ).exists():
+                if Owner.objects.filter(user_id=payload.user_id, store=store).exists(): #we still have to check the database because cache may not be updated
+                    cache.set(cache_key_check_owner, Owner.objects.get(user_id=payload.user_id, store=store)) #because we didnt have it in the cache
+                    raise HttpError(400, "User is already an owner")
+
+                cache_key_check_manager = f"manager_{store.id}_{payload.user_id}"
+                check_manager = cache.get(cache_key_check_manager)
+                if check_manager is not None:
+                    raise HttpError(400, "User is already a manager")
+                if Manager.objects.filter(user_id=payload.user_id, store=store).exists():
+                    cache.set(cache_key_check_manager, Manager.objects.get(user_id=payload.user_id, store=store))
                     raise HttpError(400, "User is already a manager")
 
                 owner = Owner.objects.create(
@@ -183,6 +186,7 @@ class StoreController:
                     store=store,
                     is_founder=False,
                 )
+                cache.set(cache_key_check_owner, owner)
         uc.send_notification(
             store.name,
             payload.user_id,
@@ -195,25 +199,35 @@ class StoreController:
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
-                store = get_object_or_404(Store, pk=payload.store_id)
+                cache_key_store = f"store_{payload.store_id}"
+                store = cache.get(cache_key_store)
+                if store is None:
+                    store = get_object_or_404(Store, pk=payload.store_id)
+                    cache.set(cache_key_store, store)
                 managing_lock_id = f"{store.pk}_managing_lock"
                 cursor.execute(
                     f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
                 )
-                removing_owner = get_object_or_404(
-                    Owner, user_id=payload.removed_by, store=store
-                )
-                # user_id_to_assign = uc.get_user_id_by_email(payload.email)
-                removed_owner = get_object_or_404(
-                    Owner, user_id=payload.user_id, store=store
-                )
+                cache_key_removing_owner = f"owner_{store.id}_{payload.removed_by}"
+                removing_owner = cache.get(cache_key_removing_owner)
+                if removing_owner is None:
+                    removing_owner = get_object_or_404(Owner, user_id=payload.removed_by, store=store)
+                    cache.set(cache_key_removing_owner, removing_owner)
+
+                cache_key_removed_owner = f"owner_{store.id}_{payload.user_id}"
+                removed_owner = cache.get(cache_key_removed_owner)
+                if removed_owner is None:
+                    removed_owner = Owner.objects.get(user_id=payload.user_id, store=store)
+                    cache.set(cache_key_removed_owner, removed_owner) #need to save to cache because maybe removing owner is not the one
+                    #who assigned the owner to be removed so the owner wont be removed
 
                 if removed_owner.assigned_by != removing_owner:
                     raise HttpError(
                         403, "Owner can only be removed by the owner who assigned them"
                     )
 
-                removed_owner.delete()
+                removed_owner.delete() #cache is deleted upon signal to db
+
         uc.send_notification(
             store.name,
             payload.user_id,
