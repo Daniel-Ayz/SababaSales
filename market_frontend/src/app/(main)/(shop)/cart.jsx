@@ -57,6 +57,7 @@ function Cart({ isOpen, setCart }) {
  );
  const [deletedProduct, setDeletedProduct] = useState(false);
  const [totalPrice, setTotalPrice] = useState(0);
+ const [discount, setDiscount] = useState(0);
 
  useEffect(() => {
   if (isOpen) {
@@ -84,6 +85,24 @@ function Cart({ isOpen, setCart }) {
         });
       });
       // Update the cart state with fetched data
+      // check for discount:
+      var total_discount = 0;
+      cartData.baskets.forEach(basket => {
+        axios.get(`http://localhost:8000/api/stores/${basket.store_id}/calculate_cart_discout`, {
+          headers: { 'Content-Type': 'application/json' },
+          withCredentials: true
+        }).then
+        (response => {
+          total_discount += response.data.discount;
+          setTotalPrice(price - total_discount);
+        })
+        .catch(error => {
+          console.log(error)
+          // console.log('fetching cart failed');
+          // Handle errors here if needed
+        });
+      });
+
       setCartData({ products: productsList });
       setTotalPrice(price);
       setDeletedProduct(false);
@@ -186,11 +205,34 @@ function Cart({ isOpen, setCart }) {
                       </div>
 
                       <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
-                        <div className="flex justify-between text-base font-medium text-gray-900">
-                          <p>Subtotal</p>
-                          <p>${totalPrice}</p>
-                        </div>
-                        <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
+                            <div className="flex justify-between text-base font-medium text-gray-900">
+                    <p>Subtotal</p>
+                    {discount > 0 ? (
+                      <p>
+                        <span className="line-through text-red-500">${totalPrice}</span>{' '}
+                        <span className="rainbow-text">
+                          It's your lucky day: ${totalPrice - discount}
+                        </span>
+                      </p>
+                    ) : (
+                      <p>${totalPrice}</p>
+                    )}
+                    <style jsx>{`
+                      .rainbow-text {
+                        background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet, red);
+                        background-size: 300% 100%;
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        animation: rainbow-animation 5s linear infinite;
+                      }
+
+                      @keyframes rainbow-animation {
+                        0% { background-position: 0% 50%; }
+                        100% { background-position: 100% 50%; }
+                      }
+                    `}</style>
+                  </div>
+                                    <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
 
                         <button>
                         <a
