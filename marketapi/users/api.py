@@ -50,7 +50,7 @@ def delete_user(request, user_id: int):
 
 
 # user must be authenticated to update their own user info
-@router.put("/{int:user_id}", response={200: UserSchema, 404: Error}, auth=django_auth)
+@router.put("/{int:user_id}", response={200: UserSchema, 404: Error})
 def update_user(request, user_id: int, payload: UserRegisterSchema):
     return uc.update_user(request, user_id, payload)
 
