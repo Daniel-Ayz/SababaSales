@@ -32,7 +32,7 @@ const products = [
 async function removeProductFromCart(product, setDeletedProduct) {
 
 
-    axios.delete(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/cart/${product.id}`,
+    axios.delete(`${process.env.NEXT_PUBLIC_USERS_ROUTE}cart/${product.id}`,
     {headers: {'Content-Type': 'application/json'}, withCredentials: true})
     .then(function (response) {
       // set the user context and redirect:
@@ -61,12 +61,13 @@ function Cart({ isOpen, setCart }) {
  const [total_discount, setTotalDiscount] = useState(0);
 
  useEffect(() => {
-  if (isOpen) {
+  if (isOpen || deletedProduct) {
     axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}cart`, {
       headers: { 'Content-Type': 'application/json' },
       withCredentials: true
     })
     .then(response => {
+      setTotalDiscount(0);
       const cartData = response.data;
       console.log("CART DATA",cartData)
       const productsList = [];
@@ -92,6 +93,7 @@ function Cart({ isOpen, setCart }) {
       // var total_discount = 0;
 
       var disc_prod = [];
+      var disc = 0;
       console.log(disc_prod)
         cartData.baskets.forEach(basket => {
           disc_prod = [];
@@ -113,7 +115,7 @@ function Cart({ isOpen, setCart }) {
             })
             .then(response => {
               console.log(parseFloat(response.data));
-              setTotalDiscount(total_discount + parseFloat(response.data));
+              setTotalDiscount(disc + parseFloat(response.data));
             })
             .catch(error => {
               console.log("ERRRRRRRRRR");
