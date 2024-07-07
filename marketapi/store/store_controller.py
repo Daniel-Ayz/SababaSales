@@ -91,6 +91,14 @@ def get_keys_by_prefix(prefix):
     return filtered_keys
 
 
+def get_or_set_cache(key, model, **kwargs):
+    obj = cache.get(key)
+    if obj is None:
+        obj = get_object_or_404(model, **kwargs)
+        cache.set(key, obj)
+    return obj
+
+
 ################
 # Rules of thumb when using cache #
 # 1. Always check cache first before accessing the db
@@ -105,10 +113,7 @@ class StoreController:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
                 cache_key_store = f"store_{store_id}"
-                store = cache.get(cache_key_store)
-                if store is None:
-                    store = get_object_or_404(Store, pk=store_id)
-                    cache.set(cache_key_store, store)
+                store = get_or_set_cache(cache_key_store, Store, pk=store_id)
 
         return store
 
@@ -123,7 +128,8 @@ class StoreController:
                     store = cache.get(key)
                     if store.name == payload.name:
                         raise HttpError(403, "Store with this name already exists")
-                if Store.objects.filter(name=payload.name).exists():  #still need to check the database because cache may not be updated
+                if Store.objects.filter(
+                        name=payload.name).exists():  #still need to check the database because cache may not be updated
                     raise HttpError(403, "Store with this name already exists")
                 store = Store.objects.create(**payload.dict(), is_active=True)
                 # cache_key_store = f"store_{store.id}"
@@ -141,8 +147,8 @@ class StoreController:
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
-                stores = Store.objects.all() #to get stores we cant use cache because we need to get all stores
-                cache.set_many({f"store_{store.id}": store for store in stores}) #but we will save to cache
+                stores = Store.objects.all()  #to get stores we cant use cache because we need to get all stores
+                cache.set_many({f"store_{store.id}": store for store in stores})  #but we will save to cache
                 return stores
 
     def assign_owner(self, request, payload: OwnerSchemaIn):
@@ -168,8 +174,10 @@ class StoreController:
                 check_owner = cache.get(cache_key_check_owner)
                 if check_owner is not None:
                     raise HttpError(400, "User is already an owner")
-                if Owner.objects.filter(user_id=payload.user_id, store=store).exists(): #we still have to check the database because cache may not be updated
-                    cache.set(cache_key_check_owner, Owner.objects.get(user_id=payload.user_id, store=store)) #because we didnt have it in the cache
+                if Owner.objects.filter(user_id=payload.user_id,
+                                        store=store).exists():  #we still have to check the database because cache may not be updated
+                    cache.set(cache_key_check_owner, Owner.objects.get(user_id=payload.user_id,
+                                                                       store=store))  #because we didnt have it in the cache
                     raise HttpError(400, "User is already an owner")
 
                 cache_key_check_manager = f"manager_{store.id}_{payload.user_id}"
@@ -218,7 +226,8 @@ class StoreController:
                 removed_owner = cache.get(cache_key_removed_owner)
                 if removed_owner is None:
                     removed_owner = Owner.objects.get(user_id=payload.user_id, store=store)
-                    cache.set(cache_key_removed_owner, removed_owner) #need to save to cache because maybe removing owner is not the one
+                    cache.set(cache_key_removed_owner,
+                              removed_owner)  #need to save to cache because maybe removing owner is not the one
                     #who assigned the owner to be removed so the owner wont be removed
 
                 if removed_owner.assigned_by != removing_owner:
@@ -226,7 +235,7 @@ class StoreController:
                         403, "Owner can only be removed by the owner who assigned them"
                     )
 
-                removed_owner.delete() #cache is deleted upon signal to db
+                removed_owner.delete()  #cache is deleted upon signal to db
 
         uc.send_notification(
             store.name,
