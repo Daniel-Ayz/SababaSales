@@ -16,7 +16,7 @@ axios.defaults.withCredentials = true;
 //   async function add_to_cart(formData) {
 
 
-//     axios.post('http://localhost:8000/api/users/register', {
+//     axios.post('${process.env.NEXT_PUBLIC_USERS_ROUTE}/register', {
 //       username:  formData.get('username'),
 //       email:  formData.get('email'),
 //       password:  formData.get('password'),
@@ -90,8 +90,8 @@ export default function ProductBuyingPage({ params }) {
             };
 
             // Example POST request to add item to cart
-            console.log("DATAAAA", data);
-            const response = await axios.post('http://localhost:8000/api/users/cart/products', data,{headers: {'Content-Type': 'application/json'}, withCredentials: true});
+            // console.log("DATAAAA", data);
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_USERS_ROUTE}cart/products`, data,{headers: {'Content-Type': 'application/json'}, withCredentials: true});
             console.log(response.data); // Log response from backend
 
             toast.success('Item added to cart!', {

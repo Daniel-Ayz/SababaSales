@@ -32,7 +32,7 @@ const products = [
 async function removeProductFromCart(product, setDeletedProduct) {
 
 
-    axios.delete(`http://localhost:8000/api/users/cart/${product.id}`,
+    axios.delete(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/cart/${product.id}`,
     {headers: {'Content-Type': 'application/json'}, withCredentials: true})
     .then(function (response) {
       // set the user context and redirect:
@@ -57,15 +57,17 @@ function Cart({ isOpen, setCart }) {
  );
  const [deletedProduct, setDeletedProduct] = useState(false);
  const [totalPrice, setTotalPrice] = useState(0);
+ const [discount, setDiscount] = useState(0);
 
  useEffect(() => {
   if (isOpen) {
-    axios.get('http://localhost:8000/api/users/cart', {
+    axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}cart`, {
       headers: { 'Content-Type': 'application/json' },
       withCredentials: true
     })
     .then(response => {
       const cartData = response.data;
+      console.log("CART DATA",cartData)
       const productsList = [];
       var price = 0;
 
@@ -80,11 +82,48 @@ function Cart({ isOpen, setCart }) {
             name: product.name,
             price: product.price,
             image_link: product.image_link,
+            category: product.category,
           });
         });
       });
       // Update the cart state with fetched data
+      // check for discount:
+      var total_discount = 0;
+
+      var disc_prod = [];
+      console.log(disc_prod)
+        cartData.baskets.forEach(basket => {
+          disc_prod = [];
+
+          basket.basket_products.forEach(product => {
+            disc_prod.push({
+              product_name: product.name,
+              category: product.category,
+              quantity: product.quantity,
+            });
+          });
+          console.log("DISC PROD", disc_prod)
+
+          axios.post(`http://localhost:8000/api/stores/${basket.store_id}/calculate_cart_discount`,
+            disc_prod,  // Send disc_prod directly as the payload
+            {
+              headers: { 'Content-Type': 'application/json' },
+              withCredentials: true,
+            })
+            .then(response => {
+              console.log("OMG", response.data);
+              total_discount += response.data;
+            })
+            .catch(error => {
+              console.log("ERRRRRRRRRR");
+              console.log(error);
+              // Handle errors here if needed
+            });
+        });
+
+
       setCartData({ products: productsList });
+      setDiscount(0);
       setTotalPrice(price);
       setDeletedProduct(false);
     })
@@ -186,11 +225,34 @@ function Cart({ isOpen, setCart }) {
                       </div>
 
                       <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
-                        <div className="flex justify-between text-base font-medium text-gray-900">
-                          <p>Subtotal</p>
-                          <p>${totalPrice}</p>
-                        </div>
-                        <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
+                            <div className="flex justify-between text-base font-medium text-gray-900">
+                    <p>Subtotal</p>
+                    {discount > 0 ? (
+                      <p>
+                        <span className="line-through text-red-500">${totalPrice}</span>{' '}
+                        <span className="rainbow-text">
+                          It's your lucky day: ${totalPrice - discount}
+                        </span>
+                      </p>
+                    ) : (
+                      <p>${totalPrice}</p>
+                    )}
+                    <style jsx>{`
+                      .rainbow-text {
+                        background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet, red);
+                        background-size: 300% 100%;
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        animation: rainbow-animation 5s linear infinite;
+                      }
+
+                      @keyframes rainbow-animation {
+                        0% { background-position: 0% 50%; }
+                        100% { background-position: 100% 50%; }
+                      }
+                    `}</style>
+                  </div>
+                                    <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
 
                         <button>
                         <a
