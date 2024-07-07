@@ -90,7 +90,7 @@ export default function ProductBuyingPage({ params }) {
             };
 
             // Example POST request to add item to cart
-            console.log("DATAAAA", data);
+            // console.log("DATAAAA", data);
             const response = await axios.post('http://localhost:8000/api/users/cart/products', data,{headers: {'Content-Type': 'application/json'}, withCredentials: true});
             console.log(response.data); // Log response from backend
 

@@ -208,6 +208,7 @@ class UserController:
             pass
         product = BasketProduct.objects.create(
             store_product_id=payload.store_product_id,
+            category=payload.category,
             quantity=payload.quantity,
             name=payload.name,
             basket=basket,

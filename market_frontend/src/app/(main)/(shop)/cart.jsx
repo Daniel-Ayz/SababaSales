@@ -67,6 +67,7 @@ function Cart({ isOpen, setCart }) {
     })
     .then(response => {
       const cartData = response.data;
+      console.log("CART DATA",cartData)
       const productsList = [];
       var price = 0;
 
@@ -81,29 +82,48 @@ function Cart({ isOpen, setCart }) {
             name: product.name,
             price: product.price,
             image_link: product.image_link,
+            category: product.category,
           });
         });
       });
       // Update the cart state with fetched data
       // check for discount:
       var total_discount = 0;
-      cartData.baskets.forEach(basket => {
-        axios.get(`http://localhost:8000/api/stores/${basket.store_id}/calculate_cart_discout`, {
-          headers: { 'Content-Type': 'application/json' },
-          withCredentials: true
-        }).then
-        (response => {
-          total_discount += response.data.discount;
-          setTotalPrice(price - total_discount);
-        })
-        .catch(error => {
-          console.log(error)
-          // console.log('fetching cart failed');
-          // Handle errors here if needed
+
+      var disc_prod = [];
+      console.log(disc_prod)
+        cartData.baskets.forEach(basket => {
+          disc_prod = [];
+
+          basket.basket_products.forEach(product => {
+            disc_prod.push({
+              product_name: product.name,
+              category: product.category,
+              quantity: product.quantity,
+            });
+          });
+          console.log("DISC PROD", disc_prod)
+
+          axios.post(`http://localhost:8000/api/stores/${basket.store_id}/calculate_cart_discount`,
+            disc_prod,  // Send disc_prod directly as the payload
+            {
+              headers: { 'Content-Type': 'application/json' },
+              withCredentials: true,
+            })
+            .then(response => {
+              console.log("OMG", response.data);
+              total_discount += response.data;
+            })
+            .catch(error => {
+              console.log("ERRRRRRRRRR");
+              console.log(error);
+              // Handle errors here if needed
+            });
         });
-      });
+
 
       setCartData({ products: productsList });
+      setDiscount(total_discount);
       setTotalPrice(price);
       setDeletedProduct(false);
     })
