@@ -179,7 +179,7 @@ class StoreController:
                 if check_manager is not None:
                     raise HttpError(400, "User is already a manager")
                 if Manager.objects.filter(user_id=payload.user_id, store=store).exists():
-                    cache.set(cache_key_check_manager, Manager.objects.get(user_id=payload.user_id, store=store)
+                    cache.set(cache_key_check_manager, Manager.objects.get(user_id=payload.user_id, store=store))
                     raise HttpError(400, "User is already a manager")
 
                 owner = Owner.objects.create(
@@ -1049,8 +1049,6 @@ class StoreController:
         cursor=None,
     ):
         total_discount = 0
-        print("CALCULATING CART DISCOUNT")
-        print(purchase_products)
         # Retrieve only root discount models to avoid duplicates
         if (
             cursor is not None and store is not None

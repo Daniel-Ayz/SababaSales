@@ -1,4 +1,5 @@
 import json
+from datetime import time, datetime
 
 from django.test import TestCase, TransactionTestCase
 from ninja.testing import TestClient
@@ -2327,8 +2328,8 @@ class StoreAPITestCase(TransactionTestCase):
             # Verify the response status code and message
             assert response.status_code == 403
             assert (
-                response.json().get("detail")
-                == "User is not an owner or manager of the store"
+                    response.json().get("detail")
+                    == "User is not an owner or manager of the store"
             )
 
             # Get the purchase policies to verify the removed purchase policy
@@ -2727,7 +2728,6 @@ class StoreAPITestCase(TransactionTestCase):
     def test_fake_data(self):
         try:
             response = self.client.post(f"/create_fake_data")
-            print(response.content)
             assert response.status_code == 200
         finally:
             self.tearDown()
@@ -2874,7 +2874,6 @@ class StoreAPITestCase(TransactionTestCase):
         finally:
             self.tearDown()
 
-
     def test_validate_purchase_policy(self):
         try:
             condition = {
@@ -2968,17 +2967,53 @@ class StoreAPITestCase(TransactionTestCase):
             self.tearDown()
 
     def test_fake_data_discount(self):
-        response = self.client.post(f"/create_fake_data")
-        assert response.status_code == 200
+        try:
+            response = self.client.post(f"/create_fake_data")
+            assert response.status_code == 200
 
-        search_schema = {
-            "product_name":"Falafel Plate"
-        }
-        response = self.client.get("/search", json={"search_query": search_schema, "filter_query": {}})
-        assert response.status_code == 200
-        store_id = response.json()[0]["store"]["id"]
-        cart_payload = [
-            {"product_name": "Falafel Plate", "category":"Food", "quantity":2}
+            search_schema = {
+                "product_name": "Falafel Plate"
+            }
+            response = self.client.get("/search", json={"search_query": search_schema, "filter_query": {}})
+            assert response.status_code == 200
+            store_id = response.json()[0]["store"]["id"]
+            cart_payload = [
+                {"product_name": "Falafel Plate", "category": "Food", "quantity": 2}
             ]
-        response = self.client.post(f"/{store_id}/calculate_cart_discount", json=cart_payload)
-        assert response.status_code == 200
+            response = self.client.post(f"/{store_id}/calculate_cart_discount", json=cart_payload)
+            assert response.status_code == 200
+        finally:
+            self.tearDown()
+
+    # def test_cache_efficiency(self):
+    #     #efficency will be checked by creating fake data, then trying to purchase; computing time, removing cache and then trying again
+    #     #and again measuring time
+    #     try:
+    #         response = self.client.post(f"/create_fake_data")
+    #         assert response.status_code == 200
+    #
+    #         search_schema = {
+    #             "product_name": "Falafel Plate"
+    #         }
+    #         response = self.client.get("/search", json={"search_query": search_schema, "filter_query": {}})
+    #         assert response.status_code == 200
+    #         store_id = response.json()[0]["store"]["id"]
+    #         cart_payload = [
+    #             {"product_name": "Falafel Plate", "category": "Food", "quantity": 2}
+    #         ]
+    #         print("starting now")
+    #         start = datetime.now()
+    #         response = self.client.put(f"/{store_id}/purchase_product", json=cart_payload)
+    #         assert response.status_code == 200
+    #         end = datetime.now()
+    #         print("First time: ", end-start)
+    #
+    #         cache.clear()
+    #
+    #         start = datetime.now()
+    #         response = self.client.put(f"/{store_id}/purchase_product", json=cart_payload)
+    #         assert response.status_code == 200
+    #         end = datetime.now()
+    #         print("Second time: ", end-start)
+    #     finally:
+    #         self.tearDown()
