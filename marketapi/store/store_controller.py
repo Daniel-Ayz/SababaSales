@@ -260,6 +260,7 @@ class StoreController:
                 if Manager.objects.filter(
                         user_id=payload.user_id, store=store
                 ).exists():
+                    cache.set(cache_key_check_manager, Manager.objects.get(user_id=payload.user_id, store=store))
                     raise HttpError(400, "User is already a manager")
 
                 cache_key_check_owner = f"owner_{store.id}_{payload.user_id}"
@@ -269,6 +270,7 @@ class StoreController:
                 elif Owner.objects.filter(
                         user_id=payload.user_id, store=store
                 ).exists():
+                    cache.set(cache_key_check_owner, Owner.objects.get(user_id=payload.user_id, store=store))
                     raise HttpError(400, "User is already an owner")
 
                 # Check if the assigning user is an owner
