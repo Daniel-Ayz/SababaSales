@@ -157,16 +157,13 @@ class ConditionalDiscount(DiscountBase):
 def delete_associated_discount(sender, instance, **kwargs):
     if instance.discount:
         instance.discount.delete()
-    cache_key_conditional_discount = f"conditional_discount_{instance.store.id}_{instance.id}"
+    cache_key_conditional_discount = f"discount_{instance.store.id}_{instance.id}"
     cache.delete(cache_key_conditional_discount)
-    condition = instance.conditions.first()
-    if condition:
-        condition.delete()
 
 
 @receiver(post_save, sender=ConditionalDiscount)
 def save_conditional_discount_cache(sender, instance, **kwargs):
-    cache_key_conditional_discount = f"conditional_discount_{instance.store.id}_{instance.id}"
+    cache_key_conditional_discount = f"discount_{instance.store.id}_{instance.id}"
     cache.set(cache_key_conditional_discount, instance)
 
 
@@ -184,14 +181,12 @@ def cascade_delete_discounts(sender, instance, **kwargs):
     # Delete all related discounts
     for discount in instance.discounts.all():
         discount.delete()
-    cache_key_composite_discount = f"composite_discount_{instance.store.id}_{instance.id}"
+    cache_key_composite_discount = f"discount_{instance.store.id}_{instance.id}"
     cache.delete(cache_key_composite_discount)
-    for condition in instance.conditions.all():
-        condition.delete()
 
 @receiver(post_save, sender=CompositeDiscount)
 def save_composite_discount_cache(sender, instance, **kwargs):
-    cache_key_composite_discount = f"composite_discount_{instance.store.id}_{instance.id}"
+    cache_key_composite_discount = f"discount_{instance.store.id}_{instance.id}"
     cache.set(cache_key_composite_discount, instance)
 
 
@@ -229,23 +224,24 @@ class Condition(models.Model):
                 + self.value
         )
 
-@receiver(post_delete, sender=Condition)
-def delete_condition_cache(sender, instance, **kwargs):
-    if instance.discount:
-        cache_key_condition_discount = f"condition_discount_{instance.discount.store.id}_{instance.discount.id}"
-        cache.delete(cache_key_condition_discount)
-    elif instance.purchase_policy:
-        cache_key_condition_purchase_policy = f"condition_purchase_policy_{instance.purchase_policy.store.id}_{instance.purchase_policy.id}"
-        cache.delete(cache_key_condition_purchase_policy)
-
-@receiver(post_save, sender=Condition)
-def save_condition_cache(sender, instance, **kwargs):
-    if instance.discount:
-        cache_key_condition_discount = f"condition_discount_{instance.discount.store.id}_{instance.discount.id}"
-        cache.set(cache_key_condition_discount, instance)
-    elif instance.purchase_policy:
-        cache_key_condition_purchase_policy = f"condition_purchase_policy_{instance.purchase_policy.store.id}_{instance.purchase_policy.id}"
-        cache.set(cache_key_condition_purchase_policy, instance)
+#no point in caching conditions because we always need all the condiotions for a discount or purchase policy and we need to make sure that none are missing
+# @receiver(post_delete, sender=Condition)
+# def delete_condition_cache(sender, instance, **kwargs):
+#     if instance.discount:
+#         cache_key_condition_discount = f"condition_discount_{instance.discount.store.id}_{instance.discount.id}"
+#         cache.delete(cache_key_condition_discount)
+#     elif instance.purchase_policy:
+#         cache_key_condition_purchase_policy = f"condition_purchase_policy_{instance.purchase_policy.store.id}_{instance.purchase_policy.id}"
+#         cache.delete(cache_key_condition_purchase_policy)
+#
+# @receiver(post_save, sender=Condition)
+# def save_condition_cache(sender, instance, **kwargs):
+#     if instance.discount:
+#         cache_key_condition_discount = f"condition_discount_{instance.discount.store.id}_{instance.discount.id}"
+#         cache.set(cache_key_condition_discount, instance)
+#     elif instance.purchase_policy:
+#         cache_key_condition_purchase_policy = f"condition_purchase_policy_{instance.purchase_policy.store.id}_{instance.purchase_policy.id}"
+#         cache.set(cache_key_condition_purchase_policy, instance)
 
 
 
@@ -259,13 +255,12 @@ class SimplePurchasePolicy(PurchasePolicyBase):
 
 @receiver(pre_delete, sender=SimplePurchasePolicy)
 def delete_simple_purchase_policy(sender, instance, **kwargs):
-    cache_key_simple_purchase_policy = f"simple_purchase_policy_{instance.store.id}_{instance.id}"
+    cache_key_simple_purchase_policy = f"purchase_policy_{instance.store.id}_{instance.id}"
     cache.delete(cache_key_simple_purchase_policy)
-    instance.condition.delete()
 
 @receiver(post_save, sender=SimplePurchasePolicy)
 def save_simple_purchase_policy(sender, instance, **kwargs):
-    cache_key_simple_purchase_policy = f"simple_purchase_policy_{instance.store.id}_{instance.id}"
+    cache_key_simple_purchase_policy = f"purchase_policy_{instance.store.id}_{instance.id}"
     cache.set(cache_key_simple_purchase_policy, instance)
 
 
@@ -284,12 +279,12 @@ class ConditionalPurchasePolicy(PurchasePolicyBase):
 def delete_associated_condition_restriction(sender, instance, **kwargs):
     instance.restriction.delete()
     instance.condition.delete()
-    cache_key_conditional_purchase_policy = f"conditional_purchase_policy_{instance.store.id}_{instance.id}"
+    cache_key_conditional_purchase_policy = f"purchase_policy_{instance.store.id}_{instance.id}"
     cache.delete(cache_key_conditional_purchase_policy)
 
 @receiver(post_save, sender=ConditionalPurchasePolicy)
 def save_conditional_purchase_policy(sender, instance, **kwargs):
-    cache_key_conditional_purchase_policy = f"conditional_purchase_policy_{instance.store.id}_{instance.id}"
+    cache_key_conditional_purchase_policy = f"purchase_policy_{instance.store.id}_{instance.id}"
     cache.set(cache_key_conditional_purchase_policy, instance)
 
 
@@ -305,12 +300,12 @@ def cascade_delete_policies(sender, instance, **kwargs):
     # Delete all related policies
     for policy in instance.policies.all():
         policy.delete()
-    cache_key_composite_purchase_policy = f"composite_purchase_policy_{instance.store.id}_{instance.id}"
+    cache_key_composite_purchase_policy = f"purchase_policy_{instance.store.id}_{instance.id}"
     cache.delete(cache_key_composite_purchase_policy)
 
 @receiver(post_save, sender=CompositePurchasePolicy)
 def save_composite_purchase_policy(sender, instance, **kwargs):
-    cache_key_composite_purchase_policy = f"composite_purchase_policy_{instance.store.id}_{instance.id}"
+    cache_key_composite_purchase_policy = f"purchase_policy_{instance.store.id}_{instance.id}"
     cache.set(cache_key_composite_purchase_policy, instance)
 
 
