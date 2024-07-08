@@ -55,7 +55,7 @@ export default function ManageStore({ params }) {
           store_id: store_id
         });
         for (let i = 0; i < managers_response.data.length; i++) {
-          const full_name = await axios.get(`http://localhost:8000/api/users/${managers_response.data[i].user_id}/get_full_name`);
+          const full_name = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${managers_response.data[i].user_id}/get_full_name`);
           managers_response.data[i].Full_name = full_name.data;
         }
 
@@ -65,7 +65,7 @@ export default function ManageStore({ params }) {
           store_id: store_id
         });
         for (let i = 0; i < owners_response.data.length; i++) {
-          const full_name = await axios.get(`http://localhost:8000/api/users/${owners_response.data[i].user_id}/get_full_name`);
+          const full_name = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${owners_response.data[i].user_id}/get_full_name`);
           owners_response.data[i].Full_name = full_name.data;
         }
         setOwners(owners_response.data);
@@ -102,7 +102,7 @@ export default function ManageStore({ params }) {
 
   const assignOwner = async () => {
     try {
-      const response_ = await axios.get(`http://localhost:8000/api/users/get_user_id?email=${email}`);
+      const response_ = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/get_user_id?email=${email}`);
       const user_id_ = response_.data.id;
       const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_owner`, {
         user_id: user_id_,
@@ -113,7 +113,7 @@ export default function ManageStore({ params }) {
         toast.success("Owner appointed successfully!");
         setEmail('');
         // Update the owners list
-        const full_name = await axios.get(`http://localhost:8000/api/users/${user_id_}/get_full_name`);
+        const full_name = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${user_id_}/get_full_name`);
         setOwners([...owners, { user_id: user_id_, Full_name: full_name.data }]);
       } else {
         toast.error("Failed to appoint owner.");
@@ -126,7 +126,7 @@ export default function ManageStore({ params }) {
 
   const assignManager = async () => {
     try {
-      const response_ = await axios.get(`http://localhost:8000/api/users/get_user_id?email=${email}`);
+      const response_ = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/get_user_id?email=${email}`);
       const user_id_ = response_.data.id;
       const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_manager`, {
         user_id: user_id_,
@@ -137,7 +137,7 @@ export default function ManageStore({ params }) {
         toast.success("Manager appointed successfully!");
         setEmail('');
         // Update the managers list
-        const full_name = await axios.get(`http://localhost:8000/api/users/${user_id_}/get_full_name`);
+        const full_name = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${user_id_}/get_full_name`);
         setManagers([...managers, { user_id: user_id_, Full_name: full_name.data }]);
       } else {
         toast.error("Failed to appoint manager.");

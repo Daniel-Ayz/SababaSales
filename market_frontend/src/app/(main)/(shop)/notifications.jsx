@@ -14,7 +14,7 @@ const NotificationsMenu = () => {
   useEffect(() => {
     const fetchNotifications = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/users/users/notifications');
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}users/notifications`);
         setNotifications(response.data);
       } catch (error) {
         console.error('Error fetching notifications:', error);
@@ -30,7 +30,7 @@ const NotificationsMenu = () => {
    const markNotificationAsRead = async (id) => {
     try {
       // Send a PUT request to the API
-      const response = await axios.put(`http://localhost:8000/api/users/notifications/${id}/`);
+      const response = await axios.put(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/notifications/${id}/`);
       if (response.status === 200) {
         // Optionally update notification state based on response
         console.log('Notification marked as read:', response.data);

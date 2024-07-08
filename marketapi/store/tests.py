@@ -2962,8 +2962,23 @@ class StoreAPITestCase(TransactionTestCase):
                     {"product_name": "Yogurt", "category": "Dairy", "quantity": 1},
                 ],
             )
-
             assert response.status_code == 200
             assert response.json() == 0.65
         finally:
             self.tearDown()
+
+    def test_fake_data_discount(self):
+        response = self.client.post(f"/create_fake_data")
+        assert response.status_code == 200
+
+        search_schema = {
+            "product_name":"Falafel Plate"
+        }
+        response = self.client.get("/search", json={"search_query": search_schema, "filter_query": {}})
+        assert response.status_code == 200
+        store_id = response.json()[0]["store"]["id"]
+        cart_payload = [
+            {"product_name": "Falafel Plate", "category":"Food", "quantity":2}
+            ]
+        response = self.client.post(f"/{store_id}/calculate_cart_discount", json=cart_payload)
+        assert response.status_code == 200
