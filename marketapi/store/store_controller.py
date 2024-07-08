@@ -179,7 +179,7 @@ class StoreController:
                 if check_manager is not None:
                     raise HttpError(400, "User is already a manager")
                 if Manager.objects.filter(user_id=payload.user_id, store=store).exists():
-                    cache.set(cache_key_check_manager, Manager.objects.get(user_id=payload.user_id, store=store))
+                    cache.set(cache_key_check_manager, Manager.objects.get(user_id=payload.user_id, store=store)
                     raise HttpError(400, "User is already a manager")
 
                 owner = Owner.objects.create(
@@ -258,7 +258,7 @@ class StoreController:
                 if check_manager is not None:
                     raise HttpError(400, "User is already a manager")
                 if Manager.objects.filter(
-                        user_id=payload.user_id, store=store
+                    user_id=payload.user_id, store=store
                 ).exists():
                     cache.set(cache_key_check_manager, Manager.objects.get(user_id=payload.user_id, store=store))
                     raise HttpError(400, "User is already a manager")
@@ -267,19 +267,13 @@ class StoreController:
                 check_owner = cache.get(cache_key_check_owner)
                 if check_owner is not None:
                     raise HttpError(400, "User is already an owner")
-                elif Owner.objects.filter(
-                        user_id=payload.user_id, store=store
+                if Owner.objects.filter(
+                    user_id=payload.user_id, store=store
                 ).exists():
                     cache.set(cache_key_check_owner, Owner.objects.get(user_id=payload.user_id, store=store))
                     raise HttpError(400, "User is already an owner")
 
-                # Check if the assigning user is an owner
-                # if not Owner.objects.filter(
-                #         user_id=payload.assigned_by, store=store
-                # ).exists():
-                #     raise HttpError(403, "Only owners can assign managers")
-                #redundent because we have 404 previously if not owner
-
+               
                 manager = Manager.objects.create(
                     user_id=payload.user_id, assigned_by=assigning_owner, store=store
                 )
@@ -317,11 +311,11 @@ class StoreController:
                 return {"message": "Manager removed successfully"}
 
     def assign_manager_permissions(
-            self,
-            request,
-            payload: ManagerPermissionSchemaIn,
-            manager: RoleSchemaIn,
-            assigning_owner_id: int,
+        self,
+        request,
+        payload: ManagerPermissionSchemaIn,
+        manager: RoleSchemaIn,
+        assigning_owner_id: int,
     ):
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -416,6 +410,7 @@ class StoreController:
                 cursor.execute(
                     f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
                 )
+
                 owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id, store=store)
                 # reduendent because cache will just return 404 if doenst exist such owner
                 # if not Owner.objects.filter(
@@ -436,6 +431,7 @@ class StoreController:
                 cursor.execute(
                     f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
                 )
+
                 owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id,
                                          store=store)
                 # if not Owner.objects.filter(
@@ -448,14 +444,14 @@ class StoreController:
         return managers
 
     def add_purchase_policy(
-            self,
-            request,
-            role: RoleSchemaIn,
-            payload: Union[
-                SimplePurchasePolicySchemaIn,
-                ConditionalPurchasePolicySchemaIn,
-                CompositePurchasePolicySchemaIn,
-            ],
+        self,
+        request,
+        role: RoleSchemaIn,
+        payload: Union[
+            SimplePurchasePolicySchemaIn,
+            ConditionalPurchasePolicySchemaIn,
+            CompositePurchasePolicySchemaIn,
+        ],
     ):
         if request is not None and role is not None:
             with transaction.atomic():
@@ -498,7 +494,7 @@ class StoreController:
         }
 
     def add_conditional_purchase_policy(
-            self, payload: ConditionalPurchasePolicySchemaIn
+        self, payload: ConditionalPurchasePolicySchemaIn
     ):
         restriction = self.add_purchase_policy(None, None, payload.restriction).get(
             "policy"
@@ -550,7 +546,7 @@ class StoreController:
         }
 
     def remove_purchase_policy(
-            self, request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
+        self, request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
     ):
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -592,14 +588,14 @@ class StoreController:
         return policies
 
     def add_discount_policy(
-            self,
-            request,
-            role: RoleSchemaIn,
-            payload: Union[
-                SimpleDiscountSchemaIn,
-                ConditionalDiscountSchemaIn,
-                CompositeDiscountSchemaIn,
-            ],
+        self,
+        request,
+        role: RoleSchemaIn,
+        payload: Union[
+            SimpleDiscountSchemaIn,
+            ConditionalDiscountSchemaIn,
+            CompositeDiscountSchemaIn,
+        ],
     ):
 
         # Check if the user is authorized to add a discount policy
@@ -712,7 +708,7 @@ class StoreController:
         }
 
     def remove_discount_policy(
-            self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
+        self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
     ):
 
         with transaction.atomic():
@@ -805,7 +801,7 @@ class StoreController:
                         return None
 
     def validate_permissions(
-            self, role: RoleSchemaIn, store: Store, permission: str, cursor
+        self, role: RoleSchemaIn, store: Store, permission: str, cursor
     ):
         managing_lock = hash(f"{store.pk}_managing_lock")
         cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock])
@@ -928,7 +924,7 @@ class StoreController:
         return products
 
     def purchase_product(
-            self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
+        self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
     ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to purchase")
@@ -963,9 +959,10 @@ class StoreController:
                     for product, item in zip(products, payload)
                 ]
 
-                self.validate_purchase_policy(payload=payload, cursor=cursor, store=store)
+                self.validate_purchase_policy(
+                    payload=payload, cursor=cursor, store=store
+                )
 
-                # Apply discount policy
                 total_price -= self.calculate_cart_discount(payload, store=store, cursor=cursor)
                 for product, item in zip(products, payload):
                     if product.quantity < item.quantity:
@@ -999,7 +996,7 @@ class StoreController:
         }
 
     def return_products(
-            self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
+        self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
     ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to return")
@@ -1045,14 +1042,23 @@ class StoreController:
         return None
 
     def calculate_cart_discount(
-            self, purchase_products: List[PurchaseStoreProductSchema], store_id: int = None, store: Store = None,
-            cursor=None
+        self,
+        purchase_products: List[PurchaseStoreProductSchema],
+        store_id: int = None,
+        store: Store = None,
+        cursor=None,
     ):
         total_discount = 0
+        print("CALCULATING CART DISCOUNT")
+        print(purchase_products)
         # Retrieve only root discount models to avoid duplicates
-        if cursor is not None and store is not None:  #after we have the cursor on the db and the store itself
+        if (
+            cursor is not None and store is not None
+        ):  # after we have the cursor on the db and the store itself
             discount_lock = f"{store.pk}_discount_lock"
-            cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});")
+            cursor.execute(
+                f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});"
+            )
             all_discount_models = DiscountBase.objects.filter(is_root=True)
             cache.set_many({f"discount_{store.id}_{discount.id}": discount for discount in all_discount_models})
             for discount_model in all_discount_models:
@@ -1071,7 +1077,7 @@ class StoreController:
         return total_discount
 
     def get_purchase_policy_instance(
-            self, purchase_model: PurchasePolicyBase, store: Store
+        self, purchase_model: PurchasePolicyBase, store: Store
     ):
         if isinstance(purchase_model, SimplePurchasePolicy):
             return SimplePurchasePolicyClass(
@@ -1100,7 +1106,11 @@ class StoreController:
         return None
 
     def validate_purchase_policy(
-            self, payload: List[PurchaseStoreProductSchema], store_id: int = None, cursor=None, store: Store = None
+        self,
+        payload: List[PurchaseStoreProductSchema],
+        store_id: int = None,
+        cursor=None,
+        store: Store = None,
     ):  # Retrieve only root purchase models to avoid duplicates
         if cursor is not None and store is not None:
             policy_lock = f"{store.pk}_policy_lock"
@@ -1112,7 +1122,9 @@ class StoreController:
             result = reduce(
                 operator.and_,
                 [
-                    self.get_purchase_policy_instance(policy, store).apply_policy(payload)
+                    self.get_purchase_policy_instance(policy, store).apply_policy(
+                        payload
+                    )
                     for policy in all_purchase_models
                 ],
             )  # all purchase policies should work
@@ -1127,7 +1139,7 @@ class StoreController:
 
     #search is not used so i dont update cache
     def search_products(
-            self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
+        self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
     ):
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -1320,7 +1332,7 @@ class StoreController:
                     "store_id": stores[i].id,
                     "is_root": True,
                     "condition": {
-                        "applies_to": "products",
+                        "applies_to": "product",
                         "name_of_apply": store_data[store_names[i]]["products"][j],
                         "condition": "at_least",
                         "value": 5,
@@ -1333,71 +1345,71 @@ class StoreController:
                             store_data[store_names[i]]["category"]
                         ],
                         "applicable_products": [
-                            str(product.id)
+                            str(product.name)
                         ],  # Use the product ID as a string
                     },
                 }
 
-            condition_schema = ConditionSchema(**payload_dict["condition"])
-            discount_data = payload_dict["discount"]
-            discount_data["applicable_categories"] = json.loads(
-                json.dumps(discount_data["applicable_categories"])
-            )
-            simple_discount_schema = SimpleDiscountSchemaIn(**discount_data)
+                condition_schema = ConditionSchema(**payload_dict["condition"])
+                discount_data = payload_dict["discount"]
+                discount_data["applicable_categories"] = json.loads(
+                    json.dumps(discount_data["applicable_categories"])
+                )
+                simple_discount_schema = SimpleDiscountSchemaIn(**discount_data)
 
-            payload = ConditionalDiscountSchemaIn(
-                store_id=payload_dict["store_id"],
-                is_root=payload_dict["is_root"],
-                condition=condition_schema,
-                discount=simple_discount_schema,
-            )
-            self.add_conditional_discount_policy(payload)
+                payload = ConditionalDiscountSchemaIn(
+                    store_id=payload_dict["store_id"],
+                    is_root=payload_dict["is_root"],
+                    condition=condition_schema,
+                    discount=simple_discount_schema,
+                )
+                self.add_conditional_discount_policy(payload)
 
-            # Create simple purchase policies
-            condition1 = {
-                "applies_to": "product",
-                "name_of_apply": product.name,
-                "condition": "at_most",
-                "value": 5,
-            }
-            purchase_policy_payload1 = {
-                "store_id": stores[i].id,
-                "is_root": True,
-                "condition": condition1,
-            }
-            simple_policy_schema1 = SimplePurchasePolicySchemaIn(
-                **purchase_policy_payload1
-            )
-            self.add_simple_purchase_policy(simple_policy_schema1)
+                # Create simple purchase policies
+                condition1 = {
+                    "applies_to": "product",
+                    "name_of_apply": product.name,
+                    "condition": "at_most",
+                    "value": 5,
+                }
+                purchase_policy_payload1 = {
+                    "store_id": stores[i].id,
+                    "is_root": True,
+                    "condition": condition1,
+                }
+                simple_policy_schema1 = SimplePurchasePolicySchemaIn(
+                    **purchase_policy_payload1
+                )
+                self.add_simple_purchase_policy(simple_policy_schema1)
 
-            condition2 = {
-                "applies_to": "time",
-                "name_of_apply": "",
-                "condition": "at_most",
-                "value": 23,
-            }
-            purchase_policy_payload2 = {
-                "store_id": stores[i].id,
-                "is_root": True,
-                "condition": condition2,
-            }
-            simple_policy_schema2 = SimplePurchasePolicySchemaIn(
-                **purchase_policy_payload2
-            )
-            self.add_simple_purchase_policy(simple_policy_schema2)
-            purchase_policy_payload1["is_root"] = False
-            purchase_policy_payload2["is_root"] = False
-            # Create a composite purchase policy
-            composite_policy_payload = {
-                "store_id": stores[i].id,
-                "is_root": True,
-                "policies": [purchase_policy_payload1, purchase_policy_payload2],
-                "combine_function": "logical_and",
-            }
-            composite_policy_schema = CompositePurchasePolicySchemaIn(
-                **composite_policy_payload
-            )
-            self.add_composite_purchase_policy(composite_policy_schema)
+                condition2 = {
+                    "applies_to": "time",
+                    "name_of_apply": "",
+                    "condition": "at_most",
+                    "value": 23,
+                }
+                purchase_policy_payload2 = {
+                    "store_id": stores[i].id,
+                    "is_root": True,
+                    "condition": condition2,
+                }
+                simple_policy_schema2 = SimplePurchasePolicySchemaIn(
+                    **purchase_policy_payload2
+                )
+                self.add_simple_purchase_policy(simple_policy_schema2)
+                purchase_policy_payload1["is_root"] = False
+                purchase_policy_payload2["is_root"] = False
+                # Create a composite purchase policy
+                composite_policy_payload = {
+                    "store_id": stores[i].id,
+                    "is_root": True,
+                    "policies": [purchase_policy_payload1, purchase_policy_payload2],
+                    "combine_function": "logical_and",
+                }
+                composite_policy_schema = CompositePurchasePolicySchemaIn(
+                    **composite_policy_payload
+                )
+                self.add_composite_purchase_policy(composite_policy_schema)
 
         return {"message": "Fake data created successfully"}
 
@@ -1473,8 +1485,8 @@ class StoreController:
                     owners_count = self.get_owners(None, role).count()
                     count_managers_with_permission = len(managers_with_permission)
                     if (
-                            bid.accepted_by.count()
-                            == owners_count + count_managers_with_permission
+                        bid.accepted_by.count()
+                        == owners_count + count_managers_with_permission
                     ):
                         bid.can_purchase = True
                         bid.save()  # Ensure bid is saved after setting can_purchase to True
