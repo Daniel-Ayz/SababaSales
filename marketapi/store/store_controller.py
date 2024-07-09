@@ -364,9 +364,12 @@ class StoreController:
                 cursor.execute(
                     f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
                 )
-                if not Owner.objects.filter(
-                    user_id=payload.user_id, store=store
-                ).exists():
+                if not (
+                    Owner.objects.filter(user_id=payload.user_id, store=store).exists()
+                    or Manager.objects.filter(
+                        user_id=payload.user_id, store=store
+                    ).exists()
+                ):
                     raise HttpError(403, "User is not an owner of the store")
                 owners = Owner.objects.filter(store=store)
 
@@ -381,9 +384,12 @@ class StoreController:
                 cursor.execute(
                     f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
                 )
-                if not Owner.objects.filter(
-                    user_id=payload.user_id, store=store
-                ).exists():
+                if not (
+                    Owner.objects.filter(user_id=payload.user_id, store=store).exists()
+                    or Manager.objects.filter(
+                        user_id=payload.user_id, store=store
+                    ).exists()
+                ):
                     raise HttpError(403, "User is not an owner of the store")
                 managers = Manager.objects.filter(store=store)
 
