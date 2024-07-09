@@ -412,11 +412,15 @@ class StoreController:
                 )
 
                 owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id, store=store)
+                manager = get_or_set_cache(f"manager_{store.id}_{payload.user_id}", Manager, user_id=payload.user_id, store=store)
                 # reduendent because cache will just return 404 if doenst exist such owner
-                # if not Owner.objects.filter(
-                #         user_id=payload.user_id, store=store
-                # ).exists():
-                #     raise HttpError(403, "User is not an owner of the store")
+#                 if not (
+#                     Owner.objects.filter(user_id=payload.user_id, store=store).exists()
+#                     or Manager.objects.filter(
+#                         user_id=payload.user_id, store=store
+#                     ).exists()
+#                 ):
+
                 owners = Owner.objects.filter(store=store)
                 cache.set_many({f"owner_{store.id}_{owner.user_id}": owner for owner in owners})
 
@@ -434,10 +438,13 @@ class StoreController:
 
                 owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id,
                                          store=store)
-                # if not Owner.objects.filter(
-                #         user_id=payload.user_id, store=store
-                # ).exists():
-                #     raise HttpError(403, "User is not an owner of the store")
+                  manager = get_or_set_cache(f"manager_{store.id}_{payload.user_id}", Manager, user_id=payload.user_id, store=store)
+#                 if not (
+#                     Owner.objects.filter(user_id=payload.user_id, store=store).exists()
+#                     or Manager.objects.filter(
+#                         user_id=payload.user_id, store=store
+#                     ).exists()
+#                 ):
                 managers = Manager.objects.filter(store=store)
                 cache.set_many({f"manager_{store.id}_{manager.user_id}": manager for manager in managers})
 
