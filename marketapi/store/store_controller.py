@@ -1609,15 +1609,3 @@ class StoreController:
                 bids = Bid.objects.filter(store=store, product__name=payload.product_name)
                 cache.set_many({f"bid_{store.id}_{bid.id}": bid for bid in bids})
                 return bids
-
-    def get_bids_by_user(self, request, user_id: int):
-        with transaction.atomic():
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
-                stores = self.get_stores(user_id)
-                for store in stores:
-                    bids_lock = f"{store.pk}_bids_lock"
-                    cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(bids_lock)});")
-                bids = Bid.objects.filter(user_id=user_id)
-                cache.set_many({f"bid_{bid.store_id}_{bid.id}": bid for bid in bids})
-                return bids
