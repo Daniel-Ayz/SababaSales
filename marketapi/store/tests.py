@@ -3017,3 +3017,37 @@ class StoreAPITestCase(TransactionTestCase):
     #         print("Second time: ", end-start)
     #     finally:
     #         self.tearDown()
+
+    def test_get_bids_by_user(self):
+        try:
+            response = self.client.post(
+                "/{store_id}/make_bid",
+                json={
+                    "user_id": 100,
+                    "store_id": self.store_id,
+                    "product_name": "Bread Loaf",
+                    "price": 2,
+                    "quantity": 1,
+                },
+            )
+            assert response.status_code == 200
+
+            response = self.client.post(
+                "/{store_id}/make_bid",
+                json={
+                    "user_id": 100,
+                    "store_id": self.store_id,
+                    "product_name": "Milk",
+                    "price": 5,
+                    "quantity": 2,
+                },
+            )
+            assert response.status_code == 200
+
+            response = self.client.get(
+                "/get_bids_by_user?user_id=100"
+            )
+            assert response.status_code == 200
+            assert len(response.json()) == 2
+        finally:
+            self.tearDown()
