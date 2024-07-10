@@ -329,3 +329,7 @@ class DecisionBidSchemaIn(Schema):  # manager makes a decision to accept or reje
 class MakePurchaseOnBidSchemaIn(Schema):
     bid_id: int
     store_id: int
+
+class GetBidsOnProductSchema(Schema):
+    product_name: str
+    store_id: int

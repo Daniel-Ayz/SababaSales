@@ -42,7 +42,7 @@ from .schemas import (
     MakePurchaseOnBidSchemaIn,
     MakePurchaseOnBidSchemaIn,
     ConditionSchemaOut,
-    GetConditionsSchemaIn,
+    GetConditionsSchemaIn, GetBidsOnProductSchema,
 )
 
 from .store_controller import StoreController
@@ -285,3 +285,7 @@ def make_purchase_on_bid(request, payload: MakePurchaseOnBidSchemaIn):
 # @router.put("/{store_id}/return_products")
 # def return_products(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
 #     return sc.return_products(request, store_id, payload)
+
+@router.post("/{store_id}/get_bids_on_product", response=List[BidSchemaOut])
+def get_bids_on_product(request, payload: GetBidsOnProductSchema):
+    return sc.get_bids_on_product(request, payload)

@@ -68,7 +68,7 @@ from .schemas import (
     MakePurchaseOnBidSchemaIn,
     ConditionSchema,
     MakePurchaseOnBidSchemaIn,
-    GetConditionsSchemaIn,
+    GetConditionsSchemaIn, GetBidsOnProductSchema,
 )
 
 router = Router()
@@ -412,7 +412,6 @@ class StoreController:
                 )
 
                 owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id, store=store)
-                manager = get_or_set_cache(f"manager_{store.id}_{payload.user_id}", Manager, user_id=payload.user_id, store=store)
                 # reduendent because cache will just return 404 if doenst exist such owner
 #                 if not (
 #                     Owner.objects.filter(user_id=payload.user_id, store=store).exists()
@@ -438,7 +437,6 @@ class StoreController:
 
                 owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id,
                                          store=store)
-                  manager = get_or_set_cache(f"manager_{store.id}_{payload.user_id}", Manager, user_id=payload.user_id, store=store)
 #                 if not (
 #                     Owner.objects.filter(user_id=payload.user_id, store=store).exists()
 #                     or Manager.objects.filter(
@@ -1501,7 +1499,7 @@ class StoreController:
                             f"Your bid on {bid.product.name} in {bid.store.name} has been accepted, you can now purchase the product",
                         )
                 else:
-                    bid.delete()
+                    #bid.delete()
                     uc.send_notification(
                         store.name,
                         bid.user_id,
@@ -1542,7 +1540,8 @@ class StoreController:
                 product.quantity -= bid.quantity
                 price = bid.price
                 product.save()
-                bid.delete()  # delete bid after purchase
+                #bid.delete()  # delete bid after purchase
+                #bid is not deleted to keep track of proudcts a bid was put on
         return {"message": "Purchase made successfully", "price": price}
 
     def get_managers_with_permissions(self, store_id: int, permission: str):
@@ -1570,3 +1569,14 @@ class StoreController:
             stores.append(manager.store)
             cache.set(f"manager_{manager.store.id}_{manager.user_id}", manager)
         return stores
+
+    def get_bids_on_product(self, request, payload: GetBidsOnProductSchema):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                store = get_or_set_cache(f"store_{payload.store_id}", Store, pk=payload.store_id)
+                bids_lock = f"{payload.store_id}_bids_lock"
+                cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(bids_lock)});")
+                bids = Bid.objects.filter(store=store, product__name=payload.product_name)
+                cache.set_many({f"bid_{store.id}_{bid.id}": bid for bid in bids})
+                return bids
