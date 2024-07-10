@@ -162,7 +162,8 @@ class StoreController:
                     f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
                 )
                 cache_key_assigning_owner = f"owner_{store.id}_{payload.assigned_by}"
-                assigning_owner = get_or_set_cache(cache_key_assigning_owner, Owner, user_id=payload.assigned_by, store=store)
+                assigning_owner = get_or_set_cache(cache_key_assigning_owner, Owner, user_id=payload.assigned_by,
+                                                   store=store)
 
                 cache_key_check_owner = f"owner_{store.id}_{payload.user_id}"
                 check_owner = cache.get(cache_key_check_owner)
@@ -207,7 +208,8 @@ class StoreController:
                     f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
                 )
                 cache_key_removing_owner = f"owner_{store.id}_{payload.removed_by}"
-                removing_owner = get_or_set_cache(cache_key_removing_owner, Owner, user_id=payload.removed_by, store=store)
+                removing_owner = get_or_set_cache(cache_key_removing_owner, Owner, user_id=payload.removed_by,
+                                                  store=store)
                 cache_key_removed_owner = f"owner_{store.id}_{payload.user_id}"
                 removed_owner = get_or_set_cache(cache_key_removed_owner, Owner, user_id=payload.user_id, store=store)
                 if removed_owner.assigned_by != removing_owner:
@@ -252,13 +254,14 @@ class StoreController:
                 managing_lock_id = hash(f"{store.pk}_managing_lock")
                 # Acquire an advisory lock on the store
                 cursor.execute("SELECT pg_advisory_xact_lock(%s);", [managing_lock_id])
-                assigning_owner = get_or_set_cache(f"owner_{store.id}_{payload.assigned_by}", Owner, user_id=payload.assigned_by, store=store)
+                assigning_owner = get_or_set_cache(f"owner_{store.id}_{payload.assigned_by}", Owner,
+                                                   user_id=payload.assigned_by, store=store)
                 cache_key_check_manager = f"manager_{store.id}_{payload.user_id}"
                 check_manager = cache.get(cache_key_check_manager)
                 if check_manager is not None:
                     raise HttpError(400, "User is already a manager")
                 if Manager.objects.filter(
-                    user_id=payload.user_id, store=store
+                        user_id=payload.user_id, store=store
                 ).exists():
                     cache.set(cache_key_check_manager, Manager.objects.get(user_id=payload.user_id, store=store))
                     raise HttpError(400, "User is already a manager")
@@ -268,12 +271,11 @@ class StoreController:
                 if check_owner is not None:
                     raise HttpError(400, "User is already an owner")
                 if Owner.objects.filter(
-                    user_id=payload.user_id, store=store
+                        user_id=payload.user_id, store=store
                 ).exists():
                     cache.set(cache_key_check_owner, Owner.objects.get(user_id=payload.user_id, store=store))
                     raise HttpError(400, "User is already an owner")
 
-               
                 manager = Manager.objects.create(
                     user_id=payload.user_id, assigned_by=assigning_owner, store=store
                 )
@@ -293,8 +295,10 @@ class StoreController:
                 cursor.execute(
                     f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
                 )
-                removing_owner = get_or_set_cache(f"owner_{store.id}_{payload.removed_by}", Owner, user_id=payload.removed_by, store=store)
-                removed_manager = get_or_set_cache(f"manager_{store.id}_{payload.user_id}", Manager, user_id=payload.user_id, store=store)
+                removing_owner = get_or_set_cache(f"owner_{store.id}_{payload.removed_by}", Owner,
+                                                  user_id=payload.removed_by, store=store)
+                removed_manager = get_or_set_cache(f"manager_{store.id}_{payload.user_id}", Manager,
+                                                   user_id=payload.user_id, store=store)
 
                 if removed_manager.assigned_by != removing_owner:
                     raise HttpError(
@@ -311,11 +315,11 @@ class StoreController:
                 return {"message": "Manager removed successfully"}
 
     def assign_manager_permissions(
-        self,
-        request,
-        payload: ManagerPermissionSchemaIn,
-        manager: RoleSchemaIn,
-        assigning_owner_id: int,
+            self,
+            request,
+            payload: ManagerPermissionSchemaIn,
+            manager: RoleSchemaIn,
+            assigning_owner_id: int,
     ):
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -325,7 +329,8 @@ class StoreController:
                 cursor.execute(
                     f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
                 )
-                manager = get_or_set_cache(f"manager_{store.id}_{manager.user_id}", Manager, user_id=manager.user_id, store=store)
+                manager = get_or_set_cache(f"manager_{store.id}_{manager.user_id}", Manager, user_id=manager.user_id,
+                                           store=store)
                 if assigning_owner_id != manager.assigned_by.user_id:
                     raise HttpError(403, "Only assigning owner can assign permissions")
                 try:
@@ -352,7 +357,8 @@ class StoreController:
                     f"SELECT pg_advisory_xact_lock({hash(managing_lock_id)});"
                 )
                 manager = get_or_set_cache(f"manager_{store.id}_{manager_id}", Manager, user_id=manager_id, store=store)
-                permissions = get_or_set_cache(f"manager_permissions_{store.id}_{manager.id}", ManagerPermission, manager=manager)
+                permissions = get_or_set_cache(f"manager_permissions_{store.id}_{manager.id}", ManagerPermission,
+                                               manager=manager)
         return permissions
 
     def close_store(self, request, payload: RoleSchemaIn):
@@ -364,7 +370,8 @@ class StoreController:
                 cursor.execute(
                     f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
                 )
-                owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id, store=store)
+                owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id,
+                                         store=store)
                 if not owner.is_founder:
                     raise HttpError(403, "Only the founder can close the store")
 
@@ -387,7 +394,8 @@ class StoreController:
                 cursor.execute(
                     f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
                 )
-                owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id, store=store)
+                owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id,
+                                         store=store)
                 if not owner.is_founder:
                     raise HttpError(403, "Only the founder can reopen the store")
 
@@ -411,14 +419,15 @@ class StoreController:
                     f"SELECT pg_advisory_xact_lock_shared({hash(managing_lock_id)});"
                 )
 
-                owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id, store=store)
+                owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id,
+                                         store=store)
                 # reduendent because cache will just return 404 if doenst exist such owner
-#                 if not (
-#                     Owner.objects.filter(user_id=payload.user_id, store=store).exists()
-#                     or Manager.objects.filter(
-#                         user_id=payload.user_id, store=store
-#                     ).exists()
-#                 ):
+                #                 if not (
+                #                     Owner.objects.filter(user_id=payload.user_id, store=store).exists()
+                #                     or Manager.objects.filter(
+                #                         user_id=payload.user_id, store=store
+                #                     ).exists()
+                #                 ):
 
                 owners = Owner.objects.filter(store=store)
                 cache.set_many({f"owner_{store.id}_{owner.user_id}": owner for owner in owners})
@@ -437,26 +446,26 @@ class StoreController:
 
                 owner = get_or_set_cache(f"owner_{store.id}_{payload.user_id}", Owner, user_id=payload.user_id,
                                          store=store)
-#                 if not (
-#                     Owner.objects.filter(user_id=payload.user_id, store=store).exists()
-#                     or Manager.objects.filter(
-#                         user_id=payload.user_id, store=store
-#                     ).exists()
-#                 ):
+                #                 if not (
+                #                     Owner.objects.filter(user_id=payload.user_id, store=store).exists()
+                #                     or Manager.objects.filter(
+                #                         user_id=payload.user_id, store=store
+                #                     ).exists()
+                #                 ):
                 managers = Manager.objects.filter(store=store)
                 cache.set_many({f"manager_{store.id}_{manager.user_id}": manager for manager in managers})
 
         return managers
 
     def add_purchase_policy(
-        self,
-        request,
-        role: RoleSchemaIn,
-        payload: Union[
-            SimplePurchasePolicySchemaIn,
-            ConditionalPurchasePolicySchemaIn,
-            CompositePurchasePolicySchemaIn,
-        ],
+            self,
+            request,
+            role: RoleSchemaIn,
+            payload: Union[
+                SimplePurchasePolicySchemaIn,
+                ConditionalPurchasePolicySchemaIn,
+                CompositePurchasePolicySchemaIn,
+            ],
     ):
         if request is not None and role is not None:
             with transaction.atomic():
@@ -499,7 +508,7 @@ class StoreController:
         }
 
     def add_conditional_purchase_policy(
-        self, payload: ConditionalPurchasePolicySchemaIn
+            self, payload: ConditionalPurchasePolicySchemaIn
     ):
         restriction = self.add_purchase_policy(None, None, payload.restriction).get(
             "policy"
@@ -551,7 +560,7 @@ class StoreController:
         }
 
     def remove_purchase_policy(
-        self, request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
+            self, request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
     ):
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -562,7 +571,8 @@ class StoreController:
                 )
                 policy_lock = f"{store.pk}_policy_lock"
                 cursor.execute(f"SELECT pg_advisory_xact_lock({hash(policy_lock)});")
-                policy = get_or_set_cache(f"purchase_policy_{store.id}_{payload.policy_id}", PurchasePolicyBase, pk=payload.policy_id, store=store, is_root=True)
+                policy = get_or_set_cache(f"purchase_policy_{store.id}_{payload.policy_id}", PurchasePolicyBase,
+                                          pk=payload.policy_id, store=store, is_root=True)
                 policy.delete()
         return {"message": "Purchase policy removed successfully"}
 
@@ -576,7 +586,8 @@ class StoreController:
                     cursor.execute(
                         "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock_id]
                     )
-                    owner = get_or_set_cache(f"owner_{store.id}_{role.user_id}", Owner, user_id=role.user_id, store=store)
+                    owner = get_or_set_cache(f"owner_{store.id}_{role.user_id}", Owner, user_id=role.user_id,
+                                             store=store)
                     # if not Owner.objects.filter(
                     #         user_id=role.user_id, store=store
                     # ).exists():
@@ -593,14 +604,14 @@ class StoreController:
         return policies
 
     def add_discount_policy(
-        self,
-        request,
-        role: RoleSchemaIn,
-        payload: Union[
-            SimpleDiscountSchemaIn,
-            ConditionalDiscountSchemaIn,
-            CompositeDiscountSchemaIn,
-        ],
+            self,
+            request,
+            role: RoleSchemaIn,
+            payload: Union[
+                SimpleDiscountSchemaIn,
+                ConditionalDiscountSchemaIn,
+                CompositeDiscountSchemaIn,
+            ],
     ):
 
         # Check if the user is authorized to add a discount policy
@@ -643,7 +654,8 @@ class StoreController:
                         f"SELECT pg_advisory_xact_lock_shared({hash(products_lock)});"
                     )
                     for product in payload.applicable_products:
-                        product_instance = get_or_set_cache(f"product_{store.id}_{product}", StoreProduct, store=store, name=product)
+                        product_instance = get_or_set_cache(f"product_{store.id}_{product}", StoreProduct, store=store,
+                                                            name=product)
                         discount.applicable_products.add(product_instance)
 
         return {
@@ -713,7 +725,7 @@ class StoreController:
         }
 
     def remove_discount_policy(
-        self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
+            self, request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
     ):
 
         with transaction.atomic():
@@ -725,7 +737,8 @@ class StoreController:
                 )
                 discount_lock = f"{store.pk}_discount_lock"
                 cursor.execute(f"SELECT pg_advisory_xact_lock({hash(discount_lock)});")
-                discount_instance = get_or_set_cache(f"discount_{store.id}_{payload.discount_id}", DiscountBase, pk=payload.discount_id, store=store, is_root=True)
+                discount_instance = get_or_set_cache(f"discount_{store.id}_{payload.discount_id}", DiscountBase,
+                                                     pk=payload.discount_id, store=store, is_root=True)
                 discount_instance.delete()
 
         return {"message": "Discount policy removed successfully"}
@@ -740,7 +753,8 @@ class StoreController:
                     cursor.execute(
                         "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock_id]
                     )
-                    owner = get_or_set_cache(f"owner_{store.id}_{role.user_id}", Owner, user_id=role.user_id, store=store)
+                    owner = get_or_set_cache(f"owner_{store.id}_{role.user_id}", Owner, user_id=role.user_id,
+                                             store=store)
                     # if not Owner.objects.filter(
                     #         user_id=role.user_id, store=store
                     # ).exists():
@@ -767,7 +781,8 @@ class StoreController:
                     cursor.execute(
                         f"SELECT pg_advisory_xact_lock_shared({hash(discount_lock)});"
                     )
-                    discount = get_or_set_cache(f"discount_{store.id}_{payload.target_id}", DiscountBase, pk=payload.target_id)
+                    discount = get_or_set_cache(f"discount_{store.id}_{payload.target_id}", DiscountBase,
+                                                pk=payload.target_id)
                     conditions = discount.conditions.all()
                     #conditions not saved in cache
                 else:
@@ -777,7 +792,8 @@ class StoreController:
                     )
                     # first check if composite
                     try:
-                        policy = get_or_set_cache(f"purchase_policy_{store.id}_{payload.target_id}", CompositePurchasePolicy, pk=payload.target_id)
+                        policy = get_or_set_cache(f"purchase_policy_{store.id}_{payload.target_id}",
+                                                  CompositePurchasePolicy, pk=payload.target_id)
                         policies = policy.policies.all()
                         conditions = [
                             condition
@@ -785,7 +801,8 @@ class StoreController:
                             for condition in policy.conditions.all()
                         ]
                     except Http404:
-                        policy = get_or_set_cache(f"purchase_policy_{store.id}_{payload.target_id}", PurchasePolicyBase, pk=payload.target_id)
+                        policy = get_or_set_cache(f"purchase_policy_{store.id}_{payload.target_id}", PurchasePolicyBase,
+                                                  pk=payload.target_id)
                         conditions = policy.conditions.all()
         return conditions
 
@@ -800,13 +817,14 @@ class StoreController:
                         f"SELECT pg_advisory_xact_lock_shared({hash(policy_lock)});"
                     )
                     try:
-                        policy = get_or_set_cache(f"purchase_policy_{store.id}_{payload.target_id}", CompositePurchasePolicy, pk=payload.target_id)
+                        policy = get_or_set_cache(f"purchase_policy_{store.id}_{payload.target_id}",
+                                                  CompositePurchasePolicy, pk=payload.target_id)
                         return policy.combine_function
                     except Http404:
                         return None
 
     def validate_permissions(
-        self, role: RoleSchemaIn, store: Store, permission: str, cursor
+            self, role: RoleSchemaIn, store: Store, permission: str, cursor
     ):
         managing_lock = hash(f"{store.pk}_managing_lock")
         cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock])
@@ -814,7 +832,8 @@ class StoreController:
             owner = get_or_set_cache(f"owner_{store.id}_{role.user_id}", Owner, user_id=role.user_id, store=store)
         except Http404:
             try:
-                manager = get_or_set_cache(f"manager_{store.id}_{role.user_id}", Manager, user_id=role.user_id, store=store)
+                manager = get_or_set_cache(f"manager_{store.id}_{role.user_id}", Manager, user_id=role.user_id,
+                                           store=store)
             except Http404:
                 raise HttpError(403, "User is not an owner or manager of the store")
 
@@ -839,7 +858,8 @@ class StoreController:
                 if payload.initial_price <= 0:
                     raise HttpError(400, "Product price cannot be 0 or negative")
                 try:
-                    product = get_or_set_cache(f"store_product_{store.id}_{payload.name}", StoreProduct, store=store, name=payload.name) #if we get 404 thats good because it means product doesnt
+                    product = get_or_set_cache(f"store_product_{store.id}_{payload.name}", StoreProduct, store=store,
+                                               name=payload.name)  #if we get 404 thats good because it means product doesnt
                     #exist
                     raise HttpError(400, "Product with this name already exists in the store")
                 except Http404:
@@ -856,7 +876,8 @@ class StoreController:
                 self.validate_permissions(role, store, "can_delete_product", cursor)
                 products_lock = f"{store.pk}_products_lock"
                 cursor.execute(f"SELECT pg_advisory_xact_lock({hash(products_lock)});")
-                product = get_or_set_cache(f"store_product_{store.id}_{product_name}", StoreProduct, store=store, name=product_name)
+                product = get_or_set_cache(f"store_product_{store.id}_{product_name}", StoreProduct, store=store,
+                                           name=product_name)
                 product.delete()
 
         return {"message": "Product removed successfully"}
@@ -869,7 +890,8 @@ class StoreController:
                 self.validate_permissions(role, store, "can_edit_product", cursor)
                 products_lock = f"{store.pk}_products_lock"
                 cursor.execute(f"SELECT pg_advisory_xact_lock({hash(products_lock)});")
-                product = get_or_set_cache(f"store_product_{store.id}_{payload.name}", StoreProduct, store=store, name=payload.name)
+                product = get_or_set_cache(f"store_product_{store.id}_{payload.name}", StoreProduct, store=store,
+                                           name=payload.name)
                 if payload.quantity <= 0:
                     raise HttpError(
                         400,
@@ -897,7 +919,8 @@ class StoreController:
                     cursor.execute(
                         "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock]
                     )
-                    owner = get_or_set_cache(f"owner_{store.id}_{role.user_id}", Owner, user_id=role.user_id, store=store)
+                    owner = get_or_set_cache(f"owner_{store.id}_{role.user_id}", Owner, user_id=role.user_id,
+                                             store=store)
                     # if not Owner.objects.filter(
                     #         user_id=role.user_id, store=store
                     # ).exists():
@@ -929,7 +952,7 @@ class StoreController:
         return products
 
     def purchase_product(
-        self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
+            self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
     ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to purchase")
@@ -943,7 +966,8 @@ class StoreController:
                 products_lock = f"{store.pk}_products_lock"
                 cursor.execute(f"SELECT pg_advisory_xact_lock({hash(products_lock)});")
                 products = [
-                    get_or_set_cache(f"store_product_{store.id}_{item.product_name}", StoreProduct, store=store, name=item.product_name)
+                    get_or_set_cache(f"store_product_{store.id}_{item.product_name}", StoreProduct, store=store,
+                                     name=item.product_name)
                     for item in payload
                 ]
                 total_price = sum(
@@ -1001,7 +1025,7 @@ class StoreController:
         }
 
     def return_products(
-        self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
+            self, request, store_id: int, payload: List[PurchaseStoreProductSchema]
     ):
         if payload is None or len(payload) == 0:
             raise HttpError(400, "No products to return")
@@ -1013,7 +1037,8 @@ class StoreController:
                 products_lock = f"{store.pk}_products_lock"
                 cursor.execute(f"SELECT pg_advisory_xact_lock({hash(products_lock)});")
                 for item in payload:
-                    product = get_or_set_cache(f"store_product_{store.id}_{item.product_name}", StoreProduct, store=store, name=item.product_name)
+                    product = get_or_set_cache(f"store_product_{store.id}_{item.product_name}", StoreProduct,
+                                               store=store, name=item.product_name)
                     product.quantity += item.quantity
                     product.save()
 
@@ -1047,16 +1072,16 @@ class StoreController:
         return None
 
     def calculate_cart_discount(
-        self,
-        purchase_products: List[PurchaseStoreProductSchema],
-        store_id: int = None,
-        store: Store = None,
-        cursor=None,
+            self,
+            purchase_products: List[PurchaseStoreProductSchema],
+            store_id: int = None,
+            store: Store = None,
+            cursor=None,
     ):
         total_discount = 0
         # Retrieve only root discount models to avoid duplicates
         if (
-            cursor is not None and store is not None
+                cursor is not None and store is not None
         ):  # after we have the cursor on the db and the store itself
             discount_lock = f"{store.pk}_discount_lock"
             cursor.execute(
@@ -1080,7 +1105,7 @@ class StoreController:
         return total_discount
 
     def get_purchase_policy_instance(
-        self, purchase_model: PurchasePolicyBase, store: Store
+            self, purchase_model: PurchasePolicyBase, store: Store
     ):
         if isinstance(purchase_model, SimplePurchasePolicy):
             return SimplePurchasePolicyClass(
@@ -1109,11 +1134,11 @@ class StoreController:
         return None
 
     def validate_purchase_policy(
-        self,
-        payload: List[PurchaseStoreProductSchema],
-        store_id: int = None,
-        cursor=None,
-        store: Store = None,
+            self,
+            payload: List[PurchaseStoreProductSchema],
+            store_id: int = None,
+            cursor=None,
+            store: Store = None,
     ):  # Retrieve only root purchase models to avoid duplicates
         if cursor is not None and store is not None:
             policy_lock = f"{store.pk}_policy_lock"
@@ -1142,7 +1167,7 @@ class StoreController:
 
     #search is not used so i dont update cache
     def search_products(
-        self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
+            self, request, search_query: SearchSchema, filter_query: FilterSearchSchema
     ):
         with transaction.atomic():
             with connection.cursor() as cursor:
@@ -1425,7 +1450,8 @@ class StoreController:
                 cursor.execute(
                     f"SELECT pg_advisory_xact_lock_shared({hash(products_lock)});"
                 )
-                product = get_or_set_cache(f"store_product_{store.id}_{payload.product_name}", StoreProduct, store=store, name=payload.product_name)
+                product = get_or_set_cache(f"store_product_{store.id}_{payload.product_name}", StoreProduct,
+                                           store=store, name=payload.product_name)
                 bids_lock = f"{store.pk}_bids_lock"
                 cursor.execute(f"SELECT pg_advisory_xact_lock({hash(bids_lock)});")
                 bid = Bid.objects.create(
@@ -1476,9 +1502,11 @@ class StoreController:
                     role.store_id, "can_decide_on_bid"
                 )
                 try:
-                    manager = get_or_set_cache(f"manager_{store.id}_{role.user_id}", Manager, user_id=role.user_id, store=bid.store)
+                    manager = get_or_set_cache(f"manager_{store.id}_{role.user_id}", Manager, user_id=role.user_id,
+                                               store=bid.store)
                 except Http404:
-                    manager = get_or_set_cache(f"owner_{store.id}_{role.user_id}", Owner, user_id=role.user_id, store=bid.store)
+                    manager = get_or_set_cache(f"owner_{store.id}_{role.user_id}", Owner, user_id=role.user_id,
+                                               store=bid.store)
                 if manager in bid.accepted_by.all():
                     raise HttpError(400, "Manager has already accepted the bid")
                 # if manager not in managers_with_permission:
@@ -1488,8 +1516,8 @@ class StoreController:
                     owners_count = self.get_owners(None, role).count()
                     count_managers_with_permission = len(managers_with_permission)
                     if (
-                        bid.accepted_by.count()
-                        == owners_count + count_managers_with_permission
+                            bid.accepted_by.count()
+                            == owners_count + count_managers_with_permission
                     ):
                         bid.can_purchase = True
                         bid.save()  # Ensure bid is saved after setting can_purchase to True
@@ -1551,7 +1579,8 @@ class StoreController:
         managers_with_permission = []
         for manager in managers:
             try:
-                manager_permissions = get_or_set_cache(f"manager_permissions_{store.id}_{manager.id}", ManagerPermission, manager=manager)
+                manager_permissions = get_or_set_cache(f"manager_permissions_{store.id}_{manager.id}",
+                                                       ManagerPermission, manager=manager)
                 if getattr(manager_permissions, permission):
                     managers_with_permission.append(manager)
             except Http404:
@@ -1560,7 +1589,7 @@ class StoreController:
 
     def get_stores_that_manager_or_owner(self, request, user_id: int):
         stores = []
-        owners = Owner.objects.filter(user_id=user_id) #need all stores he manages so cache cannot be used here
+        owners = Owner.objects.filter(user_id=user_id)  #need all stores he manages so cache cannot be used here
         for owner in owners:
             stores.append(owner.store)
             cache.set(f"owner_{owner.store.id}_{owner.user_id}", owner)
@@ -1579,4 +1608,16 @@ class StoreController:
                 cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(bids_lock)});")
                 bids = Bid.objects.filter(store=store, product__name=payload.product_name)
                 cache.set_many({f"bid_{store.id}_{bid.id}": bid for bid in bids})
+                return bids
+
+    def get_bids_by_user(self, request, user_id: int):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock_shared(%s);", [store_lock])
+                stores = self.get_stores(user_id)
+                for store in stores:
+                    bids_lock = f"{store.pk}_bids_lock"
+                    cursor.execute(f"SELECT pg_advisory_xact_lock_shared({hash(bids_lock)});")
+                bids = Bid.objects.filter(user_id=user_id)
+                cache.set_many({f"bid_{bid.store_id}_{bid.id}": bid for bid in bids})
                 return bids
