@@ -61,12 +61,6 @@ def create_store(request, payload: StoreSchemaIn, user_id: int):
 def get_stores(request):
     return sc.get_stores(request)
 
-@router.get("/get_bids_by_user", response=List[BidSchemaOut])
-def get_bids_by_user(request, user_id: int):
-    return sc.get_bids_by_user(request, user_id)
-
-
-
 @router.post("/create_fake_data")
 def create_fake_data(request):
     return sc.create_fake_data()
