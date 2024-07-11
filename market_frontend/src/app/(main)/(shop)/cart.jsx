@@ -3,7 +3,9 @@ import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import axios from 'axios'
 import Link from 'next/link'
-
+import { UserContext } from '../layout';
+import {useContext } from 'react';
+import Alert from '@mui/material/Alert';
 
 const products = [
   {
@@ -50,6 +52,8 @@ async function removeProductFromCart(product, setDeletedProduct) {
 
 // Cart.js
 function Cart({ isOpen, setCart }) {
+  const { user } = useContext(UserContext); // Access user context
+  const [showAlert, setShowAlert] = useState(false)
  const [cartData, setCartData] = useState(
   {
     products: [],
@@ -61,6 +65,10 @@ function Cart({ isOpen, setCart }) {
  const [total_discount, setTotalDiscount] = useState(0);
 
  useEffect(() => {
+  if (!user.loggedIn) {
+    console.log("user not logged in. please login before making a purchase")
+    setShowAlert(true)
+  }
   if (isOpen || deletedProduct) {
     axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}cart`, {
       headers: { 'Content-Type': 'application/json' },
@@ -262,6 +270,18 @@ function Cart({ isOpen, setCart }) {
                   </div>
                                     <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
 
+                  {showAlert && (
+                          <Alert severity="error">Please login before making a purchase</Alert>
+                        )}
+                        {showAlert && (
+                          <p className="text-center text-xs text-gray-500">
+                            Not logged in?{' '}
+                            <Link href="/login" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
+                              Login here
+                            </Link>
+                          </p>
+                        )}
+                        {!showAlert && (
                         <button>
                         <a
                           href="/purchase_details"
@@ -269,7 +289,7 @@ function Cart({ isOpen, setCart }) {
                         >
                           Checkout
                         </a>
-                        </button>
+                        </button>)}
 
 
                         <div className="mt-6 flex justify-center text-center text-sm text-gray-500">
