@@ -27,21 +27,30 @@ class AbstractPaymentService(PaymentServiceInterface):
             or year == ""
         ):
             raise HttpError(400, "Invalid Payment Information")
+        year = "20" + year
+        handshake_payload = {
+            "action_type": "handshake",
+        }
+        response = requests.post(url, data=handshake_payload)
 
+        if response.status_code != 200:
+            raise HttpError(400, "Could not connect to payment service")
+        
         payload = {
             "action_type": "pay",
-            "amount": payment_details["total_price"],
+            "amount": str(payment_details["total_price"]),
             "currency": payment_details["currency"],
             "card_number": payment_details["credit_card_number"],
             "month": month,
             "year": year,
             "holder": payment_details["holder"],
-            "ccv": payment_details["security_code"],
+            "cvv": payment_details["security_code"],
             "id": payment_details["holder_identification_number"],
         }
+        
         response = requests.post(url, data=payload)
-        if response.status_code == 200:
-            result = response.json()
+        result = response.json()
+        if response.status_code == 200 and result != -1:
             return {"result": True, "transaction_id": result}
         else:
             return {"result": False, "transaction_id": -1}
@@ -50,8 +59,8 @@ class AbstractPaymentService(PaymentServiceInterface):
         url = "https://damp-lynna-wsep-1984852e.koyeb.app/"
         payload = {"action_type": "cancel_pay", "transaction_id": transaction_id}
         response = requests.post(url, data=payload)
-        if response.status_code == 200:
-            result = response.json()
+        result = response.json()
+        if response.status_code == 200 and result != -1:
             return {"result": result == 1}
         else:
             return {"result": False}

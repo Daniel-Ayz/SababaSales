@@ -15,6 +15,14 @@ class AbstractDeliveryService(DeliveryServiceInterface):
             and delivery_method["zip"] != ""
             and delivery_method["name"] != ""
         ):
+            
+            handshake_payload = {
+                "action_type": "handshake",
+            }
+            response = requests.post(url, data=handshake_payload)
+            if response.status_code != 200:
+                raise HttpError(400, "Could not connect to payment service")
+            
             payload = {
                 "action_type": "supply",
                 "address": delivery_method["address"],
@@ -27,9 +35,9 @@ class AbstractDeliveryService(DeliveryServiceInterface):
             raise HttpError(400, "Invalid Delivery Information")
 
         response = requests.post(url, data=payload)
-        if response.status_code == 200:
-            result = response.json()
+        result = response.json()
 
+        if response.status_code == 200 and result != -1:
             return {
                 "result": True,
                 "delivery_fee": 0.0,
@@ -42,8 +50,8 @@ class AbstractDeliveryService(DeliveryServiceInterface):
         url = "https://damp-lynna-wsep-1984852e.koyeb.app/"
         payload = {"action_type": "cancel_supply", "transaction_id": transaction_id}
         response = requests.post(url, data=payload)
-        if response.status_code == 200:
-            result = response.json()
+        result = response.json()
+        if response.status_code == 200 and result != -1:
             return {"result": result == 1}
         else:
             return {"result": False}

@@ -88,9 +88,9 @@ class TestPurchase(TransactionTestCase):
                 "holder": "Test User",
                 "holder_identification_number": "123456789",
                 "currency": "USD",
-                "credit_card_number": "123456789",
-                "expiration_date": "23/01",
-                "security_code": "123",
+                "credit_card_number": "1234567890123456",
+                "expiration_date": "01/30",
+                "security_code": "262",
             },
         )
 
