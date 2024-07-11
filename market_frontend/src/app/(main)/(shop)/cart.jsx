@@ -94,59 +94,53 @@ function Cart({ isOpen, setCart }) {
 
       var disc_prod = [];
       var disc = 0;
-      var total_disc = 0;
-      console.log(disc_prod)
-        cartData.baskets.forEach(basket => {
-          disc_prod = [];
 
-          basket.basket_products.forEach(product => {
-            disc_prod.push({
-              product_name: product.name,
-              category: product.category,
-              quantity: product.quantity,
-            });
+      console.log(disc_prod);
+
+      const discountPromises = cartData.baskets.map(basket => {
+        disc_prod = basket.basket_products.map(product => ({
+          product_name: product.name,
+          category: product.category,
+          quantity: product.quantity,
+        }));
+
+        return axios.post(`http://localhost:8000/api/stores/${basket.store_id}/calculate_cart_discount`,
+          disc_prod,  // Send disc_prod directly as the payload
+          {
+            headers: { 'Content-Type': 'application/json' },
+            withCredentials: true,
+          })
+          .then(response => {
+            console.log(parseFloat(response.data));
+            disc += parseFloat(response.data);
+          })
+          .catch(error => {
+            console.log(error);
           });
-          console.log("DISC PROD", disc_prod)
+      });
 
-          // setDiscount(0);
-          axios.post(`http://localhost:8000/api/stores/${basket.store_id}/calculate_cart_discount`,
-            disc_prod,  // Send disc_prod directly as the payload
-            {
-              headers: { 'Content-Type': 'application/json' },
-              withCredentials: true,
-            })
-            .then(response => {
-              console.log(parseFloat(response.data));
-              disc = disc + parseFloat(response.data);
-              setTotalDiscount(disc)
-              console.log("DISCOUNT1", disc)
-              // setDiscount(discount + parseFloat(response.data))
-              console.log("DISCOUNT2", total_discount)
-            })
-            .catch(error => {
-              console.log("ERRRRRRRRRR");
-              console.log(error);
-              // Handle errors here if needed
-            });
-            console.log("DISCOUNT2", disc)
+      Promise.all(discountPromises)
+        .then(() => {
+          setDiscount(disc);
+          console.log("Total Discount:", disc);
+        })
+        .catch(error => {
+          console.log("Error in processing discounts:", error);
         });
 
 
-      setCartData({ products: productsList });
-      // console.log("DISCOUNT", disc)
-      // console.log("TOTAL DISCOUNT", total_disc)
-      setDiscount(total_discount);
-      // console.log("TOTAL DISCOUNT", total_discount)
-      setTotalPrice(price);
-      setDeletedProduct(false);
-    })
-    .catch(error => {
-      console.log(error)
-      // console.log('fetching cart failed');
-      // Handle errors here if needed
-    });
-  }
-}, [isOpen,deletedProduct]); // Dependency array includes isOpen to refetch when cart is opened
+            setDiscount(disc);
+            setCartData({ products: productsList });
+            setTotalPrice(price);
+            setDeletedProduct(false);
+          })
+          .catch(error => {
+            console.log(error)
+            // console.log('fetching cart failed');
+            // Handle errors here if needed
+          });
+        }
+      }, [isOpen,deletedProduct]); // Dependency array includes isOpen to refetch when cart is opened
 
 
     return (
