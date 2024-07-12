@@ -3030,23 +3030,7 @@ class StoreAPITestCase(TransactionTestCase):
                     "quantity": 1,
                 },
             )
-
-    def test_get_bids_by_user(self):
-
-        try:
-            response = self.client.post(
-                "/{store_id}/make_bid",
-                json={
-                    "user_id": 100,
-                    "store_id": self.store_id,
-                    "product_name": "Bread Loaf",
-                    "price": 2,
-                    "quantity": 1,
-                },
-            )
             self.assertEqual(response.status_code, 200)
-
-            assert response.status_code == 200
 
             response = self.client.post(
                 "/{store_id}/make_bid",
@@ -3054,9 +3038,6 @@ class StoreAPITestCase(TransactionTestCase):
                     "user_id": 101,
                     "store_id": self.store_id,
                     "product_name": "Bread Loaf",
-                    "user_id": 100,
-                    "store_id": self.store_id,
-                    "product_name": "Milk",
                     "price": 5,
                     "quantity": 2,
                 },
@@ -3075,8 +3056,30 @@ class StoreAPITestCase(TransactionTestCase):
         finally:
             self.tearDown()
 
+    def test_get_bids_by_user(self):
+        try:
+            response = self.client.post(
+                "/{store_id}/make_bid",
+                json={
+                    "user_id": 100,
+                    "store_id": self.store_id,
+                    "product_name": "Bread Loaf",
+                    "price": 2,
+                    "quantity": 1,
+                },
+            )
+            assert response.status_code == 200
 
-
+            response = self.client.post(
+                "/{store_id}/make_bid",
+                json={
+                    "user_id": 100,
+                    "store_id": self.store_id,
+                    "product_name": "Milk",
+                    "price": 5,
+                    "quantity": 2,
+                },
+            )
             assert response.status_code == 200
 
             response = self.client.get(
