@@ -337,6 +337,9 @@ class UserController:
     def update_user_full_name(
         self, request, user_id, payload: FullnameSchemaIn
     ) -> UserSchema:
+        
+        if not payload.Full_Name:
+            raise HttpError(400, "Full name is required")
         user = CustomUser.objects.get(id=user_id)
         user.Full_Name = payload.Full_Name
         user.save()
@@ -345,6 +348,13 @@ class UserController:
     def update_user_Identification_Number(
         self, request, user_id, payload: IdentificationNumberSchemaIn
     ) -> UserSchema:
+        
+        if not payload.Identification_Number:
+            raise HttpError(400, "Identification number is required")
+        
+        if len(payload.Identification_Number) != 9:
+            raise HttpError(400, "Identification number must be 9 digits long")
+        
         user = CustomUser.objects.get(id=user_id)
         user.Identification_number = payload.Identification_Number
         user.save()
@@ -354,6 +364,15 @@ class UserController:
         self, request, user_id, payload: DeliveryInfoSchema
     ) -> UserSchema:
         user = CustomUser.objects.get(id=user_id)
+        if not payload.address:
+            raise HttpError(400, "All delivery information fields are required - address missing")
+        if not payload.city:
+            raise HttpError(400, "All delivery information fields are required - city missing")
+        if not payload.country:
+            raise HttpError(400, "All delivery information fields are required - country missing")
+        if not payload.zip:
+            raise HttpError(400, "All delivery information fields are required - zip missing")
+        
         try:
             delivery_info = DeliveryInformationUser.objects.get(user=user)
         except DeliveryInformationUser.DoesNotExist:
@@ -368,6 +387,20 @@ class UserController:
     def update_user_payment_info(
         self, request, user_id, payload: PaymentInfoSchema
     ) -> UserSchema:
+        
+        if len(payload.credit_card_number) != 16:
+            raise HttpError(400, "Credit card number must be 16 digits long")
+        
+        if len(payload.security_code) != 3:
+            raise HttpError(400, "Security code (CVV) must be 3 digits long")
+        
+        current_date = datetime.now()
+        credit_year = int(payload.expiration_date.split("/")[1])
+        credit_month = int(payload.expiration_date.split("/")[0])
+
+        if credit_year < current_date.year%2000 or (credit_year%2000 == current_date.year and credit_month < current_date.month):
+            raise HttpError(400, "Credit card expired")
+        
         user = CustomUser.objects.get(id=user_id)
         try:
             payment_info = PaymentInformationUser.objects.get(user=user)
