@@ -3,7 +3,9 @@ import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@
 import { XMarkIcon } from '@heroicons/react/24/outline'
 import axios from 'axios'
 import Link from 'next/link'
-
+import { UserContext } from '../layout';
+import {useContext } from 'react';
+import Alert from '@mui/material/Alert';
 
 const products = [
   {
@@ -32,7 +34,7 @@ const products = [
 async function removeProductFromCart(product, setDeletedProduct) {
 
 
-    axios.delete(`http://localhost:8000/api/users/cart/${product.id}`,
+    axios.delete(`${process.env.NEXT_PUBLIC_USERS_ROUTE}cart/${product.id}`,
     {headers: {'Content-Type': 'application/json'}, withCredentials: true})
     .then(function (response) {
       // set the user context and redirect:
@@ -50,6 +52,8 @@ async function removeProductFromCart(product, setDeletedProduct) {
 
 // Cart.js
 function Cart({ isOpen, setCart }) {
+  const { user } = useContext(UserContext); // Access user context
+  const [showAlert, setShowAlert] = useState(false)
  const [cartData, setCartData] = useState(
   {
     products: [],
@@ -57,15 +61,23 @@ function Cart({ isOpen, setCart }) {
  );
  const [deletedProduct, setDeletedProduct] = useState(false);
  const [totalPrice, setTotalPrice] = useState(0);
+ const [discount, setDiscount] = useState(0);
+ const [total_discount, setTotalDiscount] = useState(0);
 
  useEffect(() => {
-  if (isOpen) {
-    axios.get('http://localhost:8000/api/users/cart', {
+  if (!user.loggedIn) {
+    console.log("user not logged in. please login before making a purchase")
+    setShowAlert(true)
+  }
+  if (isOpen || deletedProduct) {
+    axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}cart`, {
       headers: { 'Content-Type': 'application/json' },
       withCredentials: true
     })
     .then(response => {
+      setTotalDiscount(0);
       const cartData = response.data;
+      console.log("CART DATA",cartData)
       const productsList = [];
       var price = 0;
 
@@ -80,26 +92,69 @@ function Cart({ isOpen, setCart }) {
             name: product.name,
             price: product.price,
             image_link: product.image_link,
+            category: product.category,
           });
         });
       });
       // Update the cart state with fetched data
-      setCartData({ products: productsList });
-      setTotalPrice(price);
-      setDeletedProduct(false);
-    })
-    .catch(error => {
-      console.log(error)
-      // console.log('fetching cart failed');
-      // Handle errors here if needed
-    });
-  }
-}, [isOpen,deletedProduct]); // Dependency array includes isOpen to refetch when cart is opened
+      // check for discount:
+      // var total_discount = 0;
+
+      var disc_prod = [];
+      var disc = 0;
+
+      console.log(disc_prod);
+
+      const discountPromises = cartData.baskets.map(basket => {
+        disc_prod = basket.basket_products.map(product => ({
+          product_name: product.name,
+          category: product.category,
+          quantity: product.quantity,
+        }));
+
+        return axios.post(`http://localhost:8000/api/stores/${basket.store_id}/calculate_cart_discount`,
+          disc_prod,  // Send disc_prod directly as the payload
+          {
+            headers: { 'Content-Type': 'application/json' },
+            withCredentials: true,
+          })
+          .then(response => {
+            console.log(parseFloat(response.data));
+            disc += parseFloat(response.data);
+          })
+          .catch(error => {
+            console.log(error);
+          });
+      });
+
+      Promise.all(discountPromises)
+        .then(() => {
+          setDiscount(disc);
+          console.log("Total Discount:", disc);
+        })
+        .catch(error => {
+          console.log("Error in processing discounts:", error);
+        });
+
+
+            setDiscount(disc);
+            setCartData({ products: productsList });
+            setTotalPrice(price);
+            setDeletedProduct(false);
+          })
+          .catch(error => {
+            console.log(error)
+            // console.log('fetching cart failed');
+            // Handle errors here if needed
+          });
+        }
+      }, [isOpen,deletedProduct]); // Dependency array includes isOpen to refetch when cart is opened
 
 
     return (
         <Transition show={isOpen}>
-        <Dialog className="relative z-10" onClose={() => setCart(false)}>
+        <Dialog className="relative z-10" onClose={() => {setCart(false)
+          setDiscount(0)}}>
           <TransitionChild
             enter="ease-in-out duration-500"
             enterFrom="opacity-0"
@@ -186,12 +241,47 @@ function Cart({ isOpen, setCart }) {
                       </div>
 
                       <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
-                        <div className="flex justify-between text-base font-medium text-gray-900">
-                          <p>Subtotal</p>
-                          <p>${totalPrice}</p>
-                        </div>
-                        <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
+                            <div className="flex justify-between text-base font-medium text-gray-900">
+                    <p>Subtotal</p>
+                    {discount > 0 ? (
+                      <p>
+                        <span className="line-through text-red-500">${totalPrice}</span>{' '}
+                        <span className="rainbow-text">
+                          It's your lucky day: ${totalPrice - discount}
+                        </span>
+                      </p>
+                    ) : (
+                      <p>${totalPrice}</p>
+                    )}
+                    <style jsx>{`
+                      .rainbow-text {
+                        background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet, red);
+                        background-size: 300% 100%;
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        animation: rainbow-animation 5s linear infinite;
+                      }
 
+                      @keyframes rainbow-animation {
+                        0% { background-position: 0% 50%; }
+                        100% { background-position: 100% 50%; }
+                      }
+                    `}</style>
+                  </div>
+                                    <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
+
+                  {showAlert && (
+                          <Alert severity="error">Please login before making a purchase</Alert>
+                        )}
+                        {showAlert && (
+                          <p className="text-center text-xs text-gray-500">
+                            Not logged in?{' '}
+                            <Link href="/login" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
+                              Login here
+                            </Link>
+                          </p>
+                        )}
+                        {!showAlert && (
                         <button>
                         <a
                           href="/purchase_details"
@@ -199,7 +289,7 @@ function Cart({ isOpen, setCart }) {
                         >
                           Checkout
                         </a>
-                        </button>
+                        </button>)}
 
 
                         <div className="mt-6 flex justify-center text-center text-sm text-gray-500">

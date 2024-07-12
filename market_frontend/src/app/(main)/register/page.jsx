@@ -36,7 +36,7 @@ export default function Example() {
   async function register(formData) {
 
 
-    axios.post('http://localhost:8000/api/users/register', {
+    axios.post(`${process.env.NEXT_PUBLIC_USERS_ROUTE}register`, {
       username:  formData.get('username'),
       email:  formData.get('email'),
       password:  formData.get('password'),
@@ -56,7 +56,7 @@ export default function Example() {
 
     });
 
-  //   const response = await fetch('http://localhost:8000/api/users/', {
+  //   const response = await fetch('${process.env.NEXT_PUBLIC_USERS_ROUTE}/', {
   //     method: 'GET',
   //     headers: {
   //       'Content-Type': 'application/json',

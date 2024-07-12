@@ -38,7 +38,7 @@ function classNames(...classes) {
 }
 async function handleLogout(setUser){
 
-    axios.post('http://localhost:8000/api/users/logout',
+    axios.post(`${process.env.NEXT_PUBLIC_USERS_ROUTE}logout`,
     {headers: {'Content-Type': 'application/json'}, withCredentials: true })
     .then(function (response) {
       // set the user context and redirect:

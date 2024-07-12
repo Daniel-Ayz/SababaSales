@@ -44,7 +44,6 @@ from .schemas import (
     ConditionSchemaOut,
     GetConditionsSchemaIn,
 )
-from django.shortcuts import get_object_or_404, aget_object_or_404
 
 from .store_controller import StoreController
 
@@ -63,6 +62,11 @@ def get_stores(request):
     return sc.get_stores(request)
 
 
+@router.get("/get_bids_by_user", response=List[BidSchemaOut])
+def get_bids_by_user(request, user_id: int):
+    return sc.get_bids_by_user(request, user_id)
+
+
 @router.post("/create_fake_data")
 def create_fake_data(request):
     return sc.create_fake_data()
@@ -70,7 +74,7 @@ def create_fake_data(request):
 
 @router.get("/search", response=List[StoreProductSchemaOut])
 def search_products(
-    request, search_query: SearchSchema, filter_query: FilterSearchSchema
+        request, search_query: SearchSchema, filter_query: FilterSearchSchema
 ):
     return sc.search_products(request, search_query, filter_query)
 
@@ -112,10 +116,10 @@ def remove_manager(request, payload: RemoveManagerSchemaIn):
 
 @router.post("/{store_id}/change_manager_permissions")
 def assign_manager_permissions(
-    request,
-    payload: ManagerPermissionSchemaIn,
-    manager: RoleSchemaIn,
-    assigning_owner_id: int,
+        request,
+        payload: ManagerPermissionSchemaIn,
+        manager: RoleSchemaIn,
+        assigning_owner_id: int,
 ):
     return sc.assign_manager_permissions(request, payload, manager, assigning_owner_id)
 
@@ -147,20 +151,20 @@ def get_managers(request, payload: RoleSchemaIn):
 
 @router.post("/{store_id}/add_purchase_policy")
 def add_purchase_policy(
-    request,
-    role: RoleSchemaIn,
-    payload: Union[
-        SimplePurchasePolicySchemaIn,
-        ConditionalPurchasePolicySchemaIn,
-        CompositePurchasePolicySchemaIn,
-    ],
+        request,
+        role: RoleSchemaIn,
+        payload: Union[
+            SimplePurchasePolicySchemaIn,
+            ConditionalPurchasePolicySchemaIn,
+            CompositePurchasePolicySchemaIn,
+        ],
 ):
     return sc.add_purchase_policy(request, role, payload).get("message")
 
 
 @router.delete("/{store_id}/remove_purchase_policy")
 def remove_purchase_policy(
-    request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
+        request, role: RoleSchemaIn, payload: RemovePurchasePolicySchemaIn
 ):
     return sc.remove_purchase_policy(request, role, payload)
 
@@ -181,18 +185,18 @@ def get_purchase_policies(request, role: RoleSchemaIn):
 
 @router.post("/{store_id}/add_discount_policy")
 def add_discount_policy(
-    request,
-    role: RoleSchemaIn,
-    payload: Union[
-        SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, CompositeDiscountSchemaIn
-    ],
+        request,
+        role: RoleSchemaIn,
+        payload: Union[
+            SimpleDiscountSchemaIn, ConditionalDiscountSchemaIn, CompositeDiscountSchemaIn
+        ],
 ):  # SimpleDiscountSchemaIn | ConditionalDiscountSchemaIn | CompositeDiscountSchemaIn
     return sc.add_discount_policy(request, role, payload).get("message")
 
 
 @router.delete("/{store_id}/remove_discount_policy")
 def remove_discount_policy(
-    request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
+        request, role: RoleSchemaIn, payload: RemoveDiscountSchemaIn
 ):
     return sc.remove_discount_policy(request, role, payload)
 
@@ -209,6 +213,11 @@ def remove_discount_policy(
 )
 def get_discount_policies(request, role: RoleSchemaIn):
     return sc.get_discount_policies(request, role)
+
+
+@router.post("/{store_id}/calculate_cart_discount", response=float)
+def calculate_cart_discount(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
+    return sc.calculate_cart_discount(purchase_products=payload, store_id=store_id)
 
 
 @router.post("/{store_id}/get_conditions", response=List[ConditionSchemaOut])
@@ -254,6 +263,11 @@ def purchase_product(request, store_id: int, payload: List[PurchaseStoreProductS
     return sc.purchase_product(request, store_id, payload)
 
 
+@router.post("/{store_id}/validate_purchase_policy")
+def validate_purchase_policy(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
+    return sc.validate_purchase_policy(payload=payload, store_id=store_id)
+
+
 @router.post("/{store_id}/make_bid")
 def make_bid(request, payload: BidSchemaIn):
     return sc.make_bid(request, payload)
@@ -273,7 +287,7 @@ def get_bids(request, role: RoleSchemaIn, store_id: int):
 def make_purchase_on_bid(request, payload: MakePurchaseOnBidSchemaIn):
     return sc.make_purchase_on_bid(request, payload)
 
-
 # @router.put("/{store_id}/return_products")
 # def return_products(request, store_id: int, payload: List[PurchaseStoreProductSchema]):
 #     return sc.return_products(request, store_id, payload)
+
