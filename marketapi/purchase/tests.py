@@ -9,6 +9,8 @@ from users.api import router as user_router
 from purchase.services.payment_service import AbstractPaymentService
 from purchase.services.delivery_service import AbstractDeliveryService
 
+from django.core.cache import cache
+
 
 # Create your tests here.
 class TestPurchase(TransactionTestCase):
@@ -98,6 +100,9 @@ class TestPurchase(TransactionTestCase):
                 "security_code": "262",
             },
         )
+
+    def tearDown(self):
+        cache.clear()
 
     def test_make_purchase_of_all_products_in_cart_positive(self):
         # Test 1: Positive test case, make purchase of all products in cart

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import { UserContext } from '../layout';
@@ -65,6 +65,9 @@ const PurchaseHistory = () => {
             ) : (
                 <p className="text-slate-500">No purchase history found.</p>
             )}
+            <div className="mt-8 text-center">
+                <a href="/" className="font-semibold leading-6 text-indigo-500 hover:text-indigo-500">Back to home page</a>
+            </div>
         </div>
     );
 };
