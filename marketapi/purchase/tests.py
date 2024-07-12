@@ -6,6 +6,9 @@ from .api import router
 from store.api import router as store_router
 from users.api import router as user_router
 
+from purchase.services.payment_service import AbstractPaymentService
+from purchase.services.delivery_service import AbstractDeliveryService
+
 
 # Create your tests here.
 class TestPurchase(TransactionTestCase):
@@ -15,6 +18,8 @@ class TestPurchase(TransactionTestCase):
         self.client = TestClient(router)
         self.store_client = TestClient(store_router)
         self.user_client = TestClient(user_router)
+        self.payment_service = AbstractPaymentService()
+        self.delivery_service = AbstractDeliveryService()
 
         # Register user and set up store
         response = self.user_client.post(
@@ -79,7 +84,7 @@ class TestPurchase(TransactionTestCase):
                 "address": "Test Address",
                 "city": "Test City",
                 "country": "Test Country",
-                "zip": "123456",
+                "zip": "1234567",
             },
         )
         self.user_client.post(
@@ -209,3 +214,275 @@ class TestPurchase(TransactionTestCase):
         self.assertEqual(response.json()["cart_id"], self.cart_id)
         self.assertEqual(response.json()["total_price"], 1000.00)
         self.assertEqual(response.json()["total_quantity"], 10)
+
+
+    #Unit tests for payment_service.py
+    def test_payment_service_is_expired(self):
+        # Test 8: Positive test case, check if a credit card is expired
+        self.assertTrue(self.payment_service.is_expired("01/20"))
+
+    def test_payment_service_is_not_expired(self):
+        # Test 9: Negative test case, check if a credit card is not expired
+        self.assertFalse(self.payment_service.is_expired("01/30"))
+
+    def test_payment_service_make_payment_positive(self):
+        # Test 10: Positive test case, make payment successfully
+        payment_details = {
+            "holder": "Test User",
+            "holder_identification_number": "123456789",
+            "currency": "USD",
+            "credit_card_number": "1234567890123456",
+            "expiration_date": "01/30",
+            "security_code": "262",
+            "total_price": 1000.00,
+        }
+
+        response = self.payment_service.process_payment(payment_details)
+        self.assertTrue(response["result"])
+        self.assertNotEqual(response["transaction_id"], -1)
+
+    def test_payment_service_make_payment_invalid_holder(self):
+        # Test 11: Negative test case, make payment with invalid holder
+        payment_details = {
+            "holder": "",
+            "holder_identification_number": "123456789",
+            "currency": "USD",
+            "credit_card_number": "1234567890123456",
+            "expiration_date": "01/30",
+            "security_code": "262",
+            "total_price": 1000,
+        }
+
+        with self.assertRaises(Exception) as context:
+            self.payment_service.process_payment(payment_details)
+        self.assertEqual(str(context.exception), "Invalid Payment Information")
+
+    def test_payment_service_make_payment_invalid_holder_identification_number(self):
+        # Test 12: Negative test case, make payment with invalid holder identification number
+        payment_details = {
+            "holder": "Test User",
+            "holder_identification_number": "12345678",
+            "currency": "USD",
+            "credit_card_number": "1234567890123456",
+            "expiration_date": "01/30",
+            "security_code": "262",
+            "total_price": 1000,
+        }
+
+        with self.assertRaises(Exception) as context:
+            self.payment_service.process_payment(payment_details)
+        self.assertEqual(str(context.exception), "Invalid Payment Information")
+
+    def test_payment_service_make_payment_invalid_currency(self):
+        # Test 13: Negative test case, make payment with invalid currency
+        payment_details = {
+            "holder": "Test User",
+            "holder_identification_number": "123456789",
+            "currency": "",
+            "credit_card_number": "1234567890123456",
+            "expiration_date": "01/30",
+            "security_code": "262",
+            "total_price": 1000,
+        }
+
+        with self.assertRaises(Exception) as context:
+            self.payment_service.process_payment(payment_details)
+        self.assertEqual(str(context.exception), "Invalid Payment Information")
+
+    def test_payment_service_make_payment_invalid_credit_card_number(self):
+        # Test 14: Negative test case, make payment with invalid credit card number
+        payment_details = {
+            "holder": "Test User",
+            "holder_identification_number": "123456789",
+            "currency": "USD",
+            "credit_card_number": "123456789012345",
+            "expiration_date": "01/30",
+            "security_code": "262",
+            "total_price": 1000,
+        }
+
+        with self.assertRaises(Exception) as context:
+            self.payment_service.process_payment(payment_details)
+        self.assertEqual(str(context.exception), "Invalid Payment Information")
+
+    def test_payment_service_make_payment_invalid_expiration_date(self):
+        # Test 15: Negative test case, make payment with invalid expiration date
+        payment_details = {
+            "holder": "Test User",
+            "holder_identification_number": "123456789",
+            "currency": "USD",
+            "credit_card_number": "1234567890123456",
+            "expiration_date": "00",
+            "security_code": "262",
+            "total_price": 1000,
+        }
+
+        with self.assertRaises(Exception) as context:
+            self.payment_service.process_payment(payment_details)
+        self.assertEqual(str(context.exception), "Invalid Payment Information")
+
+    def test_payment_service_make_payment_invalid_security_code(self):
+        # Test 16: Negative test case, make payment with invalid security code
+        payment_details = {
+            "holder": "Test User",
+            "holder_identification_number": "123456789",
+            "currency": "USD",
+            "credit_card_number": "1234567890123456",
+            "expiration_date": "01/30",
+            "security_code": "26",
+            "total_price": 1000,
+        }
+
+        with self.assertRaises(Exception) as context:
+            self.payment_service.process_payment(payment_details)
+        self.assertEqual(str(context.exception), "Invalid Payment Information")
+
+    def test_payment_service_make_payment_invalid_total_price(self):
+        # Test 17: Negative test case, make payment with invalid total price
+        payment_details = {
+            "holder": "Test User",
+            "holder_identification_number": "123456789",
+            "currency": "USD",
+            "credit_card_number": "1234567890123456",
+            "expiration_date": "01/30",
+            "security_code": "262",
+            "total_price": 0,
+        }
+
+        with self.assertRaises(Exception) as context:
+            self.payment_service.process_payment(payment_details)
+        self.assertEqual(str(context.exception), "Invalid Payment Information")
+
+    def test_payment_service_make_payment_bad_cvv(self):
+        # Test 18: Negative test case, make payment with invalid security code
+        payment_details = {
+            "holder": "Test User",
+            "holder_identification_number": "123456789",
+            "currency": "USD",
+            "credit_card_number": "1234567890123456",
+            "expiration_date": "01/30",
+            "security_code": "984",
+            "total_price": 1000,
+        }
+
+        response = self.payment_service.process_payment(payment_details)
+        self.assertFalse(response["result"])
+        self.assertEqual(response["transaction_id"], -1)
+
+    def test_payment_service_cancel_payment_positive(self):
+        # Test 19: Positive test case, cancel payment successfully
+        payment_details = {
+            "holder": "Test User",
+            "holder_identification_number": "123456789",
+            "currency": "USD",
+            "credit_card_number": "1234567890123456",
+            "expiration_date": "01/30",
+            "security_code": "262",
+            "total_price": 1000.00,
+        }
+
+        transaction_id = self.payment_service.process_payment(payment_details)["transaction_id"]
+
+        response = self.payment_service.cancel_payment(transaction_id)
+        self.assertTrue(response["result"])
+
+    
+    #Unit tests for delivery_service.py
+    def test_delivery_service_create_shipment_positive(self):
+        # Test 20: Positive test case, create shipment successfully
+        delivery_method = {
+            "address": "Test Address",
+            "city": "Test City",
+            "country": "Test Country",
+            "zip": "1234567",
+            "name": "Test User",
+        }
+
+        response = self.delivery_service.create_shipment(delivery_method)
+        self.assertTrue(response["result"])
+        self.assertNotEqual(response["transaction_id"], -1)
+
+    def test_delivery_service_create_shipment_invalid_address(self):
+        # Test 21: Negative test case, create shipment with invalid address
+        delivery_method = {
+            "address": "",
+            "city": "Test City",
+            "country": "Test Country",
+            "zip": "1234567",
+            "name": "Test User",
+        }
+
+        with self.assertRaises(Exception) as context:
+            self.delivery_service.create_shipment(delivery_method)
+        self.assertEqual(str(context.exception), "Invalid Delivery Information")
+
+    def test_delivery_service_create_shipment_invalid_city(self):
+        # Test 22: Negative test case, create shipment with invalid city
+        delivery_method = {
+            "address": "Test Address",
+            "city": "",
+            "country": "Test Country",
+            "zip": "1234567",
+            "name": "Test User",
+        }
+
+        with self.assertRaises(Exception) as context:
+            self.delivery_service.create_shipment(delivery_method)
+        self.assertEqual(str(context.exception), "Invalid Delivery Information")
+
+    def test_delivery_service_create_shipment_invalid_country(self):
+        # Test 23: Negative test case, create shipment with invalid country
+        delivery_method = {
+            "address": "Test Address",
+            "city": "Test City",
+            "country": "",
+            "zip": "1234567",
+            "name": "Test User",
+        }
+
+        with self.assertRaises(Exception) as context:
+            self.delivery_service.create_shipment(delivery_method)
+        self.assertEqual(str(context.exception), "Invalid Delivery Information")
+
+    def test_delivery_service_create_shipment_invalid_zip(self):
+        # Test 24: Negative test case, create shipment with invalid zip
+        delivery_method = {
+            "address": "Test Address",
+            "city": "Test City",
+            "country": "Test Country",
+            "zip": "123",
+            "name": "Test User",
+        }
+
+        with self.assertRaises(Exception) as context:
+            self.delivery_service.create_shipment(delivery_method)
+        self.assertEqual(str(context.exception), "Invalid Delivery Information")
+
+    def test_delivery_service_create_shipment_invalid_name(self):
+        # Test 25: Negative test case, create shipment with invalid name
+        delivery_method = {
+            "address": "Test Address",
+            "city": "Test City",
+            "country": "Test Country",
+            "zip": "1234567",
+            "name": "",
+        }
+
+        with self.assertRaises(Exception) as context:
+            self.delivery_service.create_shipment(delivery_method)
+        self.assertEqual(str(context.exception), "Invalid Delivery Information")
+
+    def test_delivery_service_cancel_shipment_positive(self):
+        # Test 26: Positive test case, cancel shipment successfully
+        transaction_id = self.delivery_service.create_shipment(
+            {
+                "address": "Test Address",
+                "city": "Test City",
+                "country": "Test Country",
+                "zip": "1234567",
+                "name": "Test User",
+            }
+        )["transaction_id"]
+
+        response = self.delivery_service.cancel_shipment(transaction_id)
+        self.assertTrue(response["result"])

@@ -319,11 +319,20 @@ class UserController:
                 currency="USD",
                 holder=user.Full_Name,
                 holder_identification_number=user.Identification_number,
-                credit_card_number="1234567890",
+                credit_card_number="1234567890123456",
                 expiration_date="12/25",
                 security_code="123",
             )
             payment_info.save()
+
+            delivery_info = DeliveryInformationUser.objects.create(
+                user=user,
+                address=f"Tzarfati Street",
+                city="Elifelet",
+                country= "Israel",
+                zip="1234567",
+            )
+            delivery_info.save()
 
         return {"msg": "Fake data created successfully"}
 

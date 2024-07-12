@@ -6,13 +6,16 @@ from ninja.errors import HttpError
 
 
 class AbstractDeliveryService(DeliveryServiceInterface):
+    
+    ZIP_LENGTH = 7
+
     def create_shipment(self, delivery_method: DeliveryMethod) -> dict:
         url = "https://damp-lynna-wsep-1984852e.koyeb.app/"
         if (
             delivery_method["address"] != ""
             and delivery_method["city"] != ""
             and delivery_method["country"] != ""
-            and delivery_method["zip"] != ""
+            and len(delivery_method["zip"]) == self.ZIP_LENGTH
             and delivery_method["name"] != ""
         ):
             
@@ -34,16 +37,19 @@ class AbstractDeliveryService(DeliveryServiceInterface):
         else:
             raise HttpError(400, "Invalid Delivery Information")
 
-        response = requests.post(url, data=payload)
-        result = response.json()
+        try:
+            response = requests.post(url, data=payload)
+            result = response.json()
 
-        if response.status_code == 200 and result != -1:
-            return {
-                "result": True,
-                "delivery_fee": 0.0,
-                "transaction_id": result,
-            }
-        else:
+            if response.status_code == 200 and result != -1:
+                return {
+                    "result": True,
+                    "delivery_fee": 0.0,
+                    "transaction_id": result,
+                }
+            else:
+                return {"result": False, "delivery_fee": 0.0, "transaction_id": -1}
+        except Exception as e:
             return {"result": False, "delivery_fee": 0.0, "transaction_id": -1}
 
     def cancel_shipment(self, transaction_id: int) -> dict:
