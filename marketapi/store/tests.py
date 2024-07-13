@@ -3139,3 +3139,23 @@ class StoreAPITestCase(TransactionTestCase):
             assert response.json() == {"detail": "Bid has already been purchased"}
         finally:
             self.tearDown()
+
+    def test_get_condition_fake_data(self):
+        try:
+            response = self.client.post(f"/create_fake_data")
+            assert response.status_code == 200
+
+            search_schema = {
+                "product_name": "Falafel Plate"
+            }
+            response = self.client.get("/search", json={"search_query": search_schema, "filter_query": {}})
+            assert response.status_code == 200
+            store_id = response.json()[0]["store"]["id"]
+            response = self.client.post(f"/{store_id}/get_purchase_policies", json={"user_id": 100, "store_id": store_id})
+            assert response.status_code == 200
+            for policy in response.json():
+                response = self.client.post(f"/{store_id}/get_conditions", json={"store_id": store_id, "to_discount": False, "target_id": policy["id"]})
+                assert response.status_code == 200
+
+        finally:
+            self.tearDown()

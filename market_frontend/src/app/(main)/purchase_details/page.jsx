@@ -1,6 +1,6 @@
 // pages/checkout.js
 "use client"
-import React, { useState, useContext } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import { UserContext } from '../layout';
 import { useRouter } from 'next/navigation';
@@ -15,6 +15,8 @@ export default function Details() {
   const [showAlert, setShowAlert] = useState(false);
   const [showAlertGood, setShowAlertGood] = useState(false);
   const [showAlertBad, setShowAlertBad] = useState(false);
+  const [paymentInfo, setPaymentInfo] = useState('');
+  const [deliveryInfo, setDeliveryInfo] = useState('');
   
   const router = useRouter();
 
@@ -36,6 +38,30 @@ export default function Details() {
     setShippingInfo({ ...shippingInfo, [name]: value });
   };
 
+  useEffect(() => {
+    // Fetch payment information when the component mounts
+    if (user.loggedIn) {
+      axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${user.id}/get_payment_information`)
+        .then(response => {
+          setPaymentInfo(response.data);
+        })
+        .catch(error => {
+          console.error('Error fetching payment information:', error);
+          // Handle error fetching payment information
+        });
+
+      axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${user.id}/get_delivery_information`)
+      .then(response => {
+        setDeliveryInfo(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching delivery information:', error);
+        // Handle error fetching delivery information
+      });
+    }
+  }, [user]);
+
+
   async function makePurchase(e) {
     e.preventDefault();
 
@@ -43,7 +69,7 @@ export default function Details() {
       console.log("user not logged in. please login before making a purchase");
       setShowAlert(true);
     } else {
-      axios.post(`http://localhost:8000/api/purchase/${user.id}/${user.cart_id}/make_purchase`)
+      axios.post(`${process.env.NEXT_PUBLIC_PURCHASE_ROUTE}${user.id}/${user.cart_id}/make_purchase`)
         .then(function (response) {
           console.log('Order successful:', response.data);
           setShowAlertGood(true);
@@ -86,92 +112,82 @@ export default function Details() {
         <div className="mb-4">
           <h2 className="text-lg font-semibold mb-2">Shipping Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        </div>
+      </div>
+
+          <div>
+            <h2 className="flex w-full justify-center text-lg font-semibold mb-4">Payment Information</h2>
             <input
               type="text"
-              name="firstName"
-              value={shippingInfo.firstName}
-              onChange={handleShippingChange}
-              placeholder="First name"
+              name="Holder:"
+              value={paymentInfo.holder}
+              placeholder="paymentInfo.holder"
               className="border p-2 w-full rounded"
             />
             <input
               type="text"
-              name="lastName"
-              value={shippingInfo.lastName}
-              onChange={handleShippingChange}
-              placeholder="Last name"
+              name="Identification Number:"
+              value={paymentInfo.holder_identification_number}
+              placeholder="paymentInfo.holder_identification_number"
               className="border p-2 w-full rounded"
             />
             <input
               type="text"
-              name="company"
-              value={shippingInfo.company}
-              onChange={handleShippingChange}
-              placeholder="Company"
+              name="Currency:"
+              value={paymentInfo.currency}
+              placeholder="paymentInfo.currency"
               className="border p-2 w-full rounded"
             />
             <input
               type="text"
-              name="address"
-              value={shippingInfo.address}
-              onChange={handleShippingChange}
-              placeholder="Address"
+              name="Credit Card Number:"
+              value={paymentInfo.credit_card_number}
+              placeholder="paymentInfo.credit_card_number"
               className="border p-2 w-full rounded"
             />
             <input
               type="text"
-              name="apartment"
-              value={shippingInfo.apartment}
-              onChange={handleShippingChange}
-              placeholder="Apartment, suite, etc."
-              className="border p-2 w-full rounded"
-            />
-            <input
-              type="text"
-              name="city"
-              value={shippingInfo.city}
-              onChange={handleShippingChange}
-              placeholder="City"
-              className="border p-2 w-full rounded"
-            />
-            <select
-              name="country"
-              value={shippingInfo.country}
-              onChange={handleShippingChange}
-              className="border p-2 w-full rounded"
-            >
-              <option value="United States">United States</option>
-              {/* Add more country options here */}
-            </select>
-            <input
-              type="text"
-              name="state"
-              value={shippingInfo.state}
-              onChange={handleShippingChange}
-              placeholder="State / Province"
-              className="border p-2 w-full rounded"
-            />
-            <input
-              type="text"
-              name="postalCode"
-              value={shippingInfo.postalCode}
-              onChange={handleShippingChange}
-              placeholder="Postal code"
-              className="border p-2 w-full rounded"
-            />
-            <input
-              type="text"
-              name="phone"
-              value={shippingInfo.phone}
-              onChange={handleShippingChange}
-              placeholder="Phone"
+              name="Expiration Date:"
+              value={paymentInfo.expiration_date}
+              placeholder="paymentInfo.expiration_date"
               className="border p-2 w-full rounded"
             />
           </div>
-        </div>
+
+          <div>
+            <h2 className="flex w-full justify-center text-lg font-semibold mb-4">Delivery Information</h2>
+            <input
+              type="text"
+              name="Address:"
+              value={deliveryInfo.address}
+              placeholder="deliveryInfo.address"
+              className="border p-2 w-full rounded"
+            />
+            <input
+              type="text"
+              name="City:"
+              value={deliveryInfo.city}
+              placeholder="deliveryInfo.city"
+              className="border p-2 w-full rounded"
+            />
+            <input
+              type="text"
+              name="Country:"
+              value={deliveryInfo.country}
+              placeholder="deliveryInfo.country"
+              className="border p-2 w-full rounded"
+            />
+            <input
+              type="text"
+              name="Zip:"
+              value={deliveryInfo.zip}
+              placeholder="deliveryInfo.zip"
+              className="border p-2 w-full rounded"
+            />
+          </div>
 
         <p className="flex w-full justify-center text-lg font-semibold mb-4">
-          Want to change payment details?{' '}
+          Want to change payment/delivery details?{' '}
           <Link href="/edit_profile" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
             Click here
           </Link>
