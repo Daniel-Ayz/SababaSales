@@ -113,27 +113,9 @@ class purchaseController:
         cart_id: int,
     ):
         try:
-            delivery_information_user = uc.get_delivery_information(request, user_id)
-            delivery_information_dict = {
-                "address": delivery_information_user["address"],
-                "city": delivery_information_user["city"],
-                "country": delivery_information_user["country"],
-                "zip": delivery_information_user["zip"],
-            }
-            delivery_information_dict["name"] = uc.get_user_full_name(request, user_id)
-
-            payment_information_user = uc.get_payment_information(request, user_id)
-            payment_details_dict = {
-                "currency": payment_information_user["currency"],
-                "credit_card_number": payment_information_user["credit_card_number"],
-                "expiration_date": payment_information_user["expiration_date"],
-                "security_code": payment_information_user["security_code"],
-                "total_price": 0,
-                "holder": uc.get_user_full_name(request, user_id),
-                "holder_identification_number": uc.get_user_identification_number(
-                    request, user_id
-                ),
-            }
+            delivery_information_dict = self.get_delivery_info_dict(request, user_id)
+            
+            payment_details_dict = self.get_payment_info_dict(request, user_id)
 
             with transaction.atomic():
                 cart = get_object_or_404(Cart, id=cart_id)
@@ -231,3 +213,41 @@ class purchaseController:
             raise e
         except Exception as e:
             raise HttpError(404, f"{str(e)}")
+
+    # -------------------- Make Bid Purchase --------------------
+    def purchase_bid(
+        self,
+        request,
+        user_id: int,
+        store_id: int,
+        bid_id: int
+    ):
+        pass    
+
+    # -------------------- Get Delivery Info --------------------
+    def get_delivery_info_dict(self, request, user_id: int):
+        delivery_information_user = uc.get_delivery_information(request, user_id)
+        delivery_information_dict = {
+            "address": delivery_information_user["address"],
+            "city": delivery_information_user["city"],
+            "country": delivery_information_user["country"],
+            "zip": delivery_information_user["zip"],
+        }
+        delivery_information_dict["name"] = uc.get_user_full_name(request, user_id)
+        return delivery_information_dict
+    
+    # -------------------- Get Payment Info --------------------
+    def get_payment_info_dict(self, request, user_id: int):
+        payment_information_user = uc.get_payment_information(request, user_id)
+        payment_details_dict = {
+            "currency": payment_information_user["currency"],
+            "credit_card_number": payment_information_user["credit_card_number"],
+            "expiration_date": payment_information_user["expiration_date"],
+            "security_code": payment_information_user["security_code"],
+            "total_price": 0,
+            "holder": uc.get_user_full_name(request, user_id),
+            "holder_identification_number": uc.get_user_identification_number(
+                request, user_id
+            ),
+        }
+        return payment_details_dict
