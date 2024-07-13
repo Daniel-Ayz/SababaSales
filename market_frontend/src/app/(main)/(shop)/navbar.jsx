@@ -212,7 +212,20 @@ export default function NavBar({setCart}) {
                                 'block px-4 py-2 text-sm text-gray-700'
                               )}
                             >
-                              Your Profile
+                              Edit Profile
+                            </a>
+                          )}
+                        </MenuItem>
+                        <MenuItem>
+                          {({ focus }) => (
+                            <a
+                              href="/bid_history"
+                              className={classNames(
+                                focus ? 'bg-gray-100' : '',
+                                'block px-4 py-2 text-sm text-gray-700'
+                              )}
+                            >
+                              Bid History
                             </a>
                           )}
                         </MenuItem>
