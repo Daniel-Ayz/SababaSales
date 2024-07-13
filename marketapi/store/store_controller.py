@@ -794,12 +794,15 @@ class StoreController:
                     try:
                         policy = get_or_set_cache(f"purchase_policy_{store.id}_{payload.target_id}",
                                                   CompositePurchasePolicy, pk=payload.target_id)
-                        policies = policy.policies.all()
-                        conditions = [
-                            condition
-                            for policy in policies
-                            for condition in policy.conditions.all()
-                        ]
+                        if isinstance(policy, CompositePurchasePolicy):
+                            policies = policy.policies.all()
+                            conditions = [
+                                condition
+                                for policy in policies
+                                for condition in policy.conditions.all()
+                            ]
+                        else:
+                            raise Http404 #only to go to exception
                     except Http404:
                         policy = get_or_set_cache(f"purchase_policy_{store.id}_{payload.target_id}", PurchasePolicyBase,
                                                   pk=payload.target_id)
