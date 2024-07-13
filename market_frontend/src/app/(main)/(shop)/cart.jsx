@@ -34,7 +34,7 @@ const products = [
 async function removeProductFromCart(product, setDeletedProduct) {
 
 
-    axios.delete(`${process.env.NEXT_PUBLIC_USERS_ROUTE}cart/${product.id}`,
+    axios.delete(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/cart/${product.id}`,
     {headers: {'Content-Type': 'application/json'}, withCredentials: true})
     .then(function (response) {
       // set the user context and redirect:
@@ -70,7 +70,7 @@ function Cart({ isOpen, setCart }) {
     setShowAlert(true)
   }
   if (isOpen || deletedProduct) {
-    axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}cart`, {
+    axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/cart`, {
       headers: { 'Content-Type': 'application/json' },
       withCredentials: true
     })

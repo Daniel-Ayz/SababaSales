@@ -65,7 +65,7 @@ export default function ManageStore({ params }) {
           store_id: store_id
         });
         for (let i = 0; i < owners_response.data.length; i++) {
-          const full_name = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${owners_response.data[i].user_id}/get_full_name`);
+          const full_name = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${owners_response.data[i].user_id}/get_full_name`);
           owners_response.data[i].Full_name = full_name.data;
         }
         setOwners(owners_response.data);
