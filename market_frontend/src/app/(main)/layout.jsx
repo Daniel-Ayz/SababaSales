@@ -22,7 +22,7 @@ const Layout = ({ children }) => {
   const [search, setSearch] = useState(null);
 
   useEffect(() => {
-    axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}`, {
+    axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/`, {
       headers: { 'Content-Type': 'application/json' },
       withCredentials: true
     })

@@ -36,7 +36,7 @@ export default function Example() {
   async function register(formData) {
 
 
-    axios.post(`${process.env.NEXT_PUBLIC_USERS_ROUTE}register`, {
+    axios.post(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/register`, {
       username:  formData.get('username'),
       email:  formData.get('email'),
       password:  formData.get('password'),

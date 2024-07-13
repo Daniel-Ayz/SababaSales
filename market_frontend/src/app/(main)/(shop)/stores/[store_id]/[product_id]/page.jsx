@@ -173,7 +173,7 @@ export default function ProductBuyingPage({ params }) {
 
             // Example POST request to add item to cart
             // console.log("DATAAAA", data);
-            const response = await axios.post(`${process.env.NEXT_PUBLIC_USERS_ROUTE}cart/products`, data,{headers: {'Content-Type': 'application/json'}, withCredentials: true});
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/cart/products`, data,{headers: {'Content-Type': 'application/json'}, withCredentials: true});
             console.log(response.data); // Log response from backend
 
             toast.success('Item added to cart!', {

@@ -29,7 +29,8 @@ function ChatApp() {
     useEffect(() => {
         console.log("ChatApp useEffect")
         /* Hard coded URL to localhost for development - websocket connection */
-        const url = `ws://localhost:8000/ws/socket-server/`;
+        const url = `${process.env.NEXT_PUBLIC_WS_HOST}`
+        // const url = `ws://localhost:8000/ws/socket-server/`;
         chatSocket.current = new WebSocket(url);
 
         chatSocket.current.onmessage = function(e) {
