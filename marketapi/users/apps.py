@@ -13,7 +13,6 @@ class UsersConfig(AppConfig):
         if "runserver" not in sys.argv:
             return True
 
-        from .consumers import reset_all_online_count
+        from .initialization_file import initialize
 
-        reset_all_online_count()
-        print("All users online count reset to 0")
+        initialize()
