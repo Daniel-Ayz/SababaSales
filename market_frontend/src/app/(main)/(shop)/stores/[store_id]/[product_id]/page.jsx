@@ -12,6 +12,7 @@ import Link from 'next/link'; // Import Link from next/link
 import { ArrowLeftIcon } from '@heroicons/react/24/solid'; // Adjust the icon import as per your setup
 import { CSSTransition } from 'react-transition-group';
 import { CurrencyDollarIcon } from '@heroicons/react/24/solid';
+import { CheckIcon } from '@heroicons/react/24/solid'; // Adjust the import based on your setup
 
 
 axios.defaults.withCredentials = true;
@@ -48,6 +49,9 @@ export default function ProductBuyingPage({ params }) {
     const [isBidDialogOpen, setIsBidDialogOpen] = useState(false);
     const [bidQuantity, setBidQuantity] = useState(1);
     const [bidPrice, setBidPrice] = useState('');
+    const [added, setAdded] = useState(false);
+    const[isActive, setIsActive] = useState(false);
+
     const handleSendBid =async () => {
         // Send bid logic
         setIsBidDialogOpen(false); // Close the dialog after sending the bid
@@ -176,15 +180,25 @@ export default function ProductBuyingPage({ params }) {
             const response = await axios.post(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/cart/products`, data,{headers: {'Content-Type': 'application/json'}, withCredentials: true});
             console.log(response.data); // Log response from backend
 
-            toast.success('Item added to cart!', {
-                position: 'top-right',
-                autoClose: 500,
-                hideProgressBar: false,
-                closeOnClick: true,
-                pauseOnHover: true,
-                draggable: true,
-                progress: undefined,
-            });
+            // toast.success('Item added to cart!', {
+            //     position: 'top-right',
+            //     autoClose: 500,
+            //     hideProgressBar: false,
+            //     closeOnClick: true,
+            //     pauseOnHover: true,
+            //     draggable: true,
+            //     progress: undefined,
+            // });
+            setAdded(true);
+            setIsActive(true);
+
+            // Reset the state after a short delay
+            setTimeout(() => {
+                setAdded(false);
+            }, 1000); // Adjust the duration as needed
+            setTimeout(() => {
+                setIsActive(false);
+            }, 100); // Adjust the duration as needed
 
             // Optionally, you can redirect after adding to cart
             // router.push('/cart'); // Redirect to cart page after successful add
@@ -224,9 +238,13 @@ export default function ProductBuyingPage({ params }) {
                             <span className="px-6 py-3 bg-gray-100 border-x border-gray-400 text-lg">{count}</span>
                             <button className="px-6 py-3 bg-gray-200 rounded-md shadow-md text-lg" onClick={() => setCount(count + 1)} disabled={count >= quantity}>+</button>
                         </div>
-                        <button className="mt-10 bg-blue-500 text-white px-6 py-3 rounded-md shadow-md flex items-center space-x-2 text-lg hover:bg-blue-600 transition duration-200" onClick={handleAddToCart}>
-                            <ShoppingCartIcon className="w-6" /> <span>Add To Cart</span>
-                        </button>
+   <button
+            className={`mt-10 ${added ? 'bg-purple-700' : 'bg-blue-500'} text-white px-6 py-3 rounded-md shadow-md flex items-center space-x-2 text-lg transition duration-200 ${isActive ? 'opacity-50' : ''}`}
+            onClick={handleAddToCart}
+        >
+            {added ? <CheckIcon className="w-6" /> : <ShoppingCartIcon className="w-6" />}
+            <span>{added ? 'Added to Cart!' : 'Add To Cart'}</span>
+        </button>
                          <button className="mt-4 bg-green-500 text-white px-6 py-3 rounded-md shadow-md flex items-center space-x-2 text-lg hover:bg-green-600 transition duration-200" onClick={() => setIsBidDialogOpen(true)}>
  <CurrencyDollarIcon className="h-6 w-6" />
                             <span>Bid on Product</span>
