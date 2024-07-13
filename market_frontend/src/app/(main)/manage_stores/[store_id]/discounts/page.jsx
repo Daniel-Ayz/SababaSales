@@ -45,7 +45,7 @@ export default function Discounts({ params }) {
       if (!user || !user.id) return;
 
       try {
-        const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_discount_policies`, {
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store_id}/get_discount_policies`, {
           user_id: user.id,
           store_id: store_id
         });
@@ -58,7 +58,7 @@ export default function Discounts({ params }) {
         for (const discount of response.data) {
           if (discount.hasOwnProperty('discount')) {
             conditionalDiscounts.push(discount);
-            const conditionsResponse = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_conditions`, {
+            const conditionsResponse = await axios.post(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store_id}/get_conditions`, {
               store_id: store_id,
               to_discount: true,
               target_id: discount.id
@@ -116,7 +116,7 @@ export default function Discounts({ params }) {
 
     if (discountType === 'simple'){
       try {
-        const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/add_discount_policy`, {
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store_id}/add_discount_policy`, {
           "role": {
             "user_id": user.id,
             "store_id": store_id,
@@ -143,7 +143,7 @@ export default function Discounts({ params }) {
     }
     else if (discountType === 'conditional'){
       try {
-        const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/add_discount_policy`, {
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store_id}/add_discount_policy`, {
           "role": {
             "user_id": user.id,
             "store_id": store_id,
@@ -199,7 +199,7 @@ export default function Discounts({ params }) {
           break;
       }
 
-      const response = await axios.delete(`http://localhost:8000/api/stores/${store_id}/remove_discount_policy`, {
+      const response = await axios.delete(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store_id}/remove_discount_policy`, {
         data: {
           role: {
             user_id: user.id,

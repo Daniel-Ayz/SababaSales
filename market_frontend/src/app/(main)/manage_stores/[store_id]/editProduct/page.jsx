@@ -37,7 +37,7 @@ export default function EditProduct({ params }) {
         console.log('Product data to be sent:', productData);
 
         try {
-            const response = await axios.put(`http://localhost:8000/api/stores/${store_id}/edit_product`, productData, {
+            const response = await axios.put(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store_id}/edit_product`, productData, {
                 headers: { 'Content-Type': 'application/json' },
                 withCredentials: true
             });

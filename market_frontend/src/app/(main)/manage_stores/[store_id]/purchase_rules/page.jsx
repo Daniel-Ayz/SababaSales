@@ -42,19 +42,19 @@ export default function PurchasePolicies({ params }) {
       if (!user || !user.id) return;
 
       try {
-        const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_purchase_policies`, {
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store_id}/get_purchase_policies`, {
           user_id: user.id,
           store_id: store_id
         });
 
         const policiesWithConditions = [];
         for (const policy of response.data) {
-          const conditionsResponse = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_conditions`, {
+          const conditionsResponse = await axios.post(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store_id}/get_conditions`, {
             store_id: store_id,
             to_discount: false,
             target_id: policy.id
           });
-          const combination_functions = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_combine_function`, {
+          const combination_functions = await axios.post(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store_id}/get_combine_function`, {
             store_id: store_id,
             to_discount: false,
             target_id: policy.id
@@ -128,7 +128,7 @@ export default function PurchasePolicies({ params }) {
 
       console.log('Adding policy with payload:', payload);
 
-      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/add_purchase_policy`, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store_id}/add_purchase_policy`, {
         role: {
           user_id: user.id,
           store_id: store_id,
@@ -157,7 +157,7 @@ export default function PurchasePolicies({ params }) {
   const handleRemovePolicy = async (index) => {
     try {
       const policyToRemove = purchasePolicies[index];
-      const response = await axios.delete(`http://localhost:8000/api/stores/${store_id}/remove_purchase_policy`, {
+      const response = await axios.delete(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store_id}/remove_purchase_policy`, {
         data: {
           role: {
             user_id: user.id,

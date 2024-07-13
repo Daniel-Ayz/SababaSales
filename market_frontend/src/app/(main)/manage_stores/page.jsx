@@ -21,7 +21,7 @@ export default function ManageStores() {
     }
 
     // Fetch existing stores for the user
-    axios.get(`http://localhost:8000/api/stores/manager_or_owner?user_id=${user.id}`, {
+    axios.get(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}manager_or_owner?user_id=${user.id}`, {
       headers: { 'Content-Type': 'application/json' }
     })
     .then(response => {
@@ -42,7 +42,7 @@ export default function ManageStores() {
         return;
       }
 
-      axios.post(`http://localhost:8000/api/stores/?user_id=${user.id}`, {
+      axios.post(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}?user_id=${user.id}`, {
         name: newStore,
         description: description,
       }, {
@@ -67,8 +67,8 @@ export default function ManageStores() {
 
   const toggleStoreActiveStatus = (storeId, isActive) => {
     const endpoint = isActive
-      ? `http://localhost:8000/api/stores/stores/%7Bstore_id%7D/close_store`
-      : `http://localhost:8000/api/stores/stores/%7Bstore_id%7D/reopen_store`;
+      ? `${process.env.NEXT_PUBLIC_SOTRES_ROUTE}stores/%7Bstore_id%7D/close_store`
+      : `${process.env.NEXT_PUBLIC_SOTRES_ROUTE}stores/%7Bstore_id%7D/reopen_store`;
 
     axios.put(endpoint, {
       user_id: user.id,
