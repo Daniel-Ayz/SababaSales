@@ -3089,3 +3089,53 @@ class StoreAPITestCase(TransactionTestCase):
             assert len(response.json()) == 2
         finally:
             self.tearDown()
+
+    def test_purchase_bid_twice(self):
+        try:
+            response = self.client.post(
+                "/{store_id}/make_bid",
+                json={
+                    "user_id": 100,
+                    "store_id": self.store_id,
+                    "product_name": "Bread Loaf",
+                    "price": 2,
+                    "quantity": 1,
+                },
+            )
+            assert response.status_code == 200
+
+            self.assertEqual(response.status_code, 200)
+            role_payload = {"user_id": self.user_id, "store_id": self.store_id}
+            bid_payload = {"bid_id": 1, "decision": 1}
+
+            response = self.client.put(
+                f"/{self.store_id}/decide_on_bid",
+                json={"role": role_payload, "payload": bid_payload},
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
+
+            role_payload = {"user_id": self.owner2_id, "store_id": self.store_id}
+            bid_payload = {"bid_id": 1, "decision": 1}
+
+            response = self.client.put(
+                f"/{self.store_id}/decide_on_bid",
+                json={"role": role_payload, "payload": bid_payload},
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
+
+            response = self.client.put(
+                f"/{self.store_id}/make_purchase_on_bid",
+                json={"store_id": self.store_id, "bid_id": 1}
+            )
+            assert response.status_code == 200
+
+            response = self.client.put(
+                f"/{self.store_id}/make_purchase_on_bid",
+                json={"store_id": self.store_id, "bid_id": 1}
+            )
+            assert response.status_code == 400
+            assert response.json() == {"detail": "Bid has already been purchased"}
+        finally:
+            self.tearDown()
