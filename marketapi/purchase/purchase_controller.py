@@ -227,15 +227,6 @@ class purchaseController:
             delivery_information_dict = self.get_delivery_info_dict(request, user_id)
             payment_details_dict = self.get_payment_info_dict(request, user_id)
             with transaction.atomic():
-                bid = Bid.objects.get(id=bid_id)
-                purchase = BidPurchase.objects.create(
-                    bid=bid,
-                    purchase_date=datetime.now(),
-                    total_price=bid.price,
-                    total_quantity=bid.quantity,
-                    product=bid.product,
-                )
-
                 schema = MakePurchaseOnBidSchemaIn(
                     store_id=store_id, bid_id=bid_id
                 )
@@ -246,6 +237,14 @@ class purchaseController:
                     )
                 except HttpError as e:
                     raise HttpError(400, str(e))
+
+                purchase = BidPurchase.objects.create(
+                    bid_id=bid_id,
+                    purchase_date=datetime.now(),
+                    total_price=response["price"],
+                    total_quantity=response["quantity"],
+                    product_name=response["product"],
+                )
 
                 total_price = response["price"]
                 
@@ -276,7 +275,7 @@ class purchaseController:
                 "purchase_date": purchase.purchase_date,
                 "total_price": purchase.total_price,
                 "total_quantity": purchase.total_quantity,
-                "product": purchase.product,
+                "product": purchase.product_name,
             }
         
         except CustomUser.DoesNotExist as e:

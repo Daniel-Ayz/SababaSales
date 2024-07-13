@@ -1570,7 +1570,7 @@ class StoreController:
                 product.save()
                 #bid.delete()  # delete bid after purchase
                 #bid is not deleted to keep track of proudcts a bid was put on
-        return {"message": "Purchase made successfully", "price": price}
+        return {"message": "Purchase made successfully", "price": price, "quantity": bid.quantity, "product": product.name}  
 
     def get_managers_with_permissions(self, store_id: int, permission: str):
         store = get_or_set_cache(f"store_{store_id}", Store, pk=store_id)
