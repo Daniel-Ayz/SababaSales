@@ -10,6 +10,9 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Link from 'next/link'; // Import Link from next/link
 import { ArrowLeftIcon } from '@heroicons/react/24/solid'; // Adjust the icon import as per your setup
+import { CSSTransition } from 'react-transition-group';
+import { CurrencyDollarIcon } from '@heroicons/react/24/solid';
+
 
 axios.defaults.withCredentials = true;
 
@@ -41,6 +44,85 @@ export default function ProductBuyingPage({ params }) {
     const { storesProducts } = useContext(StoreProductsContext);
     const [product, setProduct] = useState(null);
     const [count, setCount] = useState(0);
+    const [bidcount, setBidCount] = useState(0);
+    const [isBidDialogOpen, setIsBidDialogOpen] = useState(false);
+    const [bidQuantity, setBidQuantity] = useState(1);
+    const [bidPrice, setBidPrice] = useState('');
+    const handleSendBid =async () => {
+        // Send bid logic
+        setIsBidDialogOpen(false); // Close the dialog after sending the bid
+        // check that bid is a number and not a string:
+        if (isNaN(bidPrice)) {
+            toast.error('Please enter a valid number for your bid price', {
+                position: 'top-right',
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+            return
+        }
+        if(!user.loggedIn){
+            toast.error('Please login to bid on this product', {
+                position: 'top-right',
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+            return
+        }
+        try {
+            // Example of data to send to backend for adding to cart
+            const data = {
+                product_name: product.name,
+                user_id: user.id,
+                price: bidPrice,
+                store_id: store_id,
+                quantity: bidQuantity,
+
+
+            };
+
+            // Example POST request to add item to cart
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}${store_id}/make_bid`, data,{headers: {'Content-Type': 'application/json'}, withCredentials: true});
+            console.log(response.data); // Log response from backend
+
+            toast.success('Bid sent successfully. Make sure you keep track of it in your bid history!', {
+                position: 'top-right',
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+
+            // Optionally, you can redirect after adding to cart
+            // router.push('/cart'); // Redirect to cart page after successful add
+
+        } catch (error) {
+            console.error('Error sending bid offer to store', error);
+            toast.error('Failed to add item to cart. Please try again later.', {
+                position: 'top-right',
+                autoClose: 3000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+            });
+        }
+
+
+
+
+    };
+
 
     useEffect(() => {
         const storeProducts = storesProducts[store_id];
@@ -145,10 +227,51 @@ export default function ProductBuyingPage({ params }) {
                         <button className="mt-10 bg-blue-500 text-white px-6 py-3 rounded-md shadow-md flex items-center space-x-2 text-lg hover:bg-blue-600 transition duration-200" onClick={handleAddToCart}>
                             <ShoppingCartIcon className="w-6" /> <span>Add To Cart</span>
                         </button>
+                         <button className="mt-4 bg-green-500 text-white px-6 py-3 rounded-md shadow-md flex items-center space-x-2 text-lg hover:bg-green-600 transition duration-200" onClick={() => setIsBidDialogOpen(true)}>
+ <CurrencyDollarIcon className="h-6 w-6" />
+                            <span>Bid on Product</span>
+                        </button>
                     </div>
                 </div>
             </main>
             <ToastContainer />
+{isBidDialogOpen && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center transition-opacity duration-900 ease-in-out">
+        <div className="bg-white rounded-lg p-8 space-y-4 w-[80vw] md:w-[40vw] transform transition-transform duration-900 ease-in-out scale-100">
+            <h2 className="text-2xl font-bold">Bid on Product</h2>
+            <div className="flex flex-col space-y-4">
+                <div className="flex items-center space-x-4">
+                    <label className="w-1/3 text-lg">Quantity:</label>
+                    <input
+                        type="number"
+                        min="1"
+                        max={quantity}
+                        value={bidQuantity}
+                        onChange={(e) => setBidQuantity(e.target.value)}
+                        className="flex-1 px-4 py-2 border rounded-md"
+                    />
+                </div>
+                <div className="flex items-center space-x-4">
+                    <label className="w-1/3 text-lg">Price:</label>
+                    <div className="flex-1 flex items-center">
+                        <span className="px-4 py-2 border border-r-0 rounded-l-md bg-gray-200">$</span>
+                        <input
+                            type="number"
+                            value={bidPrice}
+                            onChange={(e) => setBidPrice(e.target.value.replace(/\D/, ''))} // Removes non-numeric characters
+                            className="flex-1 px-4 py-2 border rounded-r-md"
+                        />
+                    </div>
+                </div>
+            </div>
+            <div className="flex justify-end space-x-4 mt-4">
+                <button className="px-4 py-2 bg-gray-200 rounded-md" onClick={() => setIsBidDialogOpen(false)}>Cancel</button>
+                <button className="px-4 py-2 bg-blue-500 text-white rounded-md" onClick={handleSendBid}>Send Bid</button>
+            </div>
+        </div>
+    </div>
+)}
+
         </div>
     );
 }
