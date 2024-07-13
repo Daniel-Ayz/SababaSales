@@ -25,7 +25,17 @@ export default function ManageBids({ params }) {
           store_id: store_id,
         });
 
-        setBids(response.data);
+        const bidsWithNames = await Promise.all(
+          response.data.map(async bid => {
+            const nameResponse = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${bid.user_id}/get_full_name`);
+            return {
+              ...bid,
+              bidder_name: nameResponse.data,
+            };
+          })
+        );
+
+        setBids(bidsWithNames);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching bids:", error);
@@ -84,27 +94,33 @@ export default function ManageBids({ params }) {
         {bids.length === 0 ? (
           <p>No bids available.</p>
         ) : (
-          bids.map((bid, index) => (
-            <div key={index} className="bg-white p-4 rounded shadow">
-              <div><strong>Product Name:</strong> {bid.product_name}</div>
-              <div><strong>Bidder:</strong> {bid.bidder_name}</div>
-              <div><strong>Bid Amount:</strong> ${bid.bid_amount}</div>
-              <div className="flex space-x-4 mt-4">
-                <button
-                  onClick={() => handleDecision(bid.id, true)}
-                  className="bg-green-500 hover:bg-green-400 text-white font-semibold py-2 px-4 rounded-md"
-                >
-                  Accept
-                </button>
-                <button
-                  onClick={() => handleDecision(bid.id, false)}
-                  className="bg-red-500 hover:bg-red-400 text-white font-semibold py-2 px-4 rounded-md"
-                >
-                  Decline
-                </button>
+          bids.map((bid, index) => {
+            const hasDecided = bid.accepted_by.some(manager => manager.user_id === user.id);
+            return (
+              <div key={index} className={`bg-white p-4 rounded shadow ${hasDecided ? "opacity-50" : ""}`}>
+                <div><strong>Product Name:</strong> {bid.product.name}</div>
+                <div><strong>Bidder:</strong> {bid.bidder_name}</div>
+                <div><strong>Bid Quantity:</strong> {bid.quantity}</div>
+                <div><strong>Bid Offer:</strong> {bid.price}$</div>
+                {!hasDecided && (
+                  <div className="flex space-x-4 mt-4">
+                    <button
+                      onClick={() => handleDecision(bid.id, true)}
+                      className="bg-green-500 hover:bg-green-400 text-white font-semibold py-2 px-4 rounded-md"
+                    >
+                      Accept
+                    </button>
+                    <button
+                      onClick={() => handleDecision(bid.id, false)}
+                      className="bg-red-500 hover:bg-red-400 text-white font-semibold py-2 px-4 rounded-md"
+                    >
+                      Decline
+                    </button>
+                  </div>
+                )}
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
       <ToastContainer />
