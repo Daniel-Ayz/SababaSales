@@ -55,7 +55,7 @@ export default function ProductBuyingPage({ params }) {
         if (isNaN(bidPrice)) {
             toast.error('Please enter a valid number for your bid price', {
                 position: 'top-right',
-                autoClose: 3000,
+                autoClose: 500,
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
@@ -67,7 +67,7 @@ export default function ProductBuyingPage({ params }) {
         if(!user.loggedIn){
             toast.error('Please login to bid on this product', {
                 position: 'top-right',
-                autoClose: 3000,
+                autoClose: 500,
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
@@ -94,7 +94,7 @@ export default function ProductBuyingPage({ params }) {
 
             toast.success('Bid sent successfully. Make sure you keep track of it in your bid history!', {
                 position: 'top-right',
-                autoClose: 3000,
+                autoClose: 500,
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
@@ -109,7 +109,7 @@ export default function ProductBuyingPage({ params }) {
             console.error('Error sending bid offer to store', error);
             toast.error('Error sending bid offer to store.', {
                 position: 'top-right',
-                autoClose: 3000,
+                autoClose: 500,
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
@@ -147,8 +147,8 @@ export default function ProductBuyingPage({ params }) {
       const handleAddToCart = async () => {
         if (count === 0) {
             toast.error('You must add at least one item', {
-                position: 'top-right',
-                autoClose: 3000,
+                position: 'bottom-right',
+                autoClose: 500,
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
@@ -178,7 +178,7 @@ export default function ProductBuyingPage({ params }) {
 
             toast.success('Item added to cart!', {
                 position: 'top-right',
-                autoClose: 3000,
+                autoClose: 500,
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
@@ -193,7 +193,7 @@ export default function ProductBuyingPage({ params }) {
             console.error('Error adding item to cart:', error);
             toast.error('Failed to add item to cart. Please try again later.', {
                 position: 'top-right',
-                autoClose: 3000,
+                autoClose: 500,
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
