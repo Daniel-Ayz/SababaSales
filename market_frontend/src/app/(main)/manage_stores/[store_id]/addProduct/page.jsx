@@ -37,7 +37,7 @@ export default function AddProduct({ params }) {
         console.log('Product data to be sent:', productData);
 
         try {
-            const response = await axios.post(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store_id}/add_product`, productData, {
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}${store_id}/add_product`, productData, {
                 headers: { 'Content-Type': 'application/json' },
                 withCredentials: true
             });

@@ -112,7 +112,7 @@ function Cart({ isOpen, setCart }) {
           quantity: product.quantity,
         }));
 
-        return axios.post(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${basket.store_id}/calculate_cart_discount`,
+        return axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}${basket.store_id}/calculate_cart_discount`,
           disc_prod,  // Send disc_prod directly as the payload
           {
             headers: { 'Content-Type': 'application/json' },

@@ -17,7 +17,7 @@ const StorePage = ({ params }) => {
     const fetchStoreData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${storeid}/products`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_STORES_ROUTE}${storeid}/products`);
         setProducts(response.data);
         setLoading(false);
       } catch (error) {

@@ -31,7 +31,7 @@ const {storesProducts, setStoresProducts}= useContext(StoreProductsContext);
 
         const fetchProducts = stores.map(async (store) => {
           try {
-            const storeResponse = await axios.get(`${process.env.NEXT_PUBLIC_SOTRES_ROUTE}${store.id}/products`, {
+            const storeResponse = await axios.get(`${process.env.NEXT_PUBLIC_STORES_ROUTE}${store.id}/products`, {
               headers: { 'Content-Type': 'application/json' },
               withCredentials: true
             });
