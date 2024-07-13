@@ -222,6 +222,10 @@ class UserController:
         try:
             product = BasketProduct.objects.get(id=basket_product_id)
             product.delete()
+            basket = product.basket
+            basket_products = BasketProduct.objects.filter(basket=basket)
+            if not basket_products:
+                basket.delete()
             return {"msg": "Product deleted"}
         except BasketProduct.DoesNotExist as e:
             return {"error": "Product not found"}

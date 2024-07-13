@@ -270,10 +270,10 @@ function Cart({ isOpen, setCart }) {
                   </div>
                                     <p className="mt-0.5 text-sm text-gray-500">Shipping and taxes calculated at checkout.</p>
 
-                  {showAlert && (
+                  {!user.loggedIn && (
                           <Alert severity="error">Please login before making a purchase</Alert>
                         )}
-                        {showAlert && (
+                        {!user.loggedIn && (
                           <p className="text-center text-xs text-gray-500">
                             Not logged in?{' '}
                             <Link href="/login" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
@@ -281,7 +281,7 @@ function Cart({ isOpen, setCart }) {
                             </Link>
                           </p>
                         )}
-                        {!showAlert && (
+                        {user.loggedIn && (
                         <button>
                         <a
                           href="/purchase_details"
