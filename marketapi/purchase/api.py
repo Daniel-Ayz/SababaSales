@@ -32,7 +32,13 @@ def get_purchase_receipt(request, purchase_id: int):
 
 # -------------------- Make Purchase --------------------
 
-
 @router.post("/{user_id}/{cart_id}/make_purchase")
 def make_purchase(request, user_id, cart_id: int):
     return pc.make_purchase(request, user_id, cart_id)
+
+
+# -------------------- Make Bid Purchase --------------------
+
+@router.post("/{user_id}/{store_id}/{bid_id}/make_bid_purchase")
+def make_bid_purchase(request, user_id: int, store_id: int, bid_id: int):
+    return pc.purchase_bid(request, user_id, store_id, bid_id)
