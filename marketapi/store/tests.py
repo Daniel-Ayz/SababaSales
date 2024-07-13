@@ -342,7 +342,9 @@ class StoreAPITestCase(TransactionTestCase):
                 json={"user_id": self.user_id, "store_id": self.store_id},
             )
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json(), {"message": "Product removed successfully"})
+            self.assertEqual(
+                response.json(), {"message": "Product removed successfully"}
+            )
         finally:
             self.tearDown()
 
@@ -362,7 +364,9 @@ class StoreAPITestCase(TransactionTestCase):
                 },
             )
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json(), {"message": "Product edited successfully"})
+            self.assertEqual(
+                response.json(), {"message": "Product edited successfully"}
+            )
         finally:
             self.tearDown()
 
@@ -704,7 +708,9 @@ class StoreAPITestCase(TransactionTestCase):
 
             # Verify the response status code and message
             assert response.status_code == 200
-            assert response.json().get("message") == "Discount policy removed successfully"
+            assert (
+                response.json().get("message") == "Discount policy removed successfully"
+            )
 
             # check if the discount policy is removed
             response = self.client.post(
@@ -1171,7 +1177,11 @@ class StoreAPITestCase(TransactionTestCase):
             response = self.client.put(
                 f"/{self.store_id}/purchase_product",
                 json=[
-                    {"product_name": "Cottage Cheese", "category": "Dairy", "quantity": 3},
+                    {
+                        "product_name": "Cottage Cheese",
+                        "category": "Dairy",
+                        "quantity": 3,
+                    },
                     {"product_name": "Yogurt", "category": "Dairy", "quantity": 1},
                 ],
             )
@@ -1227,7 +1237,11 @@ class StoreAPITestCase(TransactionTestCase):
             response = self.client.put(
                 f"/{self.store_id}/purchase_product",
                 json=[
-                    {"product_name": "Cottage Cheese", "category": "Dairy", "quantity": 2},
+                    {
+                        "product_name": "Cottage Cheese",
+                        "category": "Dairy",
+                        "quantity": 2,
+                    },
                     {"product_name": "Yogurt", "category": "Dairy", "quantity": 1},
                 ],
             )
@@ -1358,7 +1372,9 @@ class StoreAPITestCase(TransactionTestCase):
 
             # Verify the response status code and message
             assert response.status_code == 200
-            assert response.json().get("message") == "Discount policy removed successfully"
+            assert (
+                response.json().get("message") == "Discount policy removed successfully"
+            )
 
             # check if the discount policy is removed
             response = self.client.post(
@@ -1490,7 +1506,10 @@ class StoreAPITestCase(TransactionTestCase):
                 "condition": condition2,
             }
 
-            conditions = [simple_purchase_policy_payload1, simple_purchase_policy_payload2]
+            conditions = [
+                simple_purchase_policy_payload1,
+                simple_purchase_policy_payload2,
+            ]
             combine_function = "logical_and"
 
             composite_purchase_policy_payload = {
@@ -1638,7 +1657,9 @@ class StoreAPITestCase(TransactionTestCase):
             # Purchase a product
             response = self.client.put(
                 f"/{self.store_id}/purchase_product",
-                json=[{"product_name": "Tomato", "category": "Vegetables", "quantity": 6}],
+                json=[
+                    {"product_name": "Tomato", "category": "Vegetables", "quantity": 6}
+                ],
             )
 
             # Verify the response status code and message
@@ -1677,7 +1698,9 @@ class StoreAPITestCase(TransactionTestCase):
             # Purchase a product
             response = self.client.put(
                 f"/{self.store_id}/purchase_product",
-                json=[{"product_name": "Tomato", "category": "Vegetables", "quantity": 5}],
+                json=[
+                    {"product_name": "Tomato", "category": "Vegetables", "quantity": 5}
+                ],
             )
 
             # Verify the response status code and message
@@ -1799,7 +1822,9 @@ class StoreAPITestCase(TransactionTestCase):
             # Purchase a product
             response = self.client.put(
                 f"/{self.store_id}/purchase_product",
-                json=[{"product_name": "Tomato", "category": "Vegetables", "quantity": 5}],
+                json=[
+                    {"product_name": "Tomato", "category": "Vegetables", "quantity": 5}
+                ],
             )
 
             assert response.status_code == 200
@@ -1835,7 +1860,10 @@ class StoreAPITestCase(TransactionTestCase):
                 "condition": condition2,
             }
 
-            conditions = [simple_purchase_policy_payload1, simple_purchase_policy_payload2]
+            conditions = [
+                simple_purchase_policy_payload1,
+                simple_purchase_policy_payload2,
+            ]
             combine_function = "logical_and"
 
             composite_purchase_policy_payload = {
@@ -1900,7 +1928,10 @@ class StoreAPITestCase(TransactionTestCase):
                 "condition": condition2,
             }
 
-            conditions = [simple_purchase_policy_payload1, simple_purchase_policy_payload2]
+            conditions = [
+                simple_purchase_policy_payload1,
+                simple_purchase_policy_payload2,
+            ]
             combine_function = "logical_and"
 
             composite_purchase_policy_payload = {
@@ -2150,7 +2181,9 @@ class StoreAPITestCase(TransactionTestCase):
 
             response = self.client.put(
                 f"/{self.store_id}/purchase_product",
-                json=[{"product_name": "Tomato", "category": "Vegetable", "quantity": 5}],
+                json=[
+                    {"product_name": "Tomato", "category": "Vegetable", "quantity": 5}
+                ],
             )
 
             assert response.status_code == 400
@@ -2206,7 +2239,11 @@ class StoreAPITestCase(TransactionTestCase):
                 f"/{self.store_id}/purchase_product",
                 json=[
                     {"product_name": "Tomato", "category": "Vegetable", "quantity": 5},
-                    {"product_name": "Eggplant", "category": "Vegetable", "quantity": 1},
+                    {
+                        "product_name": "Eggplant",
+                        "category": "Vegetable",
+                        "quantity": 1,
+                    },
                 ],
             )
 
@@ -2263,7 +2300,9 @@ class StoreAPITestCase(TransactionTestCase):
             )
             # Verify the response status code and message
             assert response.status_code == 200
-            assert response.json().get("message") == "Purchase policy removed successfully"
+            assert (
+                response.json().get("message") == "Purchase policy removed successfully"
+            )
 
             # Get the purchase policies to verify the removed purchase policy
             response = self.client.post(
@@ -2328,8 +2367,8 @@ class StoreAPITestCase(TransactionTestCase):
             # Verify the response status code and message
             assert response.status_code == 403
             assert (
-                    response.json().get("detail")
-                    == "User is not an owner or manager of the store"
+                response.json().get("detail")
+                == "User is not an owner or manager of the store"
             )
 
             # Get the purchase policies to verify the removed purchase policy
@@ -2515,8 +2554,12 @@ class StoreAPITestCase(TransactionTestCase):
                 response_queue = queue.Queue()
 
                 # Create threads for each request
-                thread1 = threading.Thread(target=purchase_product, args=(response_queue,))
-                thread2 = threading.Thread(target=purchase_product, args=(response_queue,))
+                thread1 = threading.Thread(
+                    target=purchase_product, args=(response_queue,)
+                )
+                thread2 = threading.Thread(
+                    target=purchase_product, args=(response_queue,)
+                )
 
                 # Start both threads
                 thread1.start()
@@ -2579,8 +2622,12 @@ class StoreAPITestCase(TransactionTestCase):
                 response_queue = queue.Queue()
 
                 # Create threads for each request
-                thread1 = threading.Thread(target=delete_product, args=(response_queue,))
-                thread2 = threading.Thread(target=purchase_product, args=(response_queue,))
+                thread1 = threading.Thread(
+                    target=delete_product, args=(response_queue,)
+                )
+                thread2 = threading.Thread(
+                    target=purchase_product, args=(response_queue,)
+                )
 
                 # Start both threads
                 thread1.start()
@@ -2764,7 +2811,7 @@ class StoreAPITestCase(TransactionTestCase):
             self.assertEqual(response.status_code, 200)
 
             role_payload = {"user_id": self.user_id, "store_id": self.store_id}
-            response = self.client.get(f"/{self.store_id}/get_bids", json=role_payload)
+            response = self.client.post(f"/{self.store_id}/get_bids", json=role_payload)
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(response.json()), 1)
         finally:
@@ -2791,7 +2838,9 @@ class StoreAPITestCase(TransactionTestCase):
                 json={"role": role_payload, "payload": bid_payload},
             )
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
+            self.assertEqual(
+                response.json(), {"message": "Bid decision made successfully"}
+            )
         finally:
             self.tearDown()
 
@@ -2816,7 +2865,9 @@ class StoreAPITestCase(TransactionTestCase):
                 json={"role": role_payload, "payload": bid_payload},
             )
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
+            self.assertEqual(
+                response.json(), {"message": "Bid decision made successfully"}
+            )
 
             purchase_bid_payload = {"store_id": self.store_id, "bid_id": 1}
 
@@ -2852,7 +2903,9 @@ class StoreAPITestCase(TransactionTestCase):
                 json={"role": role_payload, "payload": bid_payload},
             )
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
+            self.assertEqual(
+                response.json(), {"message": "Bid decision made successfully"}
+            )
 
             role_payload = {"user_id": self.owner2_id, "store_id": self.store_id}
             bid_payload = {"bid_id": 1, "decision": 1}
@@ -2862,7 +2915,9 @@ class StoreAPITestCase(TransactionTestCase):
                 json={"role": role_payload, "payload": bid_payload},
             )
             self.assertEqual(response.status_code, 200)
-            self.assertEqual(response.json(), {"message": "Bid decision made successfully"})
+            self.assertEqual(
+                response.json(), {"message": "Bid decision made successfully"}
+            )
 
             purchase_bid_payload = {"store_id": self.store_id, "bid_id": 1}
 
@@ -2904,7 +2959,9 @@ class StoreAPITestCase(TransactionTestCase):
             # Purchase a product
             response = self.client.post(
                 f"/{self.store_id}/validate_purchase_policy",
-                json=[{"product_name": "Tomato", "category": "Vegetables", "quantity": 6}],
+                json=[
+                    {"product_name": "Tomato", "category": "Vegetables", "quantity": 6}
+                ],
             )
 
             # Verify the response status code and message
@@ -2957,7 +3014,11 @@ class StoreAPITestCase(TransactionTestCase):
             response = self.client.post(
                 f"/{self.store_id}/calculate_cart_discount",
                 json=[
-                    {"product_name": "Cottage Cheese", "category": "Dairy", "quantity": 3},
+                    {
+                        "product_name": "Cottage Cheese",
+                        "category": "Dairy",
+                        "quantity": 3,
+                    },
                     {"product_name": "Yogurt", "category": "Dairy", "quantity": 1},
                 ],
             )
@@ -2971,16 +3032,18 @@ class StoreAPITestCase(TransactionTestCase):
             response = self.client.post(f"/create_fake_data")
             assert response.status_code == 200
 
-            search_schema = {
-                "product_name": "Falafel Plate"
-            }
-            response = self.client.get("/search", json={"search_query": search_schema, "filter_query": {}})
+            search_schema = {"product_name": "Falafel Plate"}
+            response = self.client.get(
+                "/search", json={"search_query": search_schema, "filter_query": {}}
+            )
             assert response.status_code == 200
             store_id = response.json()[0]["store"]["id"]
             cart_payload = [
                 {"product_name": "Falafel Plate", "category": "Food", "quantity": 2}
             ]
-            response = self.client.post(f"/{store_id}/calculate_cart_discount", json=cart_payload)
+            response = self.client.post(
+                f"/{store_id}/calculate_cart_discount", json=cart_payload
+            )
             assert response.status_code == 200
         finally:
             self.tearDown()
@@ -3046,10 +3109,7 @@ class StoreAPITestCase(TransactionTestCase):
 
             response = self.client.post(
                 "/{store_id}/get_bids_on_product",
-                json={
-                    "store_id": self.store_id,
-                    "product_name": "Bread Loaf"
-                }
+                json={"store_id": self.store_id, "product_name": "Bread Loaf"},
             )
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(response.json()), 2)
@@ -3082,9 +3142,7 @@ class StoreAPITestCase(TransactionTestCase):
             )
             assert response.status_code == 200
 
-            response = self.client.get(
-                "/get_bids_by_user?user_id=100"
-            )
+            response = self.client.get("/get_bids_by_user?user_id=100")
             assert response.status_code == 200
             assert len(response.json()) == 2
         finally:
@@ -3145,16 +3203,26 @@ class StoreAPITestCase(TransactionTestCase):
             response = self.client.post(f"/create_fake_data")
             assert response.status_code == 200
 
-            search_schema = {
-                "product_name": "Falafel Plate"
-            }
-            response = self.client.get("/search", json={"search_query": search_schema, "filter_query": {}})
+            search_schema = {"product_name": "Falafel Plate"}
+            response = self.client.get(
+                "/search", json={"search_query": search_schema, "filter_query": {}}
+            )
             assert response.status_code == 200
             store_id = response.json()[0]["store"]["id"]
-            response = self.client.post(f"/{store_id}/get_purchase_policies", json={"user_id": 100, "store_id": store_id})
+            response = self.client.post(
+                f"/{store_id}/get_purchase_policies",
+                json={"user_id": 100, "store_id": store_id},
+            )
             assert response.status_code == 200
             for policy in response.json():
-                response = self.client.post(f"/{store_id}/get_conditions", json={"store_id": store_id, "to_discount": False, "target_id": policy["id"]})
+                response = self.client.post(
+                    f"/{store_id}/get_conditions",
+                    json={
+                        "store_id": store_id,
+                        "to_discount": False,
+                        "target_id": policy["id"],
+                    },
+                )
                 assert response.status_code == 200
 
         finally:
