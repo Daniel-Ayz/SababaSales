@@ -89,7 +89,7 @@ export default function ProductBuyingPage({ params }) {
             };
 
             // Example POST request to add item to cart
-            const response = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}${store_id}/make_bid`, data,{headers: {'Content-Type': 'application/json'}, withCredentials: true});
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/make_bid`, data,{headers: {'Content-Type': 'application/json'}, withCredentials: true});
             console.log(response.data); // Log response from backend
 
             toast.success('Bid sent successfully. Make sure you keep track of it in your bid history!', {
@@ -107,7 +107,7 @@ export default function ProductBuyingPage({ params }) {
 
         } catch (error) {
             console.error('Error sending bid offer to store', error);
-            toast.error('Failed to add item to cart. Please try again later.', {
+            toast.error('Error sending bid offer to store.', {
                 position: 'top-right',
                 autoClose: 3000,
                 hideProgressBar: false,
