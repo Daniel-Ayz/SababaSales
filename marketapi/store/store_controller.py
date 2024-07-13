@@ -1562,12 +1562,16 @@ class StoreController:
                     raise HttpError(
                         400, "Bid has not been accepted by all managers or owners"
                     )
+                if bid.purchased:
+                    raise HttpError(400, "Bid has already been purchased")
                 product = bid.product
                 if product.quantity < bid.quantity:
                     raise HttpError(400, "Insufficient quantity of product in store")
                 product.quantity -= bid.quantity
                 price = bid.price
                 product.save()
+                bid.purchased = True
+                bid.save()
                 #bid.delete()  # delete bid after purchase
                 #bid is not deleted to keep track of proudcts a bid was put on
         return {"message": "Purchase made successfully", "price": price}

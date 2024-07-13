@@ -317,6 +317,7 @@ class Bid(models.Model):
     accepted_by = models.ManyToManyField(Role, related_name="accepted_bids", blank=True)
     user_id = models.IntegerField()  # the user who made the bid
     can_purchase = models.BooleanField(default=False)
+    purchased = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.product.name} bid in {self.store.name} store"
