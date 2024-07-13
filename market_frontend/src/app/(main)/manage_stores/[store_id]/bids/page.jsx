@@ -66,7 +66,8 @@ export default function ManageBids({ params }) {
         if (!decision) {
           setBids(bids.filter(bid => bid.id !== bidId));
         } else {
-          const productName = bids.find(bid => bid.id === bidId).product_name;
+          const bid = bids.find(bid => bid.id === bidId);
+          const productName = bid.product.name;
           const updatedBidsResponse = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}${store_id}/get_bids_on_product`, {
             product_name: productName,
             store_id: store_id,
@@ -74,6 +75,8 @@ export default function ManageBids({ params }) {
 
           if (!updatedBidsResponse.data.find(bid => bid.id === bidId)) {
             setBids(bids.filter(bid => bid.id !== bidId));
+          } else {
+            setBids(bids.map(bid => bid.id === bidId ? { ...bid, accepted_by: [...bid.accepted_by, { user_id: user.id }] } : bid));
           }
         }
       } else {
@@ -84,6 +87,7 @@ export default function ManageBids({ params }) {
       toast.error("Failed to decide on bid.");
     }
   };
+
 
   if (loading) return <div>Loading...</div>;
 
