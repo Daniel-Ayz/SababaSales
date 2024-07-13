@@ -46,26 +46,26 @@ export default function ManageStore({ params }) {
     const fetchStoreData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`http://localhost:8000/api/stores/${store_id}`);
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}`);
         setStore(response.data);
-        const itemsResponse = await axios.get(`http://localhost:8000/api/stores/${store_id}/products`);
+        const itemsResponse = await axios.get(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/products`);
         setItems(itemsResponse.data);
-        const managers_response = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_managers`, {
+        const managers_response = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/get_managers`, {
           user_id: user.id,
           store_id: store_id
         });
         for (let i = 0; i < managers_response.data.length; i++) {
-          const full_name = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${managers_response.data[i].user_id}/get_full_name`);
+          const full_name = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${managers_response.data[i].user_id}/get_full_name`);
           managers_response.data[i].Full_name = full_name.data;
         }
 
         setManagers(managers_response.data);
-        const owners_response = await axios.post(`http://localhost:8000/api/stores/${store_id}/get_owners`, {
+        const owners_response = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/get_owners`, {
           user_id: user.id,
           store_id: store_id
         });
         for (let i = 0; i < owners_response.data.length; i++) {
-          const full_name = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${owners_response.data[i].user_id}/get_full_name`);
+          const full_name = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${owners_response.data[i].user_id}/get_full_name`);
           owners_response.data[i].Full_name = full_name.data;
         }
         setOwners(owners_response.data);
@@ -82,7 +82,7 @@ export default function ManageStore({ params }) {
   const removeItem = async (item_name) => {
     // ask the user if they are sure they want to delete the item
     if (confirm(`Are you sure you want to remove ${item_name} from the store?`)) {
-      const response = await axios.delete(`http://localhost:8000/api/stores/${store_id}/remove_product`, {
+      const response = await axios.delete(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/remove_product`, {
         params: {
           product_name: item_name
         },
@@ -104,7 +104,7 @@ export default function ManageStore({ params }) {
     try {
       const response_ = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/get_user_id?email=${email}`);
       const user_id_ = response_.data.id;
-      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_owner`, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/assign_owner`, {
         user_id: user_id_,
         store_id,
         assigned_by: user.id,
@@ -128,7 +128,7 @@ export default function ManageStore({ params }) {
     try {
       const response_ = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/get_user_id?email=${email}`);
       const user_id_ = response_.data.id;
-      const response = await axios.post(`http://localhost:8000/api/stores/${store_id}/assign_manager`, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/assign_manager`, {
         user_id: user_id_,
         store_id,
         assigned_by: user.id,
@@ -156,6 +156,10 @@ export default function ManageStore({ params }) {
     window.location.href = `/manage_stores/${store_id}/purchase_rules`;
   };
 
+  const manageBids = () => {
+    window.location.href = `/manage_stores/${store_id}/bids`;
+  };
+
   const addItem = () => {
     // Implement the logic for adding discount rule
     window.location.href = `/manage_stores/${store_id}/addProduct`
@@ -172,7 +176,7 @@ export default function ManageStore({ params }) {
     // Ask the user if they are sure they want to delete the item
     if (confirm(`Are you sure you want to remove this manager from the store?`)) {
       try {
-        const response = await axios.delete(`http://localhost:8000/api/stores/${store_id}/remove_manager`, {
+        const response = await axios.delete(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/remove_manager`, {
           data: {
             user_id: user_id_,
             store_id: store_id,
@@ -198,10 +202,10 @@ export default function ManageStore({ params }) {
     if (confirm(`Are you sure you want to remove this owner from the store?`)) {
       try {
         if (user.id === user_id_) {
-          const query = `http://localhost:8000/api/stores/${store_id}/leave_ownership`;
+          const query = `${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/leave_ownership`;
         }
         else {
-          const query = `http://localhost:8000/api/stores/${store_id}/remove_owner`;
+          const query = `${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/remove_owner`;
         }
         const response = await axios.delete(query, {
           data: {
@@ -351,6 +355,14 @@ export default function ManageStore({ params }) {
               className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               Manage Purchase Rules
+            </button>
+
+            <h3 className="text-lg font-medium leading-6 text-gray-900">Manage Bids</h3>
+            <button
+              onClick={manageBids}
+              className="w-full flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-md shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            >
+              Manage Bids
             </button>
 
             <p className="mt-10 text-center text-sm text-gray-500">

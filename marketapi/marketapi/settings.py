@@ -15,6 +15,7 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# our custom user model
 AUTH_USER_MODEL = "users.CustomUser"
 
 # Quick-start development settings - unsuitable for production
@@ -26,10 +27,16 @@ SECRET_KEY = "django-insecure-rez$7rdqpe3d=m0303@y38^bxi6lrg$0wpo)7q*ym8(sy(c5s_
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# Which hosts are allowed to access the application - for now, allow all
+ALLOWED_HOSTS = ["*"]
+
+# Payment service URL
+PAYMENT_SERVICE_URL = "https://damp-lynna-wsep-1984852e.koyeb.app/"
+
+# Delivery service URL
+DELIVERY_SERVICE_URL = "https://damp-lynna-wsep-1984852e.koyeb.app/"
 
 # Application definition
-
 INSTALLED_APPS = [
     "channels",
     "users",
@@ -67,10 +74,15 @@ MIDDLEWARE = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
-CORS_ORIGIN_WHITELIST = [
-    "http://localhost:3000",  # Add your frontend URL here
-    "http://127.0.0.1:3000",
-]
+
+# Which cross-origin requests to allow - for now, allow all
+CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ORIGIN_WHITELIST = [
+#     "http://localhost:3000",  # Add your frontend URL here
+#     "http://127.0.0.1:3000",
+# ]
+
+# url root path settings file
 ROOT_URLCONF = "marketapi.urls"
 
 TEMPLATES = [
@@ -89,11 +101,11 @@ TEMPLATES = [
     },
 ]
 
+# WSGI application
 WSGI_APPLICATION = "marketapi.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -108,7 +120,6 @@ DATABASES = {
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",

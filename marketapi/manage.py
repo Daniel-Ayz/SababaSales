@@ -2,10 +2,13 @@
 """Django's command-line utility for administrative tasks."""
 import os
 import sys
+import warnings
+from django.core.cache.backends.base import CacheKeyWarning
 
 
 def main():
     """Run administrative tasks."""
+    warnings.filterwarnings("ignore", category=CacheKeyWarning)
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "marketapi.settings")
     try:
         from django.core.management import execute_from_command_line

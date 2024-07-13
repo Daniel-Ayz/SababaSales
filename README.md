@@ -154,6 +154,57 @@ Start a Django shell:
 docker-compose exec web python manage.py shell
 ```
 
+## 💻 7. Setup local hosts file (www.sababasales.com)
+
+### For Windows:
+
+1. **Open Notepad as Administrator:**
+   - Click on the Start menu.
+   - Type `Notepad`.
+   - Right-click on `Notepad` and select `Run as administrator`.
+
+2. **Open the Hosts File:**
+   - In Notepad, go to `File > Open`.
+   - Navigate to `C:\Windows\System32\drivers\etc`.
+   - Select `All Files (*.*)` in the file type dropdown.
+   - Open the `hosts` file.
+
+3. **Edit the Hosts File:**
+   - Add a new line with the IP address and the desired domain name. For example:
+     ```
+     127.0.0.1   www.sababasales.com
+     ```
+   - Replace `127.0.0.1` with the IP address you want to resolve `www.sababasales.com` to.
+
+4. **Save the Hosts File:**
+   - Save the file (you may need to confirm the save with administrator privileges).
+
+### For macOS and Linux:
+
+1. **Open Terminal.**
+
+2. **Edit the Hosts File:**
+   - Use a text editor like `nano` or `vim` to edit the hosts file. For example, with `nano`:
+     ```sh
+     sudo nano /etc/hosts
+     ```
+
+3. **Add the New Entry:**
+   - Add a new line with the IP address and the desired domain name. For example:
+     ```
+     127.0.0.1   www.sababasales.com
+     ```
+   - Replace `127.0.0.1` with the IP address you want to resolve `www.sababasales.com` to.
+
+4. **Save the Hosts File:**
+   - Save and exit the text editor (for `nano`, you can do this by pressing `Ctrl+X`, then `Y`, and then `Enter`).
+
+
+
+**Test the Configuration:**
+   - Open your browser and navigate to `http://www.sababasales.com`. It should resolve to the IP address you specified in the hosts file.
+
+
 
 
 ## 🗿 Setup backend without docker

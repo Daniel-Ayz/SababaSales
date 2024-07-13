@@ -3,14 +3,15 @@ from purchase.models import DeliveryMethod
 from purchase.interfaces import DeliveryServiceInterface
 
 from ninja.errors import HttpError
+from django.conf import settings
 
 
 class AbstractDeliveryService(DeliveryServiceInterface):
-    
+
     ZIP_LENGTH = 7
 
     def create_shipment(self, delivery_method: DeliveryMethod) -> dict:
-        url = "https://damp-lynna-wsep-1984852e.koyeb.app/"
+        url = settings.DELIVERY_SERVICE_URL
         if (
             delivery_method["address"] != ""
             and delivery_method["city"] != ""
@@ -18,14 +19,14 @@ class AbstractDeliveryService(DeliveryServiceInterface):
             and len(delivery_method["zip"]) == self.ZIP_LENGTH
             and delivery_method["name"] != ""
         ):
-            
+
             handshake_payload = {
                 "action_type": "handshake",
             }
             response = requests.post(url, data=handshake_payload)
             if response.status_code != 200:
                 raise HttpError(400, "Could not connect to payment service")
-            
+
             payload = {
                 "action_type": "supply",
                 "address": delivery_method["address"],
@@ -53,7 +54,7 @@ class AbstractDeliveryService(DeliveryServiceInterface):
             return {"result": False, "delivery_fee": 0.0, "transaction_id": -1}
 
     def cancel_shipment(self, transaction_id: int) -> dict:
-        url = "https://damp-lynna-wsep-1984852e.koyeb.app/"
+        url = settings.DELIVERY_SERVICE_URL
         payload = {"action_type": "cancel_supply", "transaction_id": transaction_id}
         response = requests.post(url, data=payload)
         result = response.json()

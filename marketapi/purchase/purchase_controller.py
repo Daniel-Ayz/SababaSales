@@ -4,12 +4,13 @@ from ninja.errors import HttpError
 
 from ninja import Router
 
-from store.schemas import PurchaseStoreProductSchema
+from store.schemas import MakePurchaseOnBidSchemaIn, PurchaseStoreProductSchema
 from store.store_controller import StoreController
 
 from purchase.schemas import HistoryBasketProductSchema
 from users.models import Cart, CustomUser, Basket, BasketProduct
-from purchase.models import HistoryBasket, HistoryBasketProduct, Purchase
+from store.models import Bid
+from purchase.models import HistoryBasket, HistoryBasketProduct, Purchase, BidPurchase
 from datetime import datetime
 
 from purchase.services.payment_service import AbstractPaymentService
@@ -113,27 +114,9 @@ class purchaseController:
         cart_id: int,
     ):
         try:
-            delivery_information_user = uc.get_delivery_information(request, user_id)
-            delivery_information_dict = {
-                "address": delivery_information_user["address"],
-                "city": delivery_information_user["city"],
-                "country": delivery_information_user["country"],
-                "zip": delivery_information_user["zip"],
-            }
-            delivery_information_dict["name"] = uc.get_user_full_name(request, user_id)
-
-            payment_information_user = uc.get_payment_information(request, user_id)
-            payment_details_dict = {
-                "currency": payment_information_user["currency"],
-                "credit_card_number": payment_information_user["credit_card_number"],
-                "expiration_date": payment_information_user["expiration_date"],
-                "security_code": payment_information_user["security_code"],
-                "total_price": 0,
-                "holder": uc.get_user_full_name(request, user_id),
-                "holder_identification_number": uc.get_user_identification_number(
-                    request, user_id
-                ),
-            }
+            delivery_information_dict = self.get_delivery_info_dict(request, user_id)
+            
+            payment_details_dict = self.get_payment_info_dict(request, user_id)
 
             with transaction.atomic():
                 cart = get_object_or_404(Cart, id=cart_id)
@@ -231,3 +214,103 @@ class purchaseController:
             raise e
         except Exception as e:
             raise HttpError(404, f"{str(e)}")
+
+    # -------------------- Make Bid Purchase --------------------
+    def purchase_bid(
+        self,
+        request,
+        user_id: int,
+        store_id: int,
+        bid_id: int
+    ):
+        try:
+            delivery_information_dict = self.get_delivery_info_dict(request, user_id)
+            payment_details_dict = self.get_payment_info_dict(request, user_id)
+            with transaction.atomic():
+                schema = MakePurchaseOnBidSchemaIn(
+                    store_id=store_id, bid_id=bid_id
+                )
+
+                try:
+                    response = sc.make_purchase_on_bid(
+                        request=None, payload=schema
+                    )
+                except HttpError as e:
+                    raise HttpError(400, str(e))
+
+                purchase = BidPurchase.objects.create(
+                    bid_id=bid_id,
+                    purchase_date=datetime.now(),
+                    total_price=response["price"],
+                    total_quantity=response["quantity"],
+                    product_name=response["product"],
+                )
+
+                total_price = response["price"]
+                
+                delivery_result = delivery_service.create_shipment(
+                    delivery_information_dict
+                )
+
+                if not delivery_result["result"]:
+                    raise HttpError(400, "Delivery failed")
+
+                total_price += delivery_result["delivery_fee"]
+
+                payment_details_dict["total_price"] = total_price
+                payment_result = payment_service.process_payment(payment_details_dict)
+                if not payment_result["result"]:
+                    raise HttpError(400, "Payment failed")
+
+                BidPurchase.objects.filter(purchase_id=purchase.purchase_id).update(
+                    total_price=total_price
+                )
+                
+                purchase = BidPurchase.objects.get(purchase_id=purchase.purchase_id)
+                purchase.save()
+       
+            return {
+                "message": "Bid Purchase added successfully",
+                "purchase_id": purchase.purchase_id,
+                "purchase_date": purchase.purchase_date,
+                "total_price": purchase.total_price,
+                "total_quantity": purchase.total_quantity,
+                "product": purchase.product_name,
+            }
+        
+        except CustomUser.DoesNotExist as e:
+            raise HttpError(404, "User not found")
+        except Bid.DoesNotExist as e:
+            raise HttpError(404, "Bid not found")
+        except HttpError as e:
+            raise e
+        except Exception as e:
+            raise HttpError(404, f"{str(e)}")
+
+    # -------------------- Get Delivery Info --------------------
+    def get_delivery_info_dict(self, request, user_id: int):
+        delivery_information_user = uc.get_delivery_information(request, user_id)
+        delivery_information_dict = {
+            "address": delivery_information_user["address"],
+            "city": delivery_information_user["city"],
+            "country": delivery_information_user["country"],
+            "zip": delivery_information_user["zip"],
+        }
+        delivery_information_dict["name"] = uc.get_user_full_name(request, user_id)
+        return delivery_information_dict
+    
+    # -------------------- Get Payment Info --------------------
+    def get_payment_info_dict(self, request, user_id: int):
+        payment_information_user = uc.get_payment_information(request, user_id)
+        payment_details_dict = {
+            "currency": payment_information_user["currency"],
+            "credit_card_number": payment_information_user["credit_card_number"],
+            "expiration_date": payment_information_user["expiration_date"],
+            "security_code": payment_information_user["security_code"],
+            "total_price": 0,
+            "holder": uc.get_user_full_name(request, user_id),
+            "holder_identification_number": uc.get_user_identification_number(
+                request, user_id
+            ),
+        }
+        return payment_details_dict

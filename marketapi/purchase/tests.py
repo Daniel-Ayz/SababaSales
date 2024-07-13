@@ -1,7 +1,8 @@
 from django.test import TransactionTestCase
 from ninja.testing import TestClient
 
-from users.models import Cart, Basket, BasketProduct
+from store.models import Bid, Manager, ManagerPermission, Owner, Store, StoreProduct
+from users.models import Cart, Basket, BasketProduct, DeliveryInformationUser, PaymentInformationUser
 from .api import router
 from store.api import router as store_router
 from users.api import router as user_router
@@ -136,6 +137,8 @@ class TestPurchase(TransactionTestCase):
             },
         )
 
+        DeliveryInformationUser.objects.filter(user_id=self.user_id).update(zip="")
+
         response = self.client.post(f"/{self.user_id}/{self.cart_id}/make_purchase")
 
         self.assertEqual(response.status_code, 400)
@@ -160,6 +163,11 @@ class TestPurchase(TransactionTestCase):
                 "security_code": "123",
             },
         )
+
+        PaymentInformationUser.objects.filter(user_id=self.user_id).update(
+            expiration_date="00"
+        )
+        
         response = self.client.post(f"/{self.user_id}/{self.cart_id}/make_purchase")
 
         self.assertEqual(response.status_code, 400)
@@ -204,6 +212,107 @@ class TestPurchase(TransactionTestCase):
         response = self.client.get(f"/{invalid_user_id}/get_purchase_history")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), [])
+
+    def test_make_bid_purchase_positive(self):
+        # Test 7: Positive test case, make bid purchase successfully
+        store = Store.objects.create(
+                    name="Test Store",
+                    description="nice store",
+                    is_active=True,
+                )
+        store_id = store.id
+        owner = Owner.objects.create(user_id=1, store=store, is_founder=True)
+        manager = Manager.objects.create(
+            user_id=1, store=store, assigned_by=owner
+        )
+        manager_permissions = ManagerPermission.objects.create(
+            manager=manager,
+            can_add_product=True,
+            can_delete_product=True,
+            can_edit_product=True,
+            can_add_discount_policy=True,
+            can_remove_discount_policy=True,
+            can_add_purchase_policy=True,
+            can_remove_purchase_policy=True,
+        )
+
+        product = StoreProduct.objects.create(
+                    store=store,
+                    name="Test Product",
+                    category="Test Category",
+                    quantity=10,
+                    initial_price=100.00,
+                    image_link="Test Image Link",
+                )
+        
+        bid = Bid.objects.create(
+            store=store,
+            product=product,
+            price=50.00,
+            quantity=5,
+            #status="active",
+            user_id = self.user_id,
+            can_purchase = True
+        )
+        bid_id = bid.id
+
+        response = self.client.post(
+            f"/{self.user_id}/{store_id}/{bid_id}/make_bid_purchase"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["message"], "Bid Purchase added successfully")
+
+    def test_make_bid_purchase_negative_not_accepted(self):
+        # Test 7: Positive test case, make bid purchase successfully
+        store = Store.objects.create(
+                    name="Test Store",
+                    description="nice store",
+                    is_active=True,
+                )
+        store_id = store.id
+        owner = Owner.objects.create(user_id=1, store=store, is_founder=True)
+        manager = Manager.objects.create(
+            user_id=1, store=store, assigned_by=owner
+        )
+        manager_permissions = ManagerPermission.objects.create(
+            manager=manager,
+            can_add_product=True,
+            can_delete_product=True,
+            can_edit_product=True,
+            can_add_discount_policy=True,
+            can_remove_discount_policy=True,
+            can_add_purchase_policy=True,
+            can_remove_purchase_policy=True,
+        )
+
+        product = StoreProduct.objects.create(
+                    store=store,
+                    name="Test Product",
+                    category="Test Category",
+                    quantity=10,
+                    initial_price=100.00,
+                    image_link="Test Image Link",
+                )
+        
+        bid = Bid.objects.create(
+            store=store,
+            product=product,
+            price=50.00,
+            quantity=5,
+            #status="active",
+            user_id = self.user_id,
+            can_purchase = False
+        )
+        bid_id = bid.id
+
+        response = self.client.post(
+            f"/{self.user_id}/{store_id}/{bid_id}/make_bid_purchase"
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["detail"], "Bid has not been accepted by all managers or owners")
+        
 
     def test_get_purchase_receipt_positive(self):
         # Test 7: positive test case, get a purchase receipt after a successful purchase
