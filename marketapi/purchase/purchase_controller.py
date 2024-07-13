@@ -4,12 +4,13 @@ from ninja.errors import HttpError
 
 from ninja import Router
 
-from store.schemas import PurchaseStoreProductSchema
+from store.schemas import MakePurchaseOnBidSchemaIn, PurchaseStoreProductSchema
 from store.store_controller import StoreController
 
 from purchase.schemas import HistoryBasketProductSchema
 from users.models import Cart, CustomUser, Basket, BasketProduct
-from purchase.models import HistoryBasket, HistoryBasketProduct, Purchase
+from store.models import Bid
+from purchase.models import HistoryBasket, HistoryBasketProduct, Purchase, BidPurchase
 from datetime import datetime
 
 from purchase.services.payment_service import AbstractPaymentService
@@ -222,7 +223,70 @@ class purchaseController:
         store_id: int,
         bid_id: int
     ):
-        pass    
+        try:
+            delivery_information_dict = self.get_delivery_info_dict(request, user_id)
+            payment_details_dict = self.get_payment_info_dict(request, user_id)
+            with transaction.atomic():
+                bid = Bid.objects.get(id=bid_id)
+                purchase = BidPurchase.objects.create(
+                    bid=bid,
+                    purchase_date=datetime.now(),
+                    total_price=bid.price,
+                    total_quantity=bid.quantity,
+                    product=bid.product,
+                )
+
+                schema = MakePurchaseOnBidSchemaIn(
+                    store_id=store_id, bid_id=bid_id
+                )
+
+                try:
+                    response = sc.make_purchase_on_bid(
+                        request=None, payload=schema
+                    )
+                except HttpError as e:
+                    raise HttpError(400, str(e))
+
+                total_price = response["price"]
+                
+                delivery_result = delivery_service.create_shipment(
+                    delivery_information_dict
+                )
+
+                if not delivery_result["result"]:
+                    raise HttpError(400, "Delivery failed")
+
+                total_price += delivery_result["delivery_fee"]
+
+                payment_details_dict["total_price"] = total_price
+                payment_result = payment_service.process_payment(payment_details_dict)
+                if not payment_result["result"]:
+                    raise HttpError(400, "Payment failed")
+
+                BidPurchase.objects.filter(purchase_id=purchase.purchase_id).update(
+                    total_price=total_price
+                )
+                
+                purchase = BidPurchase.objects.get(purchase_id=purchase.purchase_id)
+                purchase.save()
+       
+            return {
+                "message": "Bid Purchase added successfully",
+                "purchase_id": purchase.purchase_id,
+                "purchase_date": purchase.purchase_date,
+                "total_price": purchase.total_price,
+                "total_quantity": purchase.total_quantity,
+                "product": purchase.product,
+            }
+        
+        except CustomUser.DoesNotExist as e:
+            raise HttpError(404, "User not found")
+        except Bid.DoesNotExist as e:
+            raise HttpError(404, "Bid not found")
+        except HttpError as e:
+            raise e
+        except Exception as e:
+            raise HttpError(404, f"{str(e)}")
 
     # -------------------- Get Delivery Info --------------------
     def get_delivery_info_dict(self, request, user_id: int):

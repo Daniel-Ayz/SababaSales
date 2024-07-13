@@ -9,6 +9,7 @@ from enum import Enum
 
 
 from users.models import Cart
+from store.models import Bid, StoreProduct
 
 
 class Purchase(models.Model):
@@ -24,7 +25,14 @@ class Purchase(models.Model):
 
     def __str__(self):
         return f"purchase {self.purchase_id} for cart {self.cart.id}"
-
+    
+class BidPurchase(models.Model):
+    bid = models.ForeignKey(Bid, on_delete=models.CASCADE)
+    purchase_id = models.AutoField(primary_key=True)
+    purchase_date = models.DateTimeField(auto_now_add=True)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    total_quantity = models.IntegerField()
+    product = models.ForeignKey(StoreProduct, on_delete=models.CASCADE)
 
 class PaymentMethod(models.Model):
     holder = models.CharField(max_length=100)
