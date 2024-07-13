@@ -319,6 +319,8 @@ class BidSchemaOut(Schema):
     price: float
     quantity: int
     accepted_by: list[Union[OwnerSchemaOut, ManagerSchemaOut]]
+    can_purchase: bool
+    purchased: bool
 
 
 class DecisionBidSchemaIn(Schema):  # manager makes a decision to accept or reject a bid
