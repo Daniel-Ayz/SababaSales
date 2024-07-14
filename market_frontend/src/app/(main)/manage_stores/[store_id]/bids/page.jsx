@@ -25,8 +25,15 @@ export default function ManageBids({ params }) {
           store_id: store_id,
         });
 
+        // Filter out bids where rejected is true
+        const filteredBids = response.data.filter(bid => !bid.rejected);
+
+        // Sort bids by ID (highest to lowest)
+        const sortedBids = filteredBids.sort((a, b) => b.id - a.id);
+
+        // Fetch bidder names asynchronously
         const bidsWithNames = await Promise.all(
-          response.data.map(async bid => {
+          sortedBids.map(async bid => {
             const nameResponse = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${bid.user_id}/get_full_name`);
             return {
               ...bid,
@@ -87,13 +94,24 @@ export default function ManageBids({ params }) {
       toast.error("Failed to decide on bid.");
     }
   };
-
+  const manageStore = () => {
+    window.location.href = `/manage_stores/${store_id}`;
+  };
 
   if (loading) return <div>Loading...</div>;
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 p-8">
-      <h1 className="text-3xl font-bold mb-8">Manage Bids for Store {store_id}</h1>
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">Manage Bids for Store {store_id}</h1>
+        </div>
+        <div>
+          <a href='#' onClick={() => manageStore()} className="bg-blue-500 hover:bg-blue-400 text-white font-semibold py-2 px-4 rounded-md">
+            Back
+          </a>
+        </div>
+      </div>
       <div className="grid grid-cols-1 gap-8">
         {bids.length === 0 ? (
           <p>No bids available.</p>
