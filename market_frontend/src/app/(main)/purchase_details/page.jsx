@@ -11,13 +11,13 @@ axios.defaults.withCredentials = true;
 
 export default function Details() {
   const { user } = useContext(UserContext);
-  const [errorState, setErrorState] = useState(''); 
+  const [errorState, setErrorState] = useState('');
   const [showAlert, setShowAlert] = useState(false);
   const [showAlertGood, setShowAlertGood] = useState(false);
   const [showAlertBad, setShowAlertBad] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState('');
   const [deliveryInfo, setDeliveryInfo] = useState('');
-  
+
   const router = useRouter();
 
   const [shippingInfo, setShippingInfo] = useState({
@@ -41,7 +41,7 @@ export default function Details() {
   useEffect(() => {
     // Fetch payment information when the component mounts
     if (user.loggedIn) {
-      axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${user.id}/get_payment_information`)
+      axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${user.id}/get_payment_information`)
         .then(response => {
           setPaymentInfo(response.data);
         })
@@ -50,7 +50,7 @@ export default function Details() {
           // Handle error fetching payment information
         });
 
-      axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${user.id}/get_delivery_information`)
+      axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${user.id}/get_delivery_information`)
       .then(response => {
         setDeliveryInfo(response.data);
       })
@@ -69,7 +69,7 @@ export default function Details() {
       console.log("user not logged in. please login before making a purchase");
       setShowAlert(true);
     } else {
-      axios.post(`${process.env.NEXT_PUBLIC_PURCHASE_ROUTE}${user.id}/${user.cart_id}/make_purchase`)
+      axios.post(`${process.env.NEXT_PUBLIC_PURCHASE_ROUTE}/${user.id}/${user.cart_id}/make_purchase`)
         .then(function (response) {
           console.log('Order successful:', response.data);
           setShowAlertGood(true);
@@ -107,7 +107,7 @@ export default function Details() {
       )}
 
       <h1 className="text-2xl font-bold mb-4 text-center">Checkout</h1>
-      
+
       <form className="flex-1 overflow-auto" onSubmit={makePurchase}>
         <div className="mb-4">
           <h2 className="text-lg font-semibold mb-2">Shipping Information</h2>
@@ -192,7 +192,7 @@ export default function Details() {
             Click here
           </Link>
         </p>
-        
+
         <div>
           <button
             type="submit"

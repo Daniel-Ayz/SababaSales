@@ -8,7 +8,7 @@ def init_online_counter():
 def init_fake_data_users():
     from .models import CustomUser
 
-    user = CustomUser.objects.get(username="Yishay_Butzim")
+    user = CustomUser.objects.filter(username="Yishay_Butzim")
     if not user:
         print("[!] Creating fake data for users...")
         from .usercontroller import UserController
@@ -21,12 +21,13 @@ def init_fake_data_users():
 
 
 def init_fake_data_store():
+
     from store.models import Store
 
-    store = Store.objects.get(name="Hummus Heaven")
+    store = Store.objects.filter(name="Hummus Heaven")
     if not store:
         print("[!] Creating fake data for products...")
-        from ..store.store_controller import StoreController
+        from store.store_controller import StoreController
 
         sc = StoreController()
         sc.create_fake_data()

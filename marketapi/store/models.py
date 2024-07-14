@@ -318,6 +318,7 @@ class Bid(models.Model):
     user_id = models.IntegerField()  # the user who made the bid
     can_purchase = models.BooleanField(default=False)
     purchased = models.BooleanField(default=False)
+    rejected = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.product.name} bid in {self.store.name} store"
