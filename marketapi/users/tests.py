@@ -1010,7 +1010,7 @@ class UserAPITestCase(TransactionTestCase):
             address = "456 New St",
             city = "New City",
             country = "New Country",
-            zip = "54321")
+            zip = "7654321")
         response = uc.update_user_delivery_info(999, self.user.id, data)
         self.assertEqual(response["msg"], "Delivery info updated successfully")
 

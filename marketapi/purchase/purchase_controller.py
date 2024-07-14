@@ -324,7 +324,7 @@ class purchaseController:
                 "purchase_date": purchase.purchase_date,
                 "total_price": purchase.total_price,
                 "total_quantity": purchase.total_quantity,
-                "product": purchase.product_name,
+                "product_name": purchase.product_name,
             }
             return purchase_receipt
 

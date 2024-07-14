@@ -256,10 +256,14 @@ class TestPurchase(TransactionTestCase):
         )
         bid_id = bid.id
 
+        history_before = self.client.get(f"/{self.user_id}/get_bid_purchase_history")
         response = self.client.post(
             f"/{self.user_id}/{store_id}/{bid_id}/make_bid_purchase"
         )
 
+        # Ensure that the purchase history is updated
+        history_after = self.client.get(f"/{self.user_id}/get_bid_purchase_history")
+        self.assertNotEqual(history_before.json(), history_after.json())
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["message"], "Bid Purchase added successfully")
 
@@ -328,6 +332,138 @@ class TestPurchase(TransactionTestCase):
         self.assertEqual(response.json()["cart_id"], self.cart_id)
         self.assertEqual(response.json()["total_price"], 1000.00)
         self.assertEqual(response.json()["total_quantity"], 10)
+
+    def test_get_purchase_receipt_negative(self):
+        # Test 8: Negative test case, get a purchase receipt that does not exist
+        response = self.client.get(
+            f"/{self.user_id}/get_purchase_receipt?purchase_id=1"
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["detail"], "Purchase not found")
+
+    def test_get_bid_purchase_receipt_positive(self):
+        # Test 9: positive test case, get a bid purchase receipt after a successful bid purchase
+        store = Store.objects.create(
+                    name="Test Store",
+                    description="nice store",
+                    is_active=True,
+                )
+        store_id = store.id
+        owner = Owner.objects.create(user_id=1, store=store, is_founder=True)
+        manager = Manager.objects.create(
+            user_id=1, store=store, assigned_by=owner
+        )
+        manager_permissions = ManagerPermission.objects.create(
+            manager=manager,
+            can_add_product=True,
+            can_delete_product=True,
+            can_edit_product=True,
+            can_add_discount_policy=True,
+            can_remove_discount_policy=True,
+            can_add_purchase_policy=True,
+            can_remove_purchase_policy=True,
+        )
+
+        product = StoreProduct.objects.create(
+                    store=store,
+                    name="Test Product",
+                    category="Test Category",
+                    quantity=10,
+                    initial_price=100.00,
+                    image_link="Test Image Link",
+                )
+        
+        bid = Bid.objects.create(
+            store=store,
+            product=product,
+            price=50.00,
+            quantity=5,
+            #status="active",
+            user_id = self.user_id,
+            can_purchase = True
+        )
+        bid_id = bid.id
+
+        response = self.client.post(
+            f"/{self.user_id}/{store_id}/{bid_id}/make_bid_purchase"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["message"], "Bid Purchase added successfully")
+
+        response = self.client.get(
+            f"1/get_bid_purchase_receipt"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["purchase_id"], 1)
+        self.assertEqual(response.json()["bid_id"], bid_id)
+        self.assertEqual(response.json()["total_price"], 50.00)
+        self.assertEqual(response.json()["total_quantity"], 5)
+        self.assertEqual(response.json()["product_name"], "Test Product")
+
+    def test_get_bid_purchase_receipt_negative(self):
+        # Test 10: Negative test case, get a bid purchase receipt that does not exist
+        response = self.client.get(
+            f"1/get_bid_purchase_receipt"
+        )
+        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.json()["detail"], "Bid Purchase not found")
+
+    def test_get_bid_purchase_history_positive(self):
+        # Test 11: Positive test case, get bid purchase history
+        store = Store.objects.create(
+                    name="Test Store",
+                    description="nice store",
+                    is_active=True,
+                )
+        store_id = store.id
+        owner = Owner.objects.create(user_id=1, store=store, is_founder=True)
+        manager = Manager.objects.create(
+            user_id=1, store=store, assigned_by=owner
+        )
+        manager_permissions = ManagerPermission.objects.create(
+            manager=manager,
+            can_add_product=True,
+            can_delete_product=True,
+            can_edit_product=True,
+            can_add_discount_policy=True,
+            can_remove_discount_policy=True,
+            can_add_purchase_policy=True,
+            can_remove_purchase_policy=True,
+        )
+
+        product = StoreProduct.objects.create(
+                    store=store,
+                    name="Test Product",
+                    category="Test Category",
+                    quantity=10,
+                    initial_price=100.00,
+                    image_link="Test Image Link",
+                )
+        
+        bid = Bid.objects.create(
+            store=store,
+            product=product,
+            price=50.00,
+            quantity=5,
+            #status="active",
+            user_id = self.user_id,
+            can_purchase = True
+        )
+        bid_id = bid.id
+
+        response = self.client.post(
+            f"/{self.user_id}/{store_id}/{bid_id}/make_bid_purchase"
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["message"], "Bid Purchase added successfully")
+
+        response = self.client.get(
+            f"/{self.user_id}/get_bid_purchase_history"
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.json()), 1)
 
 
     #Unit tests for payment_service.py

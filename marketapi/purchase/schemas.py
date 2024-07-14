@@ -33,4 +33,11 @@ class PurchaseHistorySchema(Schema):
     total_quantity: int
     cart_id: int
     baskets: List[HistoryBasketSchema]
-    
+
+class BidPurchaseHistorySchema(Schema):
+    purchase_id: int
+    bid_id: int
+    purchase_date: datetime
+    total_price: float
+    total_quantity: int
+    product_name: str

@@ -1020,6 +1020,14 @@ class StoreController:
                         f"{total_items} products have been purchased from {store.name}",
                     )
 
+                managers = Manager.objects.filter(store=store)
+                for manager in managers:
+                    uc.send_notification(
+                        store.name,
+                        manager.user_id,
+                        f"{total_items} products have been purchased from {store.name}",
+                    )
+
         return {
             "message": "Products purchased successfully",
             "total_price": total_price,

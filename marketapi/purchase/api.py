@@ -1,7 +1,7 @@
 from typing import List
 
 from purchase.purchase_controller import purchaseController
-from purchase.schemas import PurchaseHistorySchema
+from purchase.schemas import BidPurchaseHistorySchema, PurchaseHistorySchema
 
 import warnings
 
@@ -42,3 +42,13 @@ def make_purchase(request, user_id, cart_id: int):
 @router.post("/{user_id}/{store_id}/{bid_id}/make_bid_purchase")
 def make_bid_purchase(request, user_id: int, store_id: int, bid_id: int):
     return pc.purchase_bid(request, user_id, store_id, bid_id)
+
+# -------------------- Get Bid Purchase receipt --------------------
+@router.get("/{purchase_id}/get_bid_purchase_receipt", response=BidPurchaseHistorySchema)
+def get_bid_purchase_receipt(request, purchase_id: int):
+    return pc.get_bid_purchase_receipt(request, purchase_id)
+
+# -------------------- Get Bid Purchase History --------------------
+@router.get("/{user_id}/get_bid_purchase_history", response=List[BidPurchaseHistorySchema])
+def get_bid_purchase_history(request, user_id: int):
+    return pc.get_bid_purchase_history(request, user_id)
