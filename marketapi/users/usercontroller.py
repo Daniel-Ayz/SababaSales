@@ -386,6 +386,9 @@ class UserController:
         if not payload.zip:
             raise HttpError(400, "All delivery information fields are required - zip missing")
         
+        if len(payload.zip) != 7:
+            raise HttpError(400, "Zip code must be 7 digits long")
+        
         try:
             delivery_info = DeliveryInformationUser.objects.get(user=user)
         except DeliveryInformationUser.DoesNotExist:
@@ -406,6 +409,12 @@ class UserController:
         
         if len(payload.security_code) != 3:
             raise HttpError(400, "Security code (CVV) must be 3 digits long")
+        
+        if len(payload.expiration_date) != 5:
+            raise HttpError(400, "Expiration date must be in the format MM/YY")
+        
+        if len(payload.holder_identification_number) != 9:
+            raise HttpError(400, "Holder identification number must be 9 digits long")
         
         current_date = datetime.now()
         credit_year = int(payload.expiration_date.split("/")[1])

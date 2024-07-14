@@ -29,6 +29,7 @@ class Purchase(models.Model):
 class BidPurchase(models.Model):
     bid_id = models.IntegerField()
     purchase_id = models.AutoField(primary_key=True)
+    user_id = models.IntegerField()
     purchase_date = models.DateTimeField(auto_now_add=True)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     total_quantity = models.IntegerField()
