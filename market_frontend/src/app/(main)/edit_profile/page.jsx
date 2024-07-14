@@ -66,7 +66,7 @@ export default function EditProfile() {
     });
   };
   const handleSubmitUserUpdate = () => {
-    axios.put(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${user.id}`, {
+    axios.put(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${user.id}`, {
       username: formData.username,
       email: formData.email,
       password: formData.password
@@ -109,7 +109,7 @@ export default function EditProfile() {
   };
 
   const handleDelete = () => {
-    axios.delete(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${user.id}`, {
+    axios.delete(`${process.env.process.env.NEXT_PUBLIC_USERS_ROUTE}/${user.id}`, {
       withCredentials: true
     })
     .then(response => {
@@ -193,7 +193,7 @@ export default function EditProfile() {
           </form>
 
 
-          <form className="space-y-6 mt-6" onSubmit={(e) => { e.preventDefault(); handleSubmit(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${user.id}/update_Full_Name`, { Full_Name: formData.full_name }); }}>
+          <form className="space-y-6 mt-6" onSubmit={(e) => { e.preventDefault(); handleSubmit(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${user.id}/update_Full_Name`, { Full_Name: formData.full_name }); }}>
             <div className="grid grid-cols-1 gap-4">
               <div>
                 <label htmlFor="full_name" className="block text-sm font-medium leading-6 text-gray-900">
@@ -220,7 +220,7 @@ export default function EditProfile() {
             </div>
           </form>
 
-          <form className="space-y-6 mt-6" onSubmit={(e) => { e.preventDefault(); handleSubmit(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${user.id}/update_delivery_info`, { address: formData.address, city: formData.city, country: formData.country, zip: formData.zip }); }}>
+          <form className="space-y-6 mt-6" onSubmit={(e) => { e.preventDefault(); handleSubmit(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${user.id}/update_delivery_info`, { address: formData.address, city: formData.city, country: formData.country, zip: formData.zip }); }}>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="address" className="block text-sm font-medium leading-6 text-gray-900">
@@ -289,7 +289,7 @@ export default function EditProfile() {
             </div>
           </form>
 
-          <form className="space-y-6 mt-6" onSubmit={(e) => { e.preventDefault(); handleSubmit(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${user.id}/update_payment_info`, { holder: formData.holder, holder_identification_number: formData.holder_identification_number, currency: formData.currency, credit_card_number: formData.credit_card_number, expiration_date: formData.expiration_date, security_code: formData.security_code }); }}>
+          <form className="space-y-6 mt-6" onSubmit={(e) => { e.preventDefault(); handleSubmit(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${user.id}/update_payment_info`, { holder: formData.holder, holder_identification_number: formData.holder_identification_number, currency: formData.currency, credit_card_number: formData.credit_card_number, expiration_date: formData.expiration_date, security_code: formData.security_code }); }}>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="holder" className="block text-sm font-medium leading-6 text-gray-900">

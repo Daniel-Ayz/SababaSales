@@ -20,14 +20,14 @@ export default function ManageBids({ params }) {
       if (!user || !user.id) return;
 
       try {
-        const response = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}${store_id}/get_bids`, {
+        const response = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/get_bids`, {
           user_id: user.id,
           store_id: store_id,
         });
 
         const bidsWithNames = await Promise.all(
           response.data.map(async bid => {
-            const nameResponse = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${bid.user_id}/get_full_name`);
+            const nameResponse = await axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${bid.user_id}/get_full_name`);
             return {
               ...bid,
               bidder_name: nameResponse.data,
@@ -49,7 +49,7 @@ export default function ManageBids({ params }) {
 
   const handleDecision = async (bidId, decision) => {
     try {
-      const response = await axios.put(`${process.env.NEXT_PUBLIC_STORES_ROUTE}${store_id}/decide_on_bid`, {
+      const response = await axios.put(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/decide_on_bid`, {
         role: {
           user_id: user.id,
           store_id: store_id,
@@ -68,7 +68,7 @@ export default function ManageBids({ params }) {
         } else {
           const bid = bids.find(bid => bid.id === bidId);
           const productName = bid.product.name;
-          const updatedBidsResponse = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}${store_id}/get_bids_on_product`, {
+          const updatedBidsResponse = await axios.post(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/${store_id}/get_bids_on_product`, {
             product_name: productName,
             store_id: store_id,
           });
