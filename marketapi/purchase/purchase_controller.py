@@ -290,29 +290,38 @@ class purchaseController:
 
     # -------------------- Get Delivery Info --------------------
     def get_delivery_info_dict(self, request, user_id: int):
-        delivery_information_user = uc.get_delivery_information(request, user_id)
-        delivery_information_dict = {
-            "address": delivery_information_user["address"],
-            "city": delivery_information_user["city"],
-            "country": delivery_information_user["country"],
-            "zip": delivery_information_user["zip"],
-        }
-        delivery_information_dict["name"] = uc.get_user_full_name(request, user_id)
-        return delivery_information_dict
-    
+        try:
+            delivery_information_user = uc.get_delivery_information(request, user_id)
+            delivery_information_dict = {
+                "address": delivery_information_user["address"],
+                "city": delivery_information_user["city"],
+                "country": delivery_information_user["country"],
+                "zip": delivery_information_user["zip"],
+            }
+            delivery_information_dict["name"] = uc.get_user_full_name(request, user_id)
+            return delivery_information_dict
+        except CustomUser.DoesNotExist as e:
+            raise HttpError(404, "User not found")
+        except HttpError as e:
+            raise e    
     # -------------------- Get Payment Info --------------------
     def get_payment_info_dict(self, request, user_id: int):
-        payment_information_user = uc.get_payment_information(request, user_id)
-        payment_details_dict = {
-            "currency": payment_information_user["currency"],
-            "credit_card_number": payment_information_user["credit_card_number"],
-            "expiration_date": payment_information_user["expiration_date"],
-            "security_code": payment_information_user["security_code"],
-            "total_price": 0,
-            "holder": uc.get_user_full_name(request, user_id),
-            "holder_identification_number": payment_information_user["holder_identification_number"],
-        }
-        return payment_details_dict
+        try:
+            payment_information_user = uc.get_payment_information(request, user_id)
+            payment_details_dict = {
+                "currency": payment_information_user["currency"],
+                "credit_card_number": payment_information_user["credit_card_number"],
+                "expiration_date": payment_information_user["expiration_date"],
+                "security_code": payment_information_user["security_code"],
+                "total_price": 0,
+                "holder": uc.get_user_full_name(request, user_id),
+                "holder_identification_number": payment_information_user["holder_identification_number"],
+            }
+            return payment_details_dict
+        except CustomUser.DoesNotExist as e:
+            raise HttpError(404, "User not found")
+        except HttpError as e:
+            raise e
     
     # -------------------- Get Bid Purchase receipt --------------------
     def get_bid_purchase_receipt(self, request, purchase_id: int):
