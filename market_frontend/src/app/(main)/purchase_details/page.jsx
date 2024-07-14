@@ -41,7 +41,7 @@ export default function Details() {
   useEffect(() => {
     // Fetch payment information when the component mounts
     if (user.loggedIn) {
-      axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${user.id}/get_payment_information`)
+      axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${user.id}/get_payment_information`)
         .then(response => {
           setPaymentInfo(response.data);
         })
@@ -50,7 +50,7 @@ export default function Details() {
           // Handle error fetching payment information
         });
 
-      axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}${user.id}/get_delivery_information`)
+      axios.get(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${user.id}/get_delivery_information`)
       .then(response => {
         setDeliveryInfo(response.data);
       })
@@ -69,7 +69,7 @@ export default function Details() {
       console.log("user not logged in. please login before making a purchase");
       setShowAlert(true);
     } else {
-      axios.post(`${process.env.NEXT_PUBLIC_PURCHASE_ROUTE}${user.id}/${user.cart_id}/make_purchase`)
+      axios.post(`${process.env.NEXT_PUBLIC_PURCHASE_ROUTE}/${user.id}/${user.cart_id}/make_purchase`)
         .then(function (response) {
           console.log('Order successful:', response.data);
           setShowAlertGood(true);
