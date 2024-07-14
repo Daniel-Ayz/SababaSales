@@ -109,7 +109,7 @@ export default function EditProfile() {
   };
 
   const handleDelete = () => {
-    axios.delete(`${process.env.process.env.NEXT_PUBLIC_USERS_ROUTE}/${user.id}`, {
+    axios.delete(`${process.env.NEXT_PUBLIC_USERS_ROUTE}/${user.id}`, {
       withCredentials: true
     })
     .then(response => {

@@ -19,7 +19,7 @@ export default function BidHistory() {
   useEffect(() => {
     const fetchBidHistory = async () => {
       try {
-        const response = await axios.get(`http://localhost:8000/api/stores/get_bids_by_user`, {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_STORES_ROUTE}/get_bids_by_user`, {
           params: { user_id: user.id },
           withCredentials: true
         });
@@ -42,7 +42,7 @@ export default function BidHistory() {
   const handlePurchase = async (bid) => {
     try {
       const response = await axios.post(
-        `http://localhost:8000/api/purchase/${user.id}/${bid.store.id}/${bid.id}/make_bid_purchase`,
+        `${process.env.NEXT_PUBLIC_PURCHASE_ROUTE}/${user.id}/${bid.store.id}/${bid.id}/make_bid_purchase`,
         {},
         { withCredentials: true }
       );
