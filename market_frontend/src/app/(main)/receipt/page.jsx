@@ -13,7 +13,7 @@ const OrderConfirmation = () => {
       const { purchaseId } = router.query; // Get the purchaseId from the query params
 
       if (purchaseId) {
-        axios.get(`http://localhost:8000/api/${purchaseId}/get_purchase_receipt`, {
+        axios.get(`${process.env.NEXT_PUBLIC_STORES_ROUTE}`, {
           headers: { 'Content-Type': 'application/json' },
           withCredentials: true,
         })
