@@ -240,6 +240,7 @@ class purchaseController:
 
                 purchase = BidPurchase.objects.create(
                     bid_id=bid_id,
+                    user_id=user_id,
                     purchase_date=datetime.now(),
                     total_price=response["price"],
                     total_quantity=response["quantity"],
@@ -309,8 +310,45 @@ class purchaseController:
             "security_code": payment_information_user["security_code"],
             "total_price": 0,
             "holder": uc.get_user_full_name(request, user_id),
-            "holder_identification_number": uc.get_user_identification_number(
-                request, user_id
-            ),
+            "holder_identification_number": payment_information_user["holder_identification_number"],
         }
         return payment_details_dict
+    
+    # -------------------- Get Bid Purchase receipt --------------------
+    def get_bid_purchase_receipt(self, request, purchase_id: int):
+        try:
+            purchase = BidPurchase.objects.get(purchase_id=purchase_id)
+            purchase_receipt = {
+                "purchase_id": purchase.purchase_id,
+                "bid_id": purchase.bid_id,
+                "purchase_date": purchase.purchase_date,
+                "total_price": purchase.total_price,
+                "total_quantity": purchase.total_quantity,
+                "product": purchase.product_name,
+            }
+            return purchase_receipt
+
+        except BidPurchase.DoesNotExist as e:
+            raise HttpError(404, "Bid Purchase not found")
+        except HttpError as e:
+            raise e
+        except Exception as e:
+            raise HttpError(404, f"{str(e)}")
+        
+    # -------------------- Get Bid Purchase history --------------------
+    def get_bid_purchase_history(self, request, user_id: int):
+        try:
+            purchase_history = []
+            purchase_ids = BidPurchase.objects.filter(user_id=user_id).values_list(
+                "purchase_id", flat=True
+            )
+            for purchase_id in purchase_ids:
+                purchase_history.append(self.get_bid_purchase_receipt(request, purchase_id))
+            return purchase_history
+
+        except CustomUser.DoesNotExist as e:
+            raise HttpError(404, "User not found")
+        except HttpError as e:
+            raise e
+        except Exception as e:
+            raise HttpError(404, f"{str(e)}")
