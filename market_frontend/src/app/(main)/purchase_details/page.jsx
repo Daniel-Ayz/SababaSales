@@ -11,13 +11,13 @@ axios.defaults.withCredentials = true;
 
 export default function Details() {
   const { user } = useContext(UserContext);
-  const [errorState, setErrorState] = useState(''); 
+  const [errorState, setErrorState] = useState('');
   const [showAlert, setShowAlert] = useState(false);
   const [showAlertGood, setShowAlertGood] = useState(false);
   const [showAlertBad, setShowAlertBad] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState('');
   const [deliveryInfo, setDeliveryInfo] = useState('');
-  
+
   const router = useRouter();
 
   const [shippingInfo, setShippingInfo] = useState({
@@ -107,7 +107,7 @@ export default function Details() {
       )}
 
       <h1 className="text-2xl font-bold mb-4 text-center">Checkout</h1>
-      
+
       <form className="flex-1 overflow-auto" onSubmit={makePurchase}>
         <div className="mb-4">
           <h2 className="text-lg font-semibold mb-2">Shipping Information</h2>
@@ -192,7 +192,7 @@ export default function Details() {
             Click here
           </Link>
         </p>
-        
+
         <div>
           <button
             type="submit"
