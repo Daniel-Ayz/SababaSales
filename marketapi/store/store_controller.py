@@ -1497,6 +1497,8 @@ class StoreController:
                 cursor.execute(f"SELECT pg_advisory_xact_lock({hash(bids_lock)});")
                 bid = get_or_set_cache(f"bid_{store.id}_{payload.bid_id}", Bid, pk=payload.bid_id)
                 self.validate_permissions(role, bid.store, "can_decide_on_bid", cursor)
+                if bid.rejected:
+                    raise HttpError(400, "Bid has already been rejected")
                 managing_lock = hash(f"{store.pk}_managing_lock")
                 cursor.execute(
                     "SELECT pg_advisory_xact_lock_shared(%s);", [managing_lock]
@@ -1531,6 +1533,8 @@ class StoreController:
                         )
                 else:
                     #bid.delete()
+                    bid.rejected = True
+                    bid.save()
                     uc.send_notification(
                         store.name,
                         bid.user_id,
