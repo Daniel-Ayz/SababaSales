@@ -43,7 +43,7 @@ class AbstractPaymentService(PaymentServiceInterface):
         handshake_payload = {
             "action_type": "handshake",
         }
-        response = requests.post(url, data=handshake_payload)
+        response = requests.post(url, data=handshake_payload, timeout=5)
 
         if response.status_code != 200:
             raise HttpError(400, "Could not connect to payment service")
@@ -61,12 +61,14 @@ class AbstractPaymentService(PaymentServiceInterface):
         }
 
         try:
-            response = requests.post(url, data=payload)
+            response = requests.post(url, data=payload, timeout=5)
             result = response.json()
             if response.status_code == 200 and result != -1:
                 return {"result": True, "transaction_id": result}
             else:
                 return {"result": False, "transaction_id": -1}
+        except requests.exceptions.Timeout:
+            return {"result": False, "transaction_id": -1}
         except Exception as e:
             return {"result": False, "transaction_id": -1}
 
